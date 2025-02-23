@@ -1,0 +1,211 @@
+import { Document, Page, Text, View, StyleSheet } from "@react-pdf/renderer";
+import { format } from "date-fns";
+
+const styles = StyleSheet.create({
+  page: {
+    padding: 40,
+    fontSize: 12,
+  },
+  header: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginBottom: 40,
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: "bold",
+  },
+  headerRight: {
+    textAlign: "right",
+  },
+  headerText: {
+    fontSize: 10,
+    marginBottom: 4,
+  },
+  section: {
+    marginBottom: 30,
+  },
+  grid: {
+    flexDirection: "row",
+    gap: 40,
+  },
+  column: {
+    flex: 1,
+  },
+  sectionTitle: {
+    fontSize: 14,
+    fontWeight: "bold",
+    marginBottom: 8,
+  },
+  text: {
+    fontSize: 10,
+    marginBottom: 4,
+  },
+  table: {
+    marginTop: 20,
+  },
+  tableHeader: {
+    flexDirection: "row",
+    backgroundColor: "#f3f4f6",
+    padding: 8,
+    marginBottom: 8,
+  },
+  tableRow: {
+    flexDirection: "row",
+    borderBottomWidth: 1,
+    borderBottomColor: "#e5e7eb",
+    padding: 8,
+  },
+  name: {
+    width: "25%",
+    paddingRight: 8,
+  },
+  description: {
+    width: "25%",
+    paddingRight: 8,
+  },
+  quantity: {
+    width: "15%",
+    paddingRight: 8,
+  },
+  price: {
+    width: "15%",
+    paddingRight: 8,
+  },
+  total: {
+    width: "20%",
+  },
+  headerCell: {
+    fontSize: 10,
+    fontWeight: "bold",
+  },
+  cell: {
+    fontSize: 10,
+  },
+  totalRow: {
+    flexDirection: "row",
+    justifyContent: "flex-end",
+    marginTop: 20,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: "#e5e7eb",
+  },
+  totalText: {
+    fontSize: 14,
+    fontWeight: "bold",
+  },
+  footer: {
+    position: "absolute",
+    bottom: 30,
+    left: 40,
+    right: 40,
+    textAlign: "center",
+    fontSize: 8,
+    paddingTop: 10,
+    borderTopWidth: 1,
+    borderTopColor: "#e5e7eb",
+  },
+  contactInfo: {
+    marginBottom: 8,
+  },
+});
+
+const InvoicePDF = ({
+  sender,
+  recipient,
+  items,
+  invoiceNumber,
+  businessInfo,
+}) => {
+  const total = items.reduce(
+    (sum, item) => sum + item.quantity * item.price,
+    0
+  );
+
+  return (
+    <Document>
+      <Page size="A4" style={styles.page}>
+        <View style={styles.header}>
+          <View>
+            <Text style={styles.title}>
+              {businessInfo?.businessName || "INVOICE"}
+            </Text>
+          </View>
+          <View style={styles.headerRight}>
+            <Text style={styles.headerText}>
+              Date: {format(new Date(), "PPP")}
+            </Text>
+            <Text style={styles.headerText}>Invoice #: {invoiceNumber}</Text>
+          </View>
+        </View>
+
+        <View style={styles.grid}>
+          <View style={styles.column}>
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>From:</Text>
+              <View style={styles.contactInfo}>
+                <Text style={styles.text}>{sender.name || "N/A"}</Text>
+                <Text style={styles.text}>{sender.phone || "N/A"}</Text>
+                <Text style={styles.text}>{sender.email || "N/A"}</Text>
+                <Text style={styles.text}>{sender.address || "N/A"}</Text>
+              </View>
+            </View>
+          </View>
+          <View style={styles.column}>
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Bill To:</Text>
+              <View style={styles.contactInfo}>
+                <Text style={styles.text}>{recipient.name || "N/A"}</Text>
+                <Text style={styles.text}>{recipient.phone || "N/A"}</Text>
+                <Text style={styles.text}>{recipient.email || "N/A"}</Text>
+                <Text style={styles.text}>{recipient.address || "N/A"}</Text>
+              </View>
+            </View>
+          </View>
+        </View>
+
+        <View style={styles.table}>
+          <View style={styles.tableHeader}>
+            <Text style={[styles.headerCell, styles.name]}>Product Name</Text>
+            <Text style={[styles.headerCell, styles.description]}>
+              Description
+            </Text>
+            <Text style={[styles.headerCell, styles.quantity]}>Quantity</Text>
+            <Text style={[styles.headerCell, styles.price]}>Price</Text>
+            <Text style={[styles.headerCell, styles.total]}>Total</Text>
+          </View>
+
+          {items.map((item, index) => (
+            <View key={index} style={styles.tableRow}>
+              <Text style={[styles.cell, styles.name]}>
+                {item.name || "N/A"}
+              </Text>
+              <Text style={[styles.cell, styles.description]}>
+                {item.description || "N/A"}
+              </Text>
+              <Text style={[styles.cell, styles.quantity]}>
+                {item.quantity}
+              </Text>
+              <Text style={[styles.cell, styles.price]}>
+                ${item.price.toFixed(2)}
+              </Text>
+              <Text style={[styles.cell, styles.total]}>
+                ${(item.quantity * item.price).toFixed(2)}
+              </Text>
+            </View>
+          ))}
+
+          <View style={styles.totalRow}>
+            <Text style={styles.totalText}>Total: ${total.toFixed(2)}</Text>
+          </View>
+        </View>
+
+        <View style={styles.footer}>
+          <Text>Thank you for your business!</Text>
+        </View>
+      </Page>
+    </Document>
+  );
+};
+
+export default InvoicePDF;
