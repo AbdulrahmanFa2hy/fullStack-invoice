@@ -1,4 +1,4 @@
-import { useRef, useEffect } from "react";
+import { useRef, useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { FiPlus, FiTrash2, FiSave, FiDownload, FiShare2 } from "react-icons/fi";
 import { format } from "date-fns";
@@ -25,6 +25,9 @@ function Home() {
 
   const invoiceRef = useRef(null);
 
+  const [tax, setTax] = useState(0);
+  const [discount, setDiscount] = useState(0);
+
   useEffect(() => {
     if (!invoiceNumber) {
       dispatch(generateInvoiceNumber());
@@ -35,10 +38,13 @@ function Home() {
     dispatch(updateItem({ id, field, value }));
   };
 
-  const total = items.reduce(
+  const subtotal = items.reduce(
     (sum, item) => sum + item.quantity * item.price,
     0
   );
+  const taxAmount = (subtotal * tax) / 100;
+  const discountAmount = (subtotal * discount) / 100;
+  const total = subtotal + taxAmount - discountAmount;
 
   const generatePDF = async () => {
     const pdfDoc = (
@@ -47,6 +53,8 @@ function Home() {
         recipient={recipient}
         items={items}
         invoiceNumber={invoiceNumber}
+        tax={tax}
+        discount={discount}
       />
     );
     return await pdf(pdfDoc).toBlob();
@@ -61,6 +69,11 @@ function Home() {
     sender,
     recipient,
     items,
+    subtotal,
+    tax,
+    taxAmount,
+    discount,
+    discountAmount,
     total,
     date: new Date().toISOString(),
   });
@@ -74,7 +87,6 @@ function Home() {
   };
 
   const downloadPDF = async () => {
-    saveInvoiceData();
     const blob = await generatePDF();
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
@@ -87,7 +99,6 @@ function Home() {
   };
 
   const shareOnWhatsApp = async () => {
-    saveInvoiceData();
     const message = `Invoice ${invoiceNumber} from ${sender.name}`;
     const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
     window.open(whatsappUrl, "_blank");
@@ -98,8 +109,8 @@ function Home() {
   };
 
   return (
-    <div className="min-h-screen p-8 bg-gray-50 flex">
-      <div className="flex-grow max-w-4xl">
+    <div className="min-h-screen p-8 pr-0 bg-gray-50 flex">
+      <div className="flex-grow max-w-6xl">
         <div ref={invoiceRef} className="bg-white rounded-2xl shadow-lg p-8">
           <div className="flex justify-between items-center mb-8">
             <h1 className="text-4xl font-bold bg-gradient-to-r from-primary-500 to-accent-500 bg-clip-text text-transparent">
@@ -234,38 +245,41 @@ function Home() {
           <div className="mb-8">
             <div className="bg-gray-50 p-4 rounded-lg mb-4">
               <div className="grid grid-cols-12 gap-4 mb-2 font-semibold text-gray-600">
-                <div className="col-span-6">Product Details</div>
-                <div className="col-span-2">Quantity</div>
-                <div className="col-span-2">Price</div>
+                <div className="col-span-4">Product Name</div>
+                <div className="col-span-4">Description</div>
+                <div className="col-span-1">Qty</div>
+                <div className="col-span-1">Price</div>
                 <div className="col-span-1">Total</div>
                 <div className="col-span-1"></div>
               </div>
             </div>
 
             {items.map((item) => (
-              <div key={item.id} className="mb-6 bg-gray-50 p-4 rounded-lg">
-                <div className="mb-4">
-                  <input
-                    type="text"
-                    className="input mb-2"
-                    value={item.name}
-                    onChange={(e) =>
-                      handleUpdateItem(item.id, "name", e.target.value)
-                    }
-                    placeholder="Product name"
-                  />
-                  <textarea
-                    className="input h-20"
-                    value={item.description}
-                    onChange={(e) =>
-                      handleUpdateItem(item.id, "description", e.target.value)
-                    }
-                    placeholder="Product description"
-                  />
-                </div>
+              <div key={item.id} className="mb-3 bg-gray-50 p-4 rounded-lg">
                 <div className="grid grid-cols-12 gap-4 items-center">
-                  <div className="col-span-6"></div>
-                  <div className="col-span-2">
+                  <div className="col-span-4">
+                    <input
+                      type="text"
+                      className="input"
+                      value={item.name}
+                      onChange={(e) =>
+                        handleUpdateItem(item.id, "name", e.target.value)
+                      }
+                      placeholder="Product name"
+                    />
+                  </div>
+                  <div className="col-span-4">
+                    <input
+                      type="text"
+                      className="input"
+                      value={item.description}
+                      onChange={(e) =>
+                        handleUpdateItem(item.id, "description", e.target.value)
+                      }
+                      placeholder="Short description"
+                    />
+                  </div>
+                  <div className="col-span-1">
                     <input
                       type="number"
                       className="input"
@@ -280,7 +294,7 @@ function Home() {
                       min="1"
                     />
                   </div>
-                  <div className="col-span-2">
+                  <div className="col-span-1">
                     <input
                       type="number"
                       className="input"
@@ -296,7 +310,7 @@ function Home() {
                       step="0.01"
                     />
                   </div>
-                  <div className="col-span-1 text-center">
+                  <div className="col-span-1 text-center font-medium">
                     ${(item.quantity * item.price).toFixed(2)}
                   </div>
                   <div className="col-span-1 flex justify-center">
@@ -326,28 +340,102 @@ function Home() {
         </div>
       </div>
 
-      <div className="w-72 ml-8">
+      <div className="w-72 ml-4">
         <div className="bg-white p-6 rounded-xl shadow-lg sticky top-8">
-          <h2 className="text-lg font-semibold mb-6 text-gray-700">Actions</h2>
           <div className="flex flex-col gap-4">
-            <button
-              onClick={downloadPDF}
-              className="btn btn-accent flex items-center gap-2 w-full justify-center"
-            >
-              <FiDownload /> Download PDF
-            </button>
-            <button
-              onClick={shareOnWhatsApp}
-              className="btn btn-accent flex items-center gap-2 w-full justify-center"
-            >
-              <FiShare2 /> Share on WhatsApp
-            </button>
-            <button
-              onClick={handleSaveInvoice}
-              className="btn btn-primary flex items-center gap-2 w-full justify-center"
-            >
-              <FiSave /> Save Invoice
-            </button>
+            <div className="flex flex-col gap-3">
+              <button
+                onClick={downloadPDF}
+                className="btn btn-accent flex items-center gap-2 w-full justify-center"
+              >
+                <FiDownload /> Download PDF
+              </button>
+              <button
+                onClick={shareOnWhatsApp}
+                className="btn btn-accent flex items-center gap-2 w-full justify-center"
+              >
+                <FiShare2 /> Share on WhatsApp
+              </button>
+              <button
+                onClick={handleSaveInvoice}
+                className="btn btn-primary flex items-center gap-2 w-full justify-center"
+              >
+                <FiSave /> Save Invoice
+              </button>
+            </div>
+
+            <div className="border-t pt-4">
+              <div className="space-y-3">
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-medium text-gray-600 mb-1 text-center">
+                      Tax Rate
+                    </label>
+                    <div className="relative">
+                      <input
+                        type="number"
+                        className="input w-full pl-7 py-1.5 text-sm"
+                        value={tax}
+                        onChange={(e) =>
+                          setTax(parseFloat(e.target.value) || 0)
+                        }
+                        min="0"
+                        step="0.1"
+                        placeholder="0.0"
+                      />
+                      <span className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-400 text-sm">
+                        %
+                      </span>
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-gray-600 mb-1 text-center">
+                      Discount
+                    </label>
+                    <div className="relative">
+                      <input
+                        type="number"
+                        className="input w-full pl-7 py-1.5 text-sm"
+                        value={discount}
+                        onChange={(e) =>
+                          setDiscount(parseFloat(e.target.value) || 0)
+                        }
+                        min="0"
+                        step="0.1"
+                        placeholder="0.0"
+                      />
+                      <span className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-400 text-sm">
+                        %
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Compact Summary */}
+                <div className="bg-gray-50 rounded-lg p-3 space-y-1">
+                  <div className="flex justify-between text-sm text-gray-600">
+                    <span>Subtotal:</span>
+                    <span>${subtotal.toFixed(2)}</span>
+                  </div>
+                  {tax > 0 && (
+                    <div className="flex justify-between text-sm text-gray-500">
+                      <span>Tax ({tax}%):</span>
+                      <span>+${taxAmount.toFixed(2)}</span>
+                    </div>
+                  )}
+                  {discount > 0 && (
+                    <div className="flex justify-between text-sm text-gray-500">
+                      <span>Discount ({discount}%):</span>
+                      <span>-${discountAmount.toFixed(2)}</span>
+                    </div>
+                  )}
+                  <div className="flex justify-between font-medium pt-1 border-t">
+                    <span>Total:</span>
+                    <span>${total.toFixed(2)}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>

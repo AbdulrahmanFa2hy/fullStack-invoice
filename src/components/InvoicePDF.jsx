@@ -108,6 +108,44 @@ const styles = StyleSheet.create({
   contactInfo: {
     marginBottom: 8,
   },
+  summaryContainer: {
+    marginTop: 20,
+    borderTopWidth: 0.5,
+    borderTopColor: "#e5e7eb",
+    paddingTop: 8,
+    width: 200,
+    alignSelf: "flex-end",
+  },
+  summaryRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginBottom: 2,
+  },
+  summaryLabel: {
+    fontSize: 8,
+    color: "#6B7280",
+    textAlign: "left",
+  },
+  summaryValue: {
+    fontSize: 8,
+    textAlign: "right",
+  },
+  totalRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginTop: 4,
+    paddingTop: 4,
+    borderTopWidth: 0.5,
+    borderTopColor: "#e5e7eb",
+  },
+  totalLabel: {
+    fontSize: 9,
+    fontWeight: "bold",
+  },
+  totalValue: {
+    fontSize: 9,
+    fontWeight: "bold",
+  },
 });
 
 const InvoicePDF = ({
@@ -116,11 +154,16 @@ const InvoicePDF = ({
   items,
   invoiceNumber,
   businessInfo,
+  tax = 0,
+  discount = 0,
 }) => {
-  const total = items.reduce(
+  const subtotal = items.reduce(
     (sum, item) => sum + item.quantity * item.price,
     0
   );
+  const taxAmount = (subtotal * tax) / 100;
+  const discountAmount = (subtotal * discount) / 100;
+  const total = subtotal + taxAmount - discountAmount;
 
   return (
     <Document>
@@ -195,8 +238,34 @@ const InvoicePDF = ({
             </View>
           ))}
 
-          <View style={styles.totalRow}>
-            <Text style={styles.totalText}>Total: ${total.toFixed(2)}</Text>
+          <View style={styles.summaryContainer}>
+            <View style={styles.summaryRow}>
+              <Text style={styles.summaryLabel}>Subtotal</Text>
+              <Text style={styles.summaryValue}>${subtotal.toFixed(2)}</Text>
+            </View>
+
+            {tax > 0 && (
+              <View style={styles.summaryRow}>
+                <Text style={styles.summaryLabel}>Tax ({tax}%)</Text>
+                <Text style={styles.summaryValue}>
+                  +${taxAmount.toFixed(2)}
+                </Text>
+              </View>
+            )}
+
+            {discount > 0 && (
+              <View style={styles.summaryRow}>
+                <Text style={styles.summaryLabel}>Discount ({discount}%)</Text>
+                <Text style={styles.summaryValue}>
+                  -${discountAmount.toFixed(2)}
+                </Text>
+              </View>
+            )}
+
+            <View style={styles.totalRow}>
+              <Text style={styles.totalLabel}>Total</Text>
+              <Text style={styles.totalValue}>${total.toFixed(2)}</Text>
+            </View>
           </View>
         </View>
 
