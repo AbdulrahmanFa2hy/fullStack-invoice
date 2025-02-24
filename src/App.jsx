@@ -10,33 +10,67 @@ import Signup from "./pages/Signup";
 import Navbar from "./components/Navbar";
 import Home from "./pages/Home";
 import Invoices from "./pages/Invoices";
+import SubscriptionPlans from "./pages/SubscriptionPlans";
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [hasSubscription, setHasSubscription] = useState(false);
+
+  const handleAuth = () => {
+    setIsAuthenticated(true);
+  };
+
+  const handleSubscription = () => {
+    setHasSubscription(true);
+  };
+
+  const AuthRoute = ({ children }) => {
+    if (!isAuthenticated) {
+      return <Navigate to="/login" replace />;
+    }
+
+    if (!hasSubscription) {
+      return <Navigate to="/subscription-plans" replace />;
+    }
+
+    return children;
+  };
 
   return (
     <Router>
-      {isAuthenticated && <Navbar />}
+      {isAuthenticated && hasSubscription && <Navbar />}
       <Routes>
         <Route
           path="/"
           element={
-            isAuthenticated ? <Home /> : <Navigate to="/login" replace />
+            <AuthRoute>
+              <Home />
+            </AuthRoute>
           }
         />
         <Route
           path="/invoices"
           element={
-            isAuthenticated ? <Invoices /> : <Navigate to="/login" replace />
+            <AuthRoute>
+              <Invoices />
+            </AuthRoute>
           }
         />
         <Route
           path="/customers"
           element={
-            isAuthenticated ? (
+            <AuthRoute>
               <div>Customers Page</div>
+            </AuthRoute>
+          }
+        />
+        <Route
+          path="/subscription-plans"
+          element={
+            isAuthenticated && !hasSubscription ? (
+              <SubscriptionPlans onSubscribe={handleSubscription} />
             ) : (
-              <Navigate to="/login" replace />
+              <Navigate to="/" replace />
             )
           }
         />
@@ -44,9 +78,12 @@ function App() {
           path="/login"
           element={
             !isAuthenticated ? (
-              <Login onLogin={() => setIsAuthenticated(true)} />
+              <Login onLogin={handleAuth} />
             ) : (
-              <Navigate to="/" replace />
+              <Navigate
+                to={hasSubscription ? "/" : "/subscription-plans"}
+                replace
+              />
             )
           }
         />
@@ -54,9 +91,12 @@ function App() {
           path="/signup"
           element={
             !isAuthenticated ? (
-              <Signup onSignup={() => setIsAuthenticated(true)} />
+              <Signup onSignup={handleAuth} />
             ) : (
-              <Navigate to="/" replace />
+              <Navigate
+                to={hasSubscription ? "/" : "/subscription-plans"}
+                replace
+              />
             )
           }
         />
