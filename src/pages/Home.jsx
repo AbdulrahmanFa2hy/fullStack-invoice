@@ -3,6 +3,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { FiPlus, FiTrash2, FiSave, FiDownload, FiShare2 } from "react-icons/fi";
 import { format } from "date-fns";
 import { pdf } from "@react-pdf/renderer";
+import Swal from "sweetalert2";
 import InvoicePDF from "../components/InvoicePDF";
 import { useInvoiceNumber } from "../hooks/useInvoiceNumber";
 import {
@@ -109,9 +110,14 @@ function Home() {
     const invoiceData = prepareInvoiceData();
     dispatch(saveToHistory(invoiceData));
     handleCustomerData();
-    dispatch(generateInvoiceNumber());
-    dispatch(resetInvoice());
-    alert(isExistingInvoice() ? "Invoice updated!" : "Invoice created!");
+    Swal.fire({
+      icon: "success",
+      title: isExistingInvoice() ? "Invoice Updated!" : "Invoice Created!",
+      toast: true,
+      position: "bottom-end",
+      showConfirmButton: false,
+      timer: 1500,
+    });
   };
 
   const downloadPDF = async () => {

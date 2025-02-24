@@ -75,7 +75,7 @@ const Invoices = () => {
           </div>
         </div>
 
-        <div className="grid gap-6">
+        <div className="grid gap-6 cursor-pointer">
           {filteredInvoices.map((invoice) => (
             <div
               key={invoice.id}
