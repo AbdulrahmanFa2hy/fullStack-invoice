@@ -29,7 +29,7 @@ function Home() {
     if (!invoiceNumber) {
       dispatch(generateInvoiceNumber());
     }
-  }, []);
+  });
 
   const handleUpdateItem = (id, field, value) => {
     dispatch(updateItem({ id, field, value }));
