@@ -11,6 +11,7 @@ import Navbar from "./components/Navbar";
 import Home from "./pages/Home";
 import Invoices from "./pages/Invoices";
 import SubscriptionPlans from "./pages/SubscriptionPlans";
+import Customers from "./pages/Customers";
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -60,7 +61,7 @@ function App() {
           path="/customers"
           element={
             <AuthRoute>
-              <div>Customers Page</div>
+              <Customers />
             </AuthRoute>
           }
         />

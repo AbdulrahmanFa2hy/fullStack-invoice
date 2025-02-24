@@ -56,20 +56,24 @@ const styles = StyleSheet.create({
     borderBottomColor: "#e5e7eb",
     padding: 8,
   },
+  tableRowEven: {
+    backgroundColor: "#f9fafb",
+  },
   name: {
-    width: "25%",
+    width: "40%",
     paddingRight: 8,
   },
   description: {
-    width: "25%",
-    paddingRight: 8,
+    fontSize: 8,
+    color: "#6B7280",
+    marginTop: 2,
   },
   quantity: {
-    width: "15%",
+    width: "20%",
     paddingRight: 8,
   },
   price: {
-    width: "15%",
+    width: "20%",
     paddingRight: 8,
   },
   total: {
@@ -210,22 +214,22 @@ const InvoicePDF = ({
         <View style={styles.table}>
           <View style={styles.tableHeader}>
             <Text style={[styles.headerCell, styles.name]}>Product Name</Text>
-            <Text style={[styles.headerCell, styles.description]}>
-              Description
-            </Text>
             <Text style={[styles.headerCell, styles.quantity]}>Quantity</Text>
             <Text style={[styles.headerCell, styles.price]}>Price</Text>
             <Text style={[styles.headerCell, styles.total]}>Total</Text>
           </View>
 
           {items.map((item, index) => (
-            <View key={index} style={styles.tableRow}>
-              <Text style={[styles.cell, styles.name]}>
-                {item.name || "N/A"}
-              </Text>
-              <Text style={[styles.cell, styles.description]}>
-                {item.description || "N/A"}
-              </Text>
+            <View
+              key={index}
+              style={[styles.tableRow, index % 2 === 1 && styles.tableRowEven]}
+            >
+              <View style={styles.name}>
+                <Text style={styles.cell}>{item.name || "N/A"}</Text>
+                {item.description && (
+                  <Text style={styles.description}>{item.description}</Text>
+                )}
+              </View>
               <Text style={[styles.cell, styles.quantity]}>
                 {item.quantity}
               </Text>

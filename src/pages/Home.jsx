@@ -15,6 +15,7 @@ import {
   resetInvoice,
   generateInvoiceNumber,
 } from "../store/mainSlice";
+import { addCustomer, updateCustomer } from "../store/customersSlice";
 
 function Home() {
   const dispatch = useDispatch();
@@ -22,6 +23,7 @@ function Home() {
   const sender = useSelector((state) => state.main.sender);
   const recipient = useSelector((state) => state.main.recipient);
   const invoiceNumber = useInvoiceNumber();
+  const customers = useSelector((state) => state.customers.customers);
 
   const invoiceRef = useRef(null);
 
@@ -36,6 +38,11 @@ function Home() {
 
   const handleUpdateItem = (id, field, value) => {
     dispatch(updateItem({ id, field, value }));
+  };
+
+  const handleTextareaResize = (e) => {
+    e.target.style.height = "auto";
+    e.target.style.height = e.target.scrollHeight + "px";
   };
 
   const subtotal = items.reduce(
@@ -78,10 +85,31 @@ function Home() {
     date: new Date().toISOString(),
   });
 
+  const handleCustomerData = () => {
+    if (recipient.email) {
+      const customerData = {
+        name: recipient.name,
+        email: recipient.email,
+        phone: recipient.phone,
+        address: recipient.address,
+      };
+
+      const existingCustomer = customers.find(
+        (c) => c.email === recipient.email
+      );
+      if (existingCustomer) {
+        dispatch(updateCustomer(customerData));
+      } else {
+        dispatch(addCustomer(customerData));
+      }
+    }
+  };
+
   const saveInvoiceData = () => {
     const invoiceData = prepareInvoiceData();
     dispatch(saveToHistory(invoiceData));
-    dispatch(generateInvoiceNumber()); // Generate new number after saving
+    handleCustomerData();
+    dispatch(generateInvoiceNumber());
     dispatch(resetInvoice());
     alert(isExistingInvoice() ? "Invoice updated!" : "Invoice created!");
   };
@@ -106,6 +134,51 @@ function Home() {
 
   const handleSaveInvoice = () => {
     saveInvoiceData();
+  };
+
+  const handleEmailChange = (e) => {
+    const email = e.target.value;
+    dispatch(updateRecipient({ field: "email", value: email }));
+
+    const existingCustomer = customers.find((c) => c.email === email);
+    if (existingCustomer) {
+      dispatch(
+        updateRecipient({ field: "name", value: existingCustomer.name })
+      );
+      dispatch(
+        updateRecipient({ field: "phone", value: existingCustomer.phone })
+      );
+      dispatch(
+        updateRecipient({ field: "address", value: existingCustomer.address })
+      );
+    }
+  };
+
+  const handleCustomerSelect = (email) => {
+    if (email === "") {
+      // Clear the form if "Select Customer" is chosen
+      dispatch(updateRecipient({ field: "name", value: "" }));
+      dispatch(updateRecipient({ field: "email", value: "" }));
+      dispatch(updateRecipient({ field: "phone", value: "" }));
+      dispatch(updateRecipient({ field: "address", value: "" }));
+      return;
+    }
+
+    const selectedCustomer = customers.find((c) => c.email === email);
+    if (selectedCustomer) {
+      dispatch(
+        updateRecipient({ field: "name", value: selectedCustomer.name })
+      );
+      dispatch(
+        updateRecipient({ field: "email", value: selectedCustomer.email })
+      );
+      dispatch(
+        updateRecipient({ field: "phone", value: selectedCustomer.phone })
+      );
+      dispatch(
+        updateRecipient({ field: "address", value: selectedCustomer.address })
+      );
+    }
   };
 
   return (
@@ -178,9 +251,21 @@ function Home() {
                 </div>
               </div>
               <div>
-                <h2 className="text-lg font-semibold mb-4 text-gray-700">
-                  Bill To:
-                </h2>
+                <div className="flex justify-between items-start ">
+                  <h2 className="text-lg font-semibold text-gray-700">To:</h2>
+                  <select
+                    className="input w-72 text-sm p-1 mb-4 inline-block"
+                    onChange={(e) => handleCustomerSelect(e.target.value)}
+                    value={recipient.email || ""}
+                  >
+                    <option value="">Select Customer</option>
+                    {customers.map((customer) => (
+                      <option key={customer.email} value={customer.email}>
+                        {customer.name} ({customer.email})
+                      </option>
+                    ))}
+                  </select>
+                </div>
                 <div className="space-y-3">
                   <input
                     type="text"
@@ -215,14 +300,7 @@ function Home() {
                     placeholder="Email"
                     className="input"
                     value={recipient.email}
-                    onChange={(e) =>
-                      dispatch(
-                        updateRecipient({
-                          field: "email",
-                          value: e.target.value,
-                        })
-                      )
-                    }
+                    onChange={handleEmailChange}
                   />
                   <textarea
                     placeholder="Address"
@@ -269,14 +347,24 @@ function Home() {
                     />
                   </div>
                   <div className="col-span-4">
-                    <input
-                      type="text"
-                      className="input"
+                    <textarea
+                      className="input min-h-[38px] resize-none overflow-hidden"
                       value={item.description}
-                      onChange={(e) =>
-                        handleUpdateItem(item.id, "description", e.target.value)
-                      }
+                      onChange={(e) => {
+                        handleUpdateItem(
+                          item.id,
+                          "description",
+                          e.target.value
+                        );
+                        handleTextareaResize(e);
+                      }}
+                      onInput={handleTextareaResize}
                       placeholder="Short description"
+                      rows={1}
+                      style={{
+                        resize: "none",
+                        transition: "height 0.1s ease-out",
+                      }}
                     />
                   </div>
                   <div className="col-span-1">
@@ -303,11 +391,10 @@ function Home() {
                         handleUpdateItem(
                           item.id,
                           "price",
-                          parseFloat(e.target.value) || 0
+                          parseInt(e.target.value) || 0
                         )
                       }
                       min="0"
-                      step="0.01"
                     />
                   </div>
                   <div className="col-span-1 text-center font-medium">
@@ -333,9 +420,6 @@ function Home() {
             >
               <FiPlus /> Add Item
             </button>
-            <div className="text-xl font-semibold">
-              Total: ${total.toFixed(2)}
-            </div>
           </div>
         </div>
       </div>
