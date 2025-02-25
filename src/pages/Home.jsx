@@ -35,7 +35,11 @@ function Home() {
     if (!invoiceNumber) {
       dispatch(generateInvoiceNumber());
     }
-  });
+    // Add initial item if items array is empty
+    if (items.length === 0) {
+      dispatch(addItem());
+    }
+  }, [dispatch, invoiceNumber, items.length]);
 
   const handleUpdateItem = (id, field, value) => {
     dispatch(updateItem({ id, field, value }));

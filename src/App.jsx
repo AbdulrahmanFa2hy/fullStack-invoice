@@ -5,6 +5,8 @@ import {
   Route,
   Navigate,
 } from "react-router-dom";
+import { useSelector, useDispatch } from "react-redux";
+import { setAuthenticated, setSubscription } from "./store/profileSlice";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
 import Navbar from "./components/Navbar";
@@ -12,17 +14,20 @@ import Home from "./pages/Home";
 import Invoices from "./pages/Invoices";
 import SubscriptionPlans from "./pages/SubscriptionPlans";
 import Customers from "./pages/Customers";
+import Profile from "./pages/Profile";
 
 function App() {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [hasSubscription, setHasSubscription] = useState(false);
+  const dispatch = useDispatch();
+  const { isAuthenticated, hasSubscription } = useSelector(
+    (state) => state.profile.userData
+  );
 
   const handleAuth = () => {
-    setIsAuthenticated(true);
+    dispatch(setAuthenticated(true));
   };
 
   const handleSubscription = () => {
-    setHasSubscription(true);
+    dispatch(setSubscription(true));
   };
 
   const AuthRoute = ({ children }) => {
@@ -62,6 +67,14 @@ function App() {
           element={
             <AuthRoute>
               <Customers />
+            </AuthRoute>
+          }
+        />
+        <Route
+          path="/profile"
+          element={
+            <AuthRoute>
+              <Profile />
             </AuthRoute>
           }
         />

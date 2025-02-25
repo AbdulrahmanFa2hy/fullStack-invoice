@@ -1,4 +1,4 @@
-import { createSlice } from "@reduxjs/toolkit";
+import { createSlice, createAction } from "@reduxjs/toolkit";
 
 const generateInitialInvoiceNumber = () => {
   const today = new Date();
@@ -51,7 +51,7 @@ const generateNewInvoiceNumber = (lastDate, counter) => {
   };
 };
 
-export const mainSlice = createSlice({
+const mainSlice = createSlice({
   name: "main",
   initialState,
   reducers: {
@@ -141,10 +141,17 @@ export const mainSlice = createSlice({
       state.invoice.lastInvoiceDate = newDate;
     },
     resetInvoice: (state) => {
+      state.invoice.items = [
+        {
+          id: Date.now(),
+          name: "",
+          description: "",
+          quantity: 1,
+          price: 0,
+        },
+      ];
       state.sender = initialState.sender;
       state.recipient = initialState.recipient;
-      state.invoice.items = [];
-      // Don't generate new invoice number here
     },
   },
 });
