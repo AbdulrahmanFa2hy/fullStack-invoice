@@ -20,7 +20,9 @@ const initialState = {
     address: "",
   },
   invoice: {
-    items: [{ id: 1, name: "", description: "", quantity: 1, price: 0 }],
+    items: [
+      { id: Date.now(), name: "", description: "", quantity: 1, price: 0 },
+    ],
     invoiceNumber: generateInitialInvoiceNumber(),
     invoiceHistory: [],
     lastInvoiceDate: new Date().toISOString().slice(0, 10).replace(/-/g, ""),
@@ -68,7 +70,7 @@ const mainSlice = createSlice({
     },
     addItem: (state) => {
       state.invoice.items.push({
-        id: state.invoice.items.length + 1,
+        id: Date.now() + Math.random(), // Ensure uniqueness even if added in the same millisecond
         name: "",
         description: "",
         quantity: 1,

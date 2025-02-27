@@ -18,13 +18,10 @@ const customersSlice = createSlice({
     },
     updateCustomer: (state, action) => {
       const index = state.customers.findIndex(
-        (customer) => customer.email === action.payload.email
+        (customer) => customer.id === action.payload.id
       );
       if (index !== -1) {
-        state.customers[index] = {
-          ...state.customers[index],
-          ...action.payload,
-        };
+        state.customers[index] = action.payload;
       }
     },
     deleteCustomer: (state, action) => {
