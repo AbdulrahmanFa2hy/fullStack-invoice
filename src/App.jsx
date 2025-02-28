@@ -14,6 +14,7 @@ import Invoices from "./pages/Invoices";
 import SubscriptionPlans from "./pages/SubscriptionPlans";
 import Customers from "./pages/Customers";
 import Profile from "./pages/Profile";
+import CompanyForm from "./pages/CompanyForm";
 
 function App() {
   const dispatch = useDispatch();
@@ -85,6 +86,14 @@ function App() {
             ) : (
               <Navigate to="/" replace />
             )
+          }
+        />
+        <Route
+          path="/company"
+          element={
+            <AuthRoute>
+              <CompanyForm />
+            </AuthRoute>
           }
         />
         <Route

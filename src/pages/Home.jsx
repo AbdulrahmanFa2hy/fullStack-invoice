@@ -11,7 +11,6 @@ import {
   removeItem,
   updateItem,
   saveToHistory,
-  updateSender,
   generateInvoiceNumber,
 } from "../store/mainSlice";
 import {
@@ -19,11 +18,13 @@ import {
   updateCustomer,
   setSelectedCustomerId,
 } from "../store/customersSlice";
+import { updateCompany } from "../store/companySlice";
+import LogoModal from "../components/LogoModal";
 
 function Home() {
   const dispatch = useDispatch();
   const { items, invoiceHistory } = useSelector((state) => state.main.invoice);
-  const sender = useSelector((state) => state.main.sender);
+  const company = useSelector((state) => state.company);
   const invoiceNumber = useInvoiceNumber();
   const { customers, selectedCustomerId } = useSelector(
     (state) => state.customers
@@ -43,6 +44,8 @@ function Home() {
   const [discount, setDiscount] = useState(0);
   const [privacy, setPrivacy] = useState("");
   const [notes, setNotes] = useState("");
+  const [showLogoInput, setShowLogoInput] = useState(false);
+  const [isLogoModalOpen, setIsLogoModalOpen] = useState(false);
 
   useEffect(() => {
     if (!invoiceNumber) {
@@ -63,13 +66,15 @@ function Home() {
     e.target.style.height = e.target.scrollHeight + "px";
   };
 
+  // Update the calculations
   const subtotal = items.reduce(
     (sum, item) => sum + item.quantity * item.price,
     0
   );
-  const taxAmount = (subtotal * tax) / 100;
   const discountAmount = (subtotal * discount) / 100;
-  const total = subtotal + taxAmount - discountAmount;
+  const subtotalAfterDiscount = subtotal - discountAmount;
+  const taxAmount = (subtotalAfterDiscount * tax) / 100;
+  const total = subtotalAfterDiscount + taxAmount;
 
   const generatePDF = async () => {
     // Create businessInfo object
@@ -79,7 +84,7 @@ function Home() {
 
     const pdfDoc = (
       <InvoicePDF
-        sender={sender}
+        sender={company}
         customer={selectedCustomer} // Pass customer directly instead of using customerId
         items={items}
         invoiceNumber={invoiceNumber}
@@ -99,7 +104,7 @@ function Home() {
 
   const prepareInvoiceData = () => ({
     invoiceNumber,
-    sender,
+    sender: company, // Update to use company data
     customerId: selectedCustomerId, // Change this line to save only the ID
     items,
     subtotal,
@@ -172,13 +177,24 @@ function Home() {
   };
 
   const shareOnWhatsApp = async () => {
-    const message = `Invoice ${invoiceNumber} from ${sender.name}`;
+    const message = `Invoice ${invoiceNumber} from ${company.name}`;
     const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
     window.open(whatsappUrl, "_blank");
   };
 
   const handleSaveInvoice = () => {
     saveInvoiceData();
+  };
+
+  const handleLogoUpload = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        dispatch(updateCompany({ field: "logo", value: reader.result }));
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
   return (
@@ -192,6 +208,38 @@ function Home() {
             <h1 className="self-start text-2xl sm:text-3xl md:text-4xl font-bold bg-gradient-to-r from-primary-500 to-accent-500 bg-clip-text text-transparent">
               Invoice Generator
             </h1>
+            <div className="flex flex-col items-center relative">
+              {company.logo ? (
+                <div
+                  className="cursor-pointer group"
+                  onClick={() => setIsLogoModalOpen(true)}
+                >
+                  <img
+                    src={company.logo}
+                    alt="Company logo"
+                    className="h-12 w-12 object-contain rounded-full border border-gray-200 "
+                  />
+                </div>
+              ) : (
+                <button
+                  onClick={() => setIsLogoModalOpen(true)}
+                  className="text-sm text-primary-600 hover:text-primary-700"
+                >
+                  Add logo
+                </button>
+              )}
+              <LogoModal
+                isOpen={isLogoModalOpen}
+                onClose={() => setIsLogoModalOpen(false)}
+                logo={company.logo}
+                onUpdate={(logoData) =>
+                  dispatch(updateCompany({ field: "logo", value: logoData }))
+                }
+                onRemove={() =>
+                  dispatch(updateCompany({ field: "logo", value: null }))
+                }
+              />
+            </div>
             <div className="text-right self-end">
               <p className="text-xs sm:text-base text-gray-600">
                 {format(new Date(), "PPP")}
@@ -213,10 +261,10 @@ function Home() {
                     type="text"
                     placeholder="Name"
                     className="input"
-                    value={sender.name}
+                    value={company.name}
                     onChange={(e) =>
                       dispatch(
-                        updateSender({ field: "name", value: e.target.value })
+                        updateCompany({ field: "name", value: e.target.value })
                       )
                     }
                   />
@@ -224,10 +272,10 @@ function Home() {
                     type="tel"
                     placeholder="Phone"
                     className="input"
-                    value={sender.phone}
+                    value={company.phone}
                     onChange={(e) =>
                       dispatch(
-                        updateSender({ field: "phone", value: e.target.value })
+                        updateCompany({ field: "phone", value: e.target.value })
                       )
                     }
                   />
@@ -235,20 +283,20 @@ function Home() {
                     type="email"
                     placeholder="Email"
                     className="input"
-                    value={sender.email}
+                    value={company.email}
                     onChange={(e) =>
                       dispatch(
-                        updateSender({ field: "email", value: e.target.value })
+                        updateCompany({ field: "email", value: e.target.value })
                       )
                     }
                   />
                   <textarea
                     placeholder="Address"
                     className="input h-24"
-                    value={sender.address}
+                    value={company.address}
                     onChange={(e) =>
                       dispatch(
-                        updateSender({
+                        updateCompany({
                           field: "address",
                           value: e.target.value,
                         })
@@ -377,30 +425,67 @@ function Home() {
                     <input
                       type="number"
                       className="input bg-gray-50"
-                      value={item.quantity}
-                      onChange={(e) =>
+                      value={item.quantity || ""}
+                      onChange={(e) => {
+                        const value = Math.max(0, e.target.value);
                         handleUpdateItem(
                           item.id,
                           "quantity",
-                          parseInt(e.target.value) || 0
-                        )
-                      }
-                      min="1"
+                          parseFloat(value) || 0
+                        );
+                      }}
+                      onFocus={(e) => e.target.select()}
+                      min="0"
+                      step="1"
+                      onKeyDown={(e) => {
+                        if (e.key === "ArrowUp") {
+                          e.preventDefault();
+                          const newValue =
+                            (parseFloat(e.target.value) || 0) + 1;
+                          handleUpdateItem(item.id, "quantity", newValue);
+                        } else if (e.key === "ArrowDown") {
+                          e.preventDefault();
+                          const newValue = Math.max(
+                            0,
+                            (parseFloat(e.target.value) || 0) - 1
+                          );
+                          handleUpdateItem(item.id, "quantity", newValue);
+                        }
+                      }}
                     />
                   </div>
                   <div className="col-span-3 lg:col-span-1">
                     <input
                       type="number"
                       className="input bg-gray-50"
-                      value={item.price}
-                      onChange={(e) =>
+                      value={item.price || ""}
+                      placeholder="0.00"
+                      onChange={(e) => {
+                        const value = Math.max(0, e.target.value);
                         handleUpdateItem(
                           item.id,
                           "price",
-                          parseInt(e.target.value) || 0
-                        )
-                      }
+                          parseFloat(value) || 0
+                        );
+                      }}
+                      onFocus={(e) => e.target.select()}
                       min="0"
+                      step="1"
+                      onKeyDown={(e) => {
+                        if (e.key === "ArrowUp") {
+                          e.preventDefault();
+                          const newValue =
+                            (parseFloat(e.target.value) || 0) + 1;
+                          handleUpdateItem(item.id, "price", newValue);
+                        } else if (e.key === "ArrowDown") {
+                          e.preventDefault();
+                          const newValue = Math.max(
+                            0,
+                            (parseFloat(e.target.value) || 0) - 1
+                          );
+                          handleUpdateItem(item.id, "price", newValue);
+                        }
+                      }}
                     />
                   </div>
                   <div className="col-span-3 lg:col-span-1 text-center font-medium text-sm sm:text-base">
@@ -463,17 +548,26 @@ function Home() {
                       <input
                         type="number"
                         className="input w-full pl-7 py-1.5 text-sm"
-                        value={tax}
-                        onChange={(e) =>
-                          setTax(parseFloat(e.target.value) || 0)
-                        }
+                        value={tax || ""}
+                        onChange={(e) => {
+                          const value = Math.max(0, e.target.value);
+                          setTax(parseFloat(value) || 0);
+                        }}
+                        onFocus={(e) => e.target.select()}
+                        onKeyDown={(e) => {
+                          if (e.key === "ArrowUp") {
+                            e.preventDefault();
+                            setTax((prev) => Math.min(100, (prev || 0) + 1));
+                          } else if (e.key === "ArrowDown") {
+                            e.preventDefault();
+                            setTax((prev) => Math.max(0, (prev || 0) - 1));
+                          }
+                        }}
                         min="0"
+                        max="100"
                         step="0.1"
                         placeholder="0.0"
                       />
-                      <span className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-400 text-sm">
-                        %
-                      </span>
                     </div>
                   </div>
                   <div>
@@ -484,17 +578,28 @@ function Home() {
                       <input
                         type="number"
                         className="input w-full pl-7 py-1.5 text-sm"
-                        value={discount}
-                        onChange={(e) =>
-                          setDiscount(parseFloat(e.target.value) || 0)
-                        }
+                        value={discount || ""}
+                        onChange={(e) => {
+                          const value = Math.max(0, e.target.value);
+                          setDiscount(parseFloat(value) || 0);
+                        }}
+                        onFocus={(e) => e.target.select()}
+                        onKeyDown={(e) => {
+                          if (e.key === "ArrowUp") {
+                            e.preventDefault();
+                            setDiscount((prev) =>
+                              Math.min(100, (prev || 0) + 1)
+                            );
+                          } else if (e.key === "ArrowDown") {
+                            e.preventDefault();
+                            setDiscount((prev) => Math.max(0, (prev || 0) - 1));
+                          }
+                        }}
                         min="0"
+                        max="100"
                         step="0.1"
                         placeholder="0.0"
                       />
-                      <span className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-400 text-sm">
-                        %
-                      </span>
                     </div>
                   </div>
                 </div>
@@ -505,16 +610,16 @@ function Home() {
                     <span>Subtotal:</span>
                     <span>${subtotal.toFixed(2)}</span>
                   </div>
-                  {tax > 0 && (
-                    <div className="flex justify-between text-sm text-gray-500">
-                      <span>Tax ({tax}%):</span>
-                      <span>+${taxAmount.toFixed(2)}</span>
-                    </div>
-                  )}
                   {discount > 0 && (
                     <div className="flex justify-between text-sm text-gray-500">
                       <span>Discount ({discount}%):</span>
                       <span>-${discountAmount.toFixed(2)}</span>
+                    </div>
+                  )}
+                  {tax > 0 && (
+                    <div className="flex justify-between text-sm text-gray-500">
+                      <span>Tax ({tax}%):</span>
+                      <span>+${taxAmount.toFixed(2)}</span>
                     </div>
                   )}
                   <div className="flex justify-between font-medium pt-1 border-t text-sm sm:text-base">

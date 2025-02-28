@@ -1,4 +1,4 @@
-import { createSlice, createAction } from "@reduxjs/toolkit";
+import { createSlice } from "@reduxjs/toolkit";
 
 const generateInitialInvoiceNumber = () => {
   const today = new Date();
@@ -7,12 +7,6 @@ const generateInitialInvoiceNumber = () => {
 };
 
 const initialState = {
-  sender: {
-    name: "",
-    phone: "",
-    email: "",
-    address: "",
-  },
   invoice: {
     items: [
       { id: Date.now(), name: "", description: "", quantity: 1, price: 0 },
@@ -51,11 +45,6 @@ const mainSlice = createSlice({
   name: "main",
   initialState,
   reducers: {
-    updateSender: (state, action) => {
-      const { field, value } = action.payload;
-      state.sender[field] = value;
-    },
-
     setInvoiceNumber: (state, action) => {
       state.invoice.invoiceNumber = action.payload;
     },
@@ -143,13 +132,11 @@ const mainSlice = createSlice({
           price: 0,
         },
       ];
-      state.sender = initialState.sender;
     },
   },
 });
 
 export const {
-  updateSender,
   setInvoiceNumber,
   addItem,
   removeItem,

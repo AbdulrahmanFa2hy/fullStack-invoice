@@ -1,4 +1,11 @@
-import { Document, Page, Text, View, StyleSheet } from "@react-pdf/renderer";
+import {
+  Document,
+  Page,
+  Text,
+  View,
+  StyleSheet,
+  Image,
+} from "@react-pdf/renderer";
 import { format } from "date-fns";
 
 const styles = StyleSheet.create({
@@ -150,11 +157,18 @@ const styles = StyleSheet.create({
     fontSize: 9,
     fontWeight: "bold",
   },
+  logo: {
+    width: 50,
+    height: 50,
+    objectFit: "contain",
+    alignSelf: "center",
+    marginHorizontal: 20,
+  },
 });
 
 const InvoicePDF = ({
-  sender,
-  customer, // Change props to accept customer directly
+  sender, // This will now receive company data
+  customer,
   items,
   invoiceNumber,
   tax = 0,
@@ -183,6 +197,7 @@ const InvoicePDF = ({
               {/* Use businessInfo from props */}
             </Text>
           </View>
+          {sender.logo && <Image src={sender.logo} style={styles.logo} />}
           <View style={styles.headerRight}>
             <Text style={styles.headerText}>
               Date: {format(new Date(), "PPP")}
@@ -196,10 +211,10 @@ const InvoicePDF = ({
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>From:</Text>
               <View style={styles.contactInfo}>
-                <Text style={styles.text}>{sender.name || "N/A"}</Text>
-                <Text style={styles.text}>{sender.phone || "N/A"}</Text>
-                <Text style={styles.text}>{sender.email || "N/A"}</Text>
-                <Text style={styles.text}>{sender.address || "N/A"}</Text>
+                <Text style={styles.text}>{sender?.name || "N/A"}</Text>
+                <Text style={styles.text}>{sender?.phone || "N/A"}</Text>
+                <Text style={styles.text}>{sender?.email || "N/A"}</Text>
+                <Text style={styles.text}>{sender?.address || "N/A"}</Text>
               </View>
             </View>
           </View>
@@ -253,20 +268,20 @@ const InvoicePDF = ({
               <Text style={styles.summaryValue}>${subtotal.toFixed(2)}</Text>
             </View>
 
-            {tax > 0 && (
-              <View style={styles.summaryRow}>
-                <Text style={styles.summaryLabel}>Tax ({tax}%)</Text>
-                <Text style={styles.summaryValue}>
-                  +${taxAmount.toFixed(2)}
-                </Text>
-              </View>
-            )}
-
             {discount > 0 && (
               <View style={styles.summaryRow}>
                 <Text style={styles.summaryLabel}>Discount ({discount}%)</Text>
                 <Text style={styles.summaryValue}>
                   -${discountAmount.toFixed(2)}
+                </Text>
+              </View>
+            )}
+
+            {tax > 0 && (
+              <View style={styles.summaryRow}>
+                <Text style={styles.summaryLabel}>Tax ({tax}%)</Text>
+                <Text style={styles.summaryValue}>
+                  +${taxAmount.toFixed(2)}
                 </Text>
               </View>
             )}

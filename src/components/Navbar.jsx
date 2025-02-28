@@ -124,6 +124,16 @@ const Navbar = () => {
             >
               Customers
             </NavLink>
+            <NavLink
+              to="/company"
+              className={({ isActive }) =>
+                `text-white hover:bg-blue-700 px-4 py-2 rounded-md transition-colors ${
+                  isActive ? activeStyle : ""
+                }`
+              }
+            >
+              Company
+            </NavLink>
           </div>
         </div>
 
@@ -197,6 +207,17 @@ const Navbar = () => {
               onClick={() => setIsMenuOpen(false)}
             >
               Customers
+            </NavLink>
+            <NavLink
+              to="/company"
+              className={({ isActive }) =>
+                `text-white hover:bg-blue-700 px-4 py-2 rounded-md transition-colors block mb-2 ${
+                  isActive ? activeStyle : ""
+                }`
+              }
+              onClick={() => setIsMenuOpen(false)}
+            >
+              Company
             </NavLink>
           </div>
 

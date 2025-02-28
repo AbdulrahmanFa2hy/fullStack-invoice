@@ -44,7 +44,7 @@ function SubscriptionPlans({ onSubscribe }) {
 
   const handleTypeSelection = (type) => {
     onSubscribe();
-    navigate("/");
+    navigate("/company");
   };
 
   return (

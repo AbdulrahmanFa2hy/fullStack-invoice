@@ -33,6 +33,7 @@ const InvoiceDetailModal = ({ invoice, onClose, onUpdate, onDelete }) => {
 
   // Add this selector to get customers
   const customers = useSelector((state) => state.customers.customers);
+  const company = useSelector((state) => state.company);
 
   // Find customer based on customerId
   const customer = customers.find((c) => c.id === invoice?.customerId) || {
@@ -104,16 +105,17 @@ const InvoiceDetailModal = ({ invoice, onClose, onUpdate, onDelete }) => {
     if (editForm.total <= 0) {
       alert("Total amount must be greater than 0");
       return;
-    } // Added missing closing brace
+    }
 
-    // Calculate new totals
+    // Calculate new totals with correct order
     const subtotal = editForm.items.reduce(
       (sum, item) => sum + item.quantity * item.price,
       0
     );
-    const taxAmount = (subtotal * editForm.tax) / 100;
     const discountAmount = (subtotal * editForm.discount) / 100;
-    const total = subtotal + taxAmount - discountAmount;
+    const subtotalAfterDiscount = subtotal - discountAmount;
+    const taxAmount = (subtotalAfterDiscount * editForm.tax) / 100;
+    const total = subtotalAfterDiscount + taxAmount;
 
     const updatedInvoice = {
       ...editForm,
@@ -228,6 +230,18 @@ Total Amount: $${currentInvoice.total.toFixed(2)}
     ) {
       onClose();
     }
+  };
+
+  const handlePrint = async () => {
+    const pdfDoc = (
+      <InvoicePDF
+        sender={company}
+        customer={getCustomerById(invoice.customerId)}
+        items={invoice.items}
+        // ...other props...
+      />
+    );
+    // ...rest of the existing code...
   };
 
   return (
@@ -421,29 +435,75 @@ Total Amount: $${currentInvoice.total.toFixed(2)}
                           <td className="px-4 py-2">
                             <input
                               type="number"
-                              value={item.quantity}
-                              onChange={(e) =>
+                              value={item.quantity || ""}
+                              onChange={(e) => {
+                                const value = Math.max(0, e.target.value);
                                 handleItemUpdate(
                                   item.id,
                                   "quantity",
-                                  e.target.value
-                                )
-                              }
+                                  parseFloat(value) || 0
+                                );
+                              }}
+                              onFocus={(e) => e.target.select()}
                               className="border p-1 rounded w-full min-w-[80px] text-right"
+                              min="0"
+                              step="1"
+                              onKeyDown={(e) => {
+                                if (e.key === "ArrowUp") {
+                                  e.preventDefault();
+                                  const newValue =
+                                    (parseFloat(e.target.value) || 0) + 1;
+                                  handleItemUpdate(
+                                    item.id,
+                                    "quantity",
+                                    newValue
+                                  );
+                                } else if (e.key === "ArrowDown") {
+                                  e.preventDefault();
+                                  const newValue = Math.max(
+                                    0,
+                                    (parseFloat(e.target.value) || 0) - 1
+                                  );
+                                  handleItemUpdate(
+                                    item.id,
+                                    "quantity",
+                                    newValue
+                                  );
+                                }
+                              }}
                             />
                           </td>
                           <td className="px-4 py-2">
                             <input
                               type="number"
-                              value={item.price}
-                              onChange={(e) =>
+                              value={item.price || ""}
+                              onChange={(e) => {
+                                const value = Math.max(0, e.target.value);
                                 handleItemUpdate(
                                   item.id,
                                   "price",
-                                  e.target.value
-                                )
-                              }
+                                  parseFloat(value) || 0
+                                );
+                              }}
+                              onFocus={(e) => e.target.select()}
                               className="border p-1 rounded w-full min-w-[100px] text-right"
+                              min="0"
+                              step="1"
+                              onKeyDown={(e) => {
+                                if (e.key === "ArrowUp") {
+                                  e.preventDefault();
+                                  const newValue =
+                                    (parseFloat(e.target.value) || 0) + 1;
+                                  handleItemUpdate(item.id, "price", newValue);
+                                } else if (e.key === "ArrowDown") {
+                                  e.preventDefault();
+                                  const newValue = Math.max(
+                                    0,
+                                    (parseFloat(e.target.value) || 0) - 1
+                                  );
+                                  handleItemUpdate(item.id, "price", newValue);
+                                }
+                              }}
                             />
                           </td>
                           <td className="px-4 py-2 text-right">
@@ -489,59 +549,12 @@ Total Amount: $${currentInvoice.total.toFixed(2)}
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-[400px] ml-auto">
                 <div className="space-y-1">
-                  <label className="text-sm text-gray-600">Tax (%)</label>
-                  <input
-                    type="number"
-                    min="0"
-                    max="100"
-                    value={editForm.tax}
-                    onChange={(e) => {
-                      const tax = Math.min(
-                        100,
-                        Math.max(0, Number(e.target.value))
-                      );
-                      const subtotal = editForm.items.reduce(
-                        (sum, item) => sum + item.price * item.quantity,
-                        0
-                      );
-                      const taxAmount = (subtotal * tax) / 100;
-                      const discountAmount =
-                        (subtotal * editForm.discount) / 100;
-                      setEditForm((prev) => ({
-                        ...prev,
-                        tax,
-                        total: subtotal + taxAmount - discountAmount,
-                      }));
-                    }}
-                    className="border p-2 rounded w-full"
-                  />
+                  <label className="text-sm text-gray-600">Discount (%)</label>
+                  {/* Discount input */}
                 </div>
                 <div className="space-y-1">
-                  <label className="text-sm text-gray-600">Discount (%)</label>
-                  <input
-                    type="number"
-                    min="0"
-                    max="100"
-                    value={editForm.discount}
-                    onChange={(e) => {
-                      const discount = Math.min(
-                        100,
-                        Math.max(0, Number(e.target.value))
-                      );
-                      const subtotal = editForm.items.reduce(
-                        (sum, item) => sum + item.price * item.quantity,
-                        0
-                      );
-                      const taxAmount = (subtotal * editForm.tax) / 100;
-                      const discountAmount = (subtotal * discount) / 100;
-                      setEditForm((prev) => ({
-                        ...prev,
-                        discount,
-                        total: subtotal + taxAmount - discountAmount,
-                      }));
-                    }}
-                    className="border p-2 rounded w-full"
-                  />
+                  <label className="text-sm text-gray-600">Tax (%)</label>
+                  {/* Tax input */}
                 </div>
               </div>
 
@@ -674,18 +687,18 @@ Total Amount: $${currentInvoice.total.toFixed(2)}
                       <span>Subtotal:</span>
                       <span>${currentInvoice.subtotal.toFixed(2)}</span>
                     </div>
-                    {currentInvoice.tax > 0 && (
-                      <div className="flex justify-between">
-                        <span>Tax ({currentInvoice.tax}%):</span>
-                        <span>+${currentInvoice.taxAmount.toFixed(2)}</span>
-                      </div>
-                    )}
                     {currentInvoice.discount > 0 && (
                       <div className="flex justify-between">
                         <span>Discount ({currentInvoice.discount}%):</span>
                         <span>
                           -${currentInvoice.discountAmount.toFixed(2)}
                         </span>
+                      </div>
+                    )}
+                    {currentInvoice.tax > 0 && (
+                      <div className="flex justify-between">
+                        <span>Tax ({currentInvoice.tax}%):</span>
+                        <span>+${currentInvoice.taxAmount.toFixed(2)}</span>
                       </div>
                     )}
                   </div>
@@ -772,7 +785,7 @@ Total Amount: $${currentInvoice.total.toFixed(2)}
                   strokeLinecap="round"
                   strokeLinejoin="round"
                   strokeWidth={2}
-                  d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                  d="M11 5H6a2 2 00-2 2v11a2 2 00-2 2h11a2 2 002-2v-5m-1.414-9.414a2 2 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
                 />
               </svg>
               <span>Edit</span>
@@ -795,7 +808,7 @@ Total Amount: $${currentInvoice.total.toFixed(2)}
                   strokeLinecap="round"
                   strokeLinejoin="round"
                   strokeWidth={2}
-                  d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                  d="M19 7l-.867 12.142A2 2 0116.138 21H7.862a2 2 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 00-1-1h-4a1 1 00-1 1v3M4 7h16"
                 />
               </svg>
               <span>Delete</span>
