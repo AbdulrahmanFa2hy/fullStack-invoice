@@ -12,18 +12,30 @@ import {
   updateItem,
   saveToHistory,
   updateSender,
-  updateRecipient,
   generateInvoiceNumber,
 } from "../store/mainSlice";
-import { addCustomer, updateCustomer } from "../store/customersSlice";
+import {
+  addCustomer,
+  updateCustomer,
+  setSelectedCustomerId,
+} from "../store/customersSlice";
 
 function Home() {
   const dispatch = useDispatch();
   const { items, invoiceHistory } = useSelector((state) => state.main.invoice);
   const sender = useSelector((state) => state.main.sender);
-  const recipient = useSelector((state) => state.main.recipient);
   const invoiceNumber = useInvoiceNumber();
-  const customers = useSelector((state) => state.customers.customers);
+  const { customers, selectedCustomerId } = useSelector(
+    (state) => state.customers
+  );
+  const selectedCustomer = customers.find(
+    (customer) => customer.id === selectedCustomerId
+  ) || {
+    name: "",
+    phone: "",
+    email: "",
+    address: "",
+  };
 
   const invoiceRef = useRef(null);
 
@@ -60,14 +72,22 @@ function Home() {
   const total = subtotal + taxAmount - discountAmount;
 
   const generatePDF = async () => {
+    // Create businessInfo object
+    const businessInfo = {
+      businessName: "INVOICE",
+    };
+
     const pdfDoc = (
       <InvoicePDF
         sender={sender}
-        recipient={recipient}
+        customer={selectedCustomer} // Pass customer directly instead of using customerId
         items={items}
         invoiceNumber={invoiceNumber}
         tax={tax}
         discount={discount}
+        businessInfo={businessInfo} // Add businessInfo
+        privacy={privacy}
+        notes={notes}
       />
     );
     return await pdf(pdfDoc).toBlob();
@@ -80,7 +100,7 @@ function Home() {
   const prepareInvoiceData = () => ({
     invoiceNumber,
     sender,
-    recipient,
+    customerId: selectedCustomerId, // Change this line to save only the ID
     items,
     subtotal,
     tax,
@@ -88,33 +108,47 @@ function Home() {
     discount,
     discountAmount,
     total,
+    privacy,
+    notes,
     date: new Date().toISOString(),
   });
 
-  const handleCustomerData = () => {
-    if (recipient.email) {
-      const customerData = {
-        name: recipient.name,
-        email: recipient.email,
-        phone: recipient.phone,
-        address: recipient.address,
-      };
-
-      const existingCustomer = customers.find(
-        (c) => c.email === recipient.email
+  const handleCustomerChange = (field, value) => {
+    if (selectedCustomerId) {
+      // Update existing customer
+      dispatch(
+        updateCustomer({
+          id: selectedCustomerId,
+          ...selectedCustomer,
+          [field]: value,
+        })
       );
-      if (existingCustomer) {
-        dispatch(updateCustomer(customerData));
-      } else {
-        dispatch(addCustomer(customerData));
-      }
+    } else {
+      // Create new customer with ID before adding
+      const newCustomer = {
+        id: Date.now().toString(),
+        name: "",
+        phone: "",
+        email: "",
+        address: "",
+        [field]: value,
+      };
+      dispatch(addCustomer(newCustomer));
+      dispatch(setSelectedCustomerId(newCustomer.id));
+    }
+  };
+
+  const handleCustomerSelect = (customerId) => {
+    if (customerId === "") {
+      dispatch(setSelectedCustomerId(null));
+    } else {
+      dispatch(setSelectedCustomerId(customerId));
     }
   };
 
   const saveInvoiceData = () => {
     const invoiceData = prepareInvoiceData();
     dispatch(saveToHistory(invoiceData));
-    handleCustomerData();
     Swal.fire({
       icon: "success",
       title: isExistingInvoice() ? "Invoice Updated!" : "Invoice Created!",
@@ -145,51 +179,6 @@ function Home() {
 
   const handleSaveInvoice = () => {
     saveInvoiceData();
-  };
-
-  const handleEmailChange = (e) => {
-    const email = e.target.value;
-    dispatch(updateRecipient({ field: "email", value: email }));
-
-    const existingCustomer = customers.find((c) => c.email === email);
-    if (existingCustomer) {
-      dispatch(
-        updateRecipient({ field: "name", value: existingCustomer.name })
-      );
-      dispatch(
-        updateRecipient({ field: "phone", value: existingCustomer.phone })
-      );
-      dispatch(
-        updateRecipient({ field: "address", value: existingCustomer.address })
-      );
-    }
-  };
-
-  const handleCustomerSelect = (email) => {
-    if (email === "") {
-      // Clear the form if "Select Customer" is chosen
-      dispatch(updateRecipient({ field: "name", value: "" }));
-      dispatch(updateRecipient({ field: "email", value: "" }));
-      dispatch(updateRecipient({ field: "phone", value: "" }));
-      dispatch(updateRecipient({ field: "address", value: "" }));
-      return;
-    }
-
-    const selectedCustomer = customers.find((c) => c.email === email);
-    if (selectedCustomer) {
-      dispatch(
-        updateRecipient({ field: "name", value: selectedCustomer.name })
-      );
-      dispatch(
-        updateRecipient({ field: "email", value: selectedCustomer.email })
-      );
-      dispatch(
-        updateRecipient({ field: "phone", value: selectedCustomer.phone })
-      );
-      dispatch(
-        updateRecipient({ field: "address", value: selectedCustomer.address })
-      );
-    }
   };
 
   return (
@@ -276,11 +265,11 @@ function Home() {
                   <select
                     className="input w-48 sm:w-72 text-sm p-1 mb-4 inline-block"
                     onChange={(e) => handleCustomerSelect(e.target.value)}
-                    value={recipient.email || ""}
+                    value={selectedCustomerId || ""}
                   >
                     <option value="">Select Customer</option>
                     {customers.map((customer) => (
-                      <option key={customer.email} value={customer.email}>
+                      <option key={customer.id} value={customer.id}>
                         {customer.name} ({customer.email})
                       </option>
                     ))}
@@ -291,48 +280,35 @@ function Home() {
                     type="text"
                     placeholder="Name"
                     className="input"
-                    value={recipient.name}
+                    value={selectedCustomer.name}
                     onChange={(e) =>
-                      dispatch(
-                        updateRecipient({
-                          field: "name",
-                          value: e.target.value,
-                        })
-                      )
+                      handleCustomerChange("name", e.target.value)
                     }
                   />
                   <input
                     type="tel"
                     placeholder="Phone"
                     className="input"
-                    value={recipient.phone}
+                    value={selectedCustomer.phone}
                     onChange={(e) =>
-                      dispatch(
-                        updateRecipient({
-                          field: "phone",
-                          value: e.target.value,
-                        })
-                      )
+                      handleCustomerChange("phone", e.target.value)
                     }
                   />
                   <input
                     type="email"
                     placeholder="Email"
                     className="input"
-                    value={recipient.email}
-                    onChange={handleEmailChange}
+                    value={selectedCustomer.email}
+                    onChange={(e) =>
+                      handleCustomerChange("email", e.target.value)
+                    }
                   />
                   <textarea
                     placeholder="Address"
                     className="input h-24"
-                    value={recipient.address}
+                    value={selectedCustomer.address}
                     onChange={(e) =>
-                      dispatch(
-                        updateRecipient({
-                          field: "address",
-                          value: e.target.value,
-                        })
-                      )
+                      handleCustomerChange("address", e.target.value)
                     }
                   ></textarea>
                 </div>

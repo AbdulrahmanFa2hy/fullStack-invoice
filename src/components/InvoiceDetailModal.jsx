@@ -1,21 +1,83 @@
 import { format, parseISO } from "date-fns";
-import { useState, useRef } from "react"; // Add useRef import
+import { useState, useRef, useEffect } from "react"; // Add useRef and useEffect import
 import { pdf } from "@react-pdf/renderer";
 import InvoicePDF from "./InvoicePDF";
 import { motion } from "framer-motion";
+import { useSelector, useDispatch } from "react-redux"; // Add this import
+import { updateCustomer } from "../store/customersSlice"; // Add this import
 
 const InvoiceDetailModal = ({ invoice, onClose, onUpdate, onDelete }) => {
+  const dispatch = useDispatch(); // Add dispatch
   const [isEditing, setIsEditing] = useState(false);
+  // Fix the initial state to include all required fields
   const [editForm, setEditForm] = useState({
-    ...invoice,
-    tax: invoice.tax || 0,
-    discount: invoice.discount || 0,
+    id: invoice?.id,
+    invoiceNumber: invoice?.invoiceNumber,
+    sender: invoice?.sender || {},
+    customerId: invoice?.customerId,
+    items: invoice?.items || [],
+    tax: invoice?.tax || 0,
+    discount: invoice?.discount || 0,
+    subtotal: invoice?.subtotal || 0,
+    total: invoice?.total || 0,
+    createdAt: invoice?.createdAt,
+    updatedAt: invoice?.updatedAt,
+    privacy: invoice?.privacy || "",
+    notes: invoice?.notes || "",
   });
   const [currentInvoice, setCurrentInvoice] = useState({
     ...invoice,
     tax: invoice.tax || 0,
     discount: invoice.discount || 0,
   });
+
+  // Add this selector to get customers
+  const customers = useSelector((state) => state.customers.customers);
+
+  // Find customer based on customerId
+  const customer = customers.find((c) => c.id === invoice?.customerId) || {
+    name: "N/A",
+    email: "N/A",
+    phone: "N/A",
+    address: "N/A",
+  };
+
+  // Reset editForm when invoice changes
+  useEffect(() => {
+    if (invoice) {
+      setEditForm({
+        id: invoice.id,
+        invoiceNumber: invoice.invoiceNumber,
+        sender: invoice.sender || {},
+        customerId: invoice.customerId,
+        items: invoice.items || [],
+        tax: invoice.tax || 0,
+        discount: invoice.discount || 0,
+        subtotal: invoice.subtotal || 0,
+        total: invoice.total || 0,
+        createdAt: invoice.createdAt,
+        updatedAt: invoice.updatedAt,
+        privacy: invoice.privacy || "",
+        notes: invoice.notes || "",
+      });
+    }
+  }, [invoice]);
+
+  if (!invoice) return null;
+
+  const {
+    invoiceNumber,
+    date,
+    sender = {},
+    customerId, // Change toCustomer to customerId
+    items = [],
+    subtotal = 0,
+    tax = 0,
+    taxAmount = 0,
+    discount = 0,
+    discountAmount = 0,
+    total = 0,
+  } = invoice;
 
   const formatDate = (dateString) => {
     try {
@@ -25,13 +87,45 @@ const InvoiceDetailModal = ({ invoice, onClose, onUpdate, onDelete }) => {
     }
   };
 
+  const handleCustomerUpdate = (field, value) => {
+    const selectedCustomer = customers.find(
+      (c) => c.id === editForm.customerId
+    );
+    if (selectedCustomer) {
+      const updatedCustomer = {
+        ...selectedCustomer,
+        [field]: value,
+      };
+      dispatch(updateCustomer(updatedCustomer));
+    }
+  };
+
   const handleUpdate = () => {
     if (editForm.total <= 0) {
       alert("Total amount must be greater than 0");
       return;
-    }
-    onUpdate(editForm);
-    setCurrentInvoice(editForm);
+    } // Added missing closing brace
+
+    // Calculate new totals
+    const subtotal = editForm.items.reduce(
+      (sum, item) => sum + item.quantity * item.price,
+      0
+    );
+    const taxAmount = (subtotal * editForm.tax) / 100;
+    const discountAmount = (subtotal * editForm.discount) / 100;
+    const total = subtotal + taxAmount - discountAmount;
+
+    const updatedInvoice = {
+      ...editForm,
+      subtotal,
+      taxAmount,
+      discountAmount,
+      total,
+      updatedAt: new Date().toISOString(),
+    };
+
+    onUpdate(updatedInvoice);
+    setCurrentInvoice(updatedInvoice);
     setIsEditing(false);
   };
 
@@ -78,17 +172,24 @@ const InvoiceDetailModal = ({ invoice, onClose, onUpdate, onDelete }) => {
 
   const handleDownload = async () => {
     try {
+      const customerData =
+        customers.find((c) => c.id === currentInvoice.customerId) || {};
+      const businessInfo = {
+        businessName: "INVOICE", // You can customize this or get it from state/props
+      };
+
       const blob = await pdf(
         <InvoicePDF
           sender={currentInvoice.sender}
-          recipient={currentInvoice.recipient}
+          customerId={currentInvoice.customerId}
+          customer={customerData}
           items={currentInvoice.items}
           invoiceNumber={currentInvoice.invoiceNumber}
           tax={currentInvoice.tax}
           discount={currentInvoice.discount}
-          businessInfo={{
-            businessName: "INVOICE",
-          }}
+          businessInfo={businessInfo} // Pass businessInfo object
+          privacy={currentInvoice.privacy}
+          notes={currentInvoice.notes}
         />
       ).toBlob();
 
@@ -107,12 +208,13 @@ const InvoiceDetailModal = ({ invoice, onClose, onUpdate, onDelete }) => {
   };
 
   const handleWhatsAppShare = () => {
+    const customer =
+      customers.find((c) => c.id === currentInvoice.customerId) || {};
     const message = encodeURIComponent(`Invoice #${currentInvoice.invoiceNumber}
 From: ${currentInvoice.sender.name}
-To: ${currentInvoice.recipient.name}
+To: ${customer.name}
 Total Amount: $${currentInvoice.total.toFixed(2)}
     `);
-    window.open(`https://wa.me/?text=${message}`, "_blank");
   };
 
   // Add ref for the modal content
@@ -156,53 +258,114 @@ Total Amount: $${currentInvoice.total.toFixed(2)}
           {isEditing ? (
             <div className="space-y-4 sm:space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
+                {/* From Section */}
                 <div className="space-y-4">
                   <h3 className="text-base sm:text-lg font-semibold">From</h3>
-                  {["name", "email", "phone", "address"].map((field) => (
-                    <div key={field} className="space-y-1">
-                      <label className="text-sm text-gray-600 capitalize">
-                        {field}
-                      </label>
-                      <input
-                        type="text"
-                        value={editForm.sender[field]}
-                        onChange={(e) =>
-                          setEditForm({
-                            ...editForm,
-                            sender: {
-                              ...editForm.sender,
-                              [field]: e.target.value,
-                            },
-                          })
-                        }
-                        className="border p-2 rounded w-full"
-                      />
-                    </div>
-                  ))}
+                  <div className="space-y-4">
+                    {["name", "email", "phone", "address"].map((field) => (
+                      <div key={field}>
+                        <label className="block text-sm text-gray-600 capitalize mb-1">
+                          {field}
+                        </label>
+                        {field === "address" ? (
+                          <textarea
+                            value={editForm.sender[field] || ""}
+                            onChange={(e) =>
+                              setEditForm({
+                                ...editForm,
+                                sender: {
+                                  ...editForm.sender,
+                                  [field]: e.target.value,
+                                },
+                              })
+                            }
+                            className="w-full p-2 border rounded min-h-[80px]"
+                          />
+                        ) : (
+                          <input
+                            type={field === "email" ? "email" : "text"}
+                            value={editForm.sender[field] || ""}
+                            onChange={(e) =>
+                              setEditForm({
+                                ...editForm,
+                                sender: {
+                                  ...editForm.sender,
+                                  [field]: e.target.value,
+                                },
+                              })
+                            }
+                            className="w-full p-2 border rounded h-10"
+                          />
+                        )}
+                      </div>
+                    ))}
+                  </div>
                 </div>
-                <div className="space-y-4">
-                  <h3 className="text-base sm:text-lg font-semibold">To</h3>
-                  {["name", "email", "phone", "address"].map((field) => (
-                    <div key={field} className="space-y-1">
-                      <label className="text-sm text-gray-600 capitalize">
-                        {field}
-                      </label>
-                      <input
-                        type="text"
-                        value={editForm.recipient[field]}
-                        onChange={(e) =>
-                          setEditForm({
-                            ...editForm,
-                            recipient: {
-                              ...editForm.recipient,
-                              [field]: e.target.value,
-                            },
-                          })
-                        }
-                        className="border p-2 rounded w-full"
-                      />
+
+                {/* To Section */}
+                <div className="">
+                  <div className="flex justify-between items-center mb-1">
+                    <h3 className="text-base sm:text-lg font-semibold">To</h3>
+                    <select
+                      className="w-4/5 p-2 border rounded h-10"
+                      value={editForm.customerId || ""}
+                      onChange={(e) =>
+                        setEditForm({
+                          ...editForm,
+                          customerId: e.target.value,
+                        })
+                      }
+                    >
+                      <option value="">Select Customer</option>
+                      {customers.map((c) => (
+                        <option key={c.id} value={c.id}>
+                          {c.name} ({c.email})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  {editForm.customerId && (
+                    <div className="space-y-4">
+                      {[
+                        { key: "name", type: "text" },
+                        { key: "email", type: "email" },
+                        { key: "phone", type: "tel" },
+                        { key: "address", type: "textarea" },
+                      ].map(({ key, type }) => (
+                        <div key={key}>
+                          <label className="block text-sm text-gray-600 capitalize mb-1">
+                            {key}
+                          </label>
+                          {type === "textarea" ? (
+                            <textarea
+                              className="w-full p-2 border rounded min-h-[80px]"
+                              value={
+                                customers.find(
+                                  (c) => c.id === editForm.customerId
+                                )?.[key] || ""
+                              }
+                              onChange={(e) =>
+                                handleCustomerUpdate(key, e.target.value)
+                              }
+                            />
+                          ) : (
+                            <input
+                              type={type}
+                              className="w-full p-2 border rounded h-10"
+                              value={
+                                customers.find(
+                                  (c) => c.id === editForm.customerId
+                                )?.[key] || ""
+                              }
+                              onChange={(e) =>
+                                handleCustomerUpdate(key, e.target.value)
+                              }
+                            />
+                          )}
+                        </div>
+                      ))}
                     </div>
-                  ))}
+                  )}
                 </div>
               </div>
 
@@ -382,6 +545,39 @@ Total Amount: $${currentInvoice.total.toFixed(2)}
                 </div>
               </div>
 
+              <div className="space-y-3">
+                <div>
+                  <label className="text-sm text-gray-600">
+                    Terms & Privacy
+                  </label>
+                  <textarea
+                    className="w-full p-2 mt-1 border rounded bg-gray-50"
+                    value={editForm.privacy}
+                    onChange={(e) =>
+                      setEditForm((prev) => ({
+                        ...prev,
+                        privacy: e.target.value,
+                      }))
+                    }
+                    rows={3}
+                  />
+                </div>
+                <div>
+                  <label className="text-sm text-gray-600">Notes</label>
+                  <textarea
+                    className="w-full p-2 mt-1 border rounded bg-gray-50"
+                    value={editForm.notes}
+                    onChange={(e) =>
+                      setEditForm((prev) => ({
+                        ...prev,
+                        notes: e.target.value,
+                      }))
+                    }
+                    rows={3}
+                  />
+                </div>
+              </div>
+
               <div className="flex flex-col sm:flex-row justify-between items-center gap-4 pt-4 border-t">
                 <div className="self-end text-base min-w-fit sm:text-lg md:text-xl font-bold">
                   Total: ${editForm.total.toFixed(2)}
@@ -414,10 +610,10 @@ Total Amount: $${currentInvoice.total.toFixed(2)}
                 </div>
                 <div className="space-y-2">
                   <h3 className="font-semibold">To</h3>
-                  <p className="text-lg">{currentInvoice.recipient.name}</p>
-                  <p>{currentInvoice.recipient.email}</p>
-                  <p>{currentInvoice.recipient.phone}</p>
-                  <p>{currentInvoice.recipient.address}</p>
+                  <p className="text-lg">{customer.name}</p>
+                  <p>{customer.email}</p>
+                  <p>{customer.phone}</p>
+                  <p>{customer.address}</p>
                 </div>
               </div>
 
@@ -476,45 +672,19 @@ Total Amount: $${currentInvoice.total.toFixed(2)}
                   <div className="text-xs sm:text-sm text-gray-600">
                     <div className="flex justify-between">
                       <span>Subtotal:</span>
-                      <span>
-                        $
-                        {currentInvoice.items
-                          .reduce(
-                            (sum, item) => sum + item.quantity * item.price,
-                            0
-                          )
-                          .toFixed(2)}
-                      </span>
+                      <span>${currentInvoice.subtotal.toFixed(2)}</span>
                     </div>
                     {currentInvoice.tax > 0 && (
                       <div className="flex justify-between">
                         <span>Tax ({currentInvoice.tax}%):</span>
-                        <span>
-                          +$
-                          {(
-                            (currentInvoice.items.reduce(
-                              (sum, item) => sum + item.quantity * item.price,
-                              0
-                            ) *
-                              currentInvoice.tax) /
-                            100
-                          ).toFixed(2)}
-                        </span>
+                        <span>+${currentInvoice.taxAmount.toFixed(2)}</span>
                       </div>
                     )}
                     {currentInvoice.discount > 0 && (
                       <div className="flex justify-between">
                         <span>Discount ({currentInvoice.discount}%):</span>
                         <span>
-                          -$
-                          {(
-                            (currentInvoice.items.reduce(
-                              (sum, item) => sum + item.quantity * item.price,
-                              0
-                            ) *
-                              currentInvoice.discount) /
-                            100
-                          ).toFixed(2)}
+                          -${currentInvoice.discountAmount.toFixed(2)}
                         </span>
                       </div>
                     )}
@@ -527,11 +697,30 @@ Total Amount: $${currentInvoice.total.toFixed(2)}
                   </div>
                 </div>
               </div>
+              {(currentInvoice.privacy || currentInvoice.notes) && (
+                <div className="space-y-4">
+                  {currentInvoice.privacy && (
+                    <div>
+                      <h3 className="font-semibold mb-2">Terms & Privacy</h3>
+                      <p className="text-sm text-gray-600">
+                        {currentInvoice.privacy}
+                      </p>
+                    </div>
+                  )}
+                  {currentInvoice.notes && (
+                    <div>
+                      <h3 className="font-semibold mb-2">Notes</h3>
+                      <p className="text-sm text-gray-600">
+                        {currentInvoice.notes}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           )}
         </div>
 
-        {/* Floating action buttons */}
         {!isEditing && (
           <motion.div
             initial={{ y: 20, opacity: 0 }}
@@ -564,23 +753,6 @@ Total Amount: $${currentInvoice.total.toFixed(2)}
                 />
               </svg>
               <span>PDF</span>
-            </motion.button>
-
-            {/* WhatsApp button */}
-            <motion.button
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              onClick={handleWhatsAppShare}
-              className="w-full sm:w-auto flex-1 sm:flex-none px-3 sm:px-4 py-2 bg-gradient-to-r from-green-600 to-green-700 text-white rounded-lg shadow-lg hover:shadow-xl transition-all duration-200 flex items-center justify-center gap-2 text-sm sm:text-base"
-            >
-              <svg
-                className="w-4 h-4 sm:w-5 sm:h-5"
-                fill="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
-              </svg>
-              <span>WhatsApp</span>
             </motion.button>
 
             {/* Edit button */}

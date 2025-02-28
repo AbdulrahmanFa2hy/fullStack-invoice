@@ -13,12 +13,6 @@ const initialState = {
     email: "",
     address: "",
   },
-  recipient: {
-    name: "",
-    phone: "",
-    email: "",
-    address: "",
-  },
   invoice: {
     items: [
       { id: Date.now(), name: "", description: "", quantity: 1, price: 0 },
@@ -61,10 +55,7 @@ const mainSlice = createSlice({
       const { field, value } = action.payload;
       state.sender[field] = value;
     },
-    updateRecipient: (state, action) => {
-      const { field, value } = action.payload;
-      state.recipient[field] = value;
-    },
+
     setInvoiceNumber: (state, action) => {
       state.invoice.invoiceNumber = action.payload;
     },
@@ -153,14 +144,12 @@ const mainSlice = createSlice({
         },
       ];
       state.sender = initialState.sender;
-      state.recipient = initialState.recipient;
     },
   },
 });
 
 export const {
   updateSender,
-  updateRecipient,
   setInvoiceNumber,
   addItem,
   removeItem,

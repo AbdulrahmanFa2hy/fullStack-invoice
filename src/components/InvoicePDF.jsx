@@ -154,13 +154,17 @@ const styles = StyleSheet.create({
 
 const InvoicePDF = ({
   sender,
-  recipient,
+  customer, // Change props to accept customer directly
   items,
   invoiceNumber,
-  businessInfo,
   tax = 0,
   discount = 0,
+  businessInfo,
+  privacy = "",
+  notes = "",
 }) => {
+  // Remove any Redux related code
+
   const subtotal = items.reduce(
     (sum, item) => sum + item.quantity * item.price,
     0
@@ -175,7 +179,8 @@ const InvoicePDF = ({
         <View style={styles.header}>
           <View>
             <Text style={styles.title}>
-              {businessInfo?.businessName || "INVOICE"}
+              {businessInfo?.businessName || "INVOICE"}{" "}
+              {/* Use businessInfo from props */}
             </Text>
           </View>
           <View style={styles.headerRight}>
@@ -202,10 +207,10 @@ const InvoicePDF = ({
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>Bill To:</Text>
               <View style={styles.contactInfo}>
-                <Text style={styles.text}>{recipient.name || "N/A"}</Text>
-                <Text style={styles.text}>{recipient.phone || "N/A"}</Text>
-                <Text style={styles.text}>{recipient.email || "N/A"}</Text>
-                <Text style={styles.text}>{recipient.address || "N/A"}</Text>
+                <Text style={styles.text}>{customer?.name || "N/A"}</Text>
+                <Text style={styles.text}>{customer?.phone || "N/A"}</Text>
+                <Text style={styles.text}>{customer?.email || "N/A"}</Text>
+                <Text style={styles.text}>{customer?.address || "N/A"}</Text>
               </View>
             </View>
           </View>
@@ -272,6 +277,27 @@ const InvoicePDF = ({
             </View>
           </View>
         </View>
+
+        {(privacy || notes) && (
+          <View style={[styles.section, { marginTop: 20 }]}>
+            {privacy && (
+              <View style={{ marginBottom: 10 }}>
+                <Text style={[styles.sectionTitle, { fontSize: 10 }]}>
+                  Terms & Privacy:
+                </Text>
+                <Text style={[styles.text, { color: "#666" }]}>{privacy}</Text>
+              </View>
+            )}
+            {notes && (
+              <View>
+                <Text style={[styles.sectionTitle, { fontSize: 10 }]}>
+                  Notes:
+                </Text>
+                <Text style={[styles.text, { color: "#666" }]}>{notes}</Text>
+              </View>
+            )}
+          </View>
+        )}
 
         <View style={styles.footer}>
           <Text>Thank you for your business!</Text>

@@ -2,6 +2,7 @@ import { NavLink, useNavigate } from "react-router-dom";
 import { FiPlus, FiMenu, FiX } from "react-icons/fi";
 import { useDispatch, useSelector } from "react-redux";
 import { resetInvoice, generateInvoiceNumber } from "../store/mainSlice";
+import { setSelectedCustomerId } from "../store/customersSlice"; // Add this import
 import { useState, useRef, useEffect } from "react";
 
 const getInitials = (name = "") => {
@@ -55,6 +56,7 @@ const Navbar = () => {
     if (isExistingInvoice) {
       dispatch(resetInvoice());
       dispatch(generateInvoiceNumber());
+      dispatch(setSelectedCustomerId(null)); // Add this line to reset customer selection
     }
 
     navigate("/");

@@ -2,6 +2,7 @@ import { createSlice } from "@reduxjs/toolkit";
 
 const initialState = {
   customers: [],
+  selectedCustomerId: null,
 };
 
 const customersSlice = createSlice({
@@ -9,12 +10,11 @@ const customersSlice = createSlice({
   initialState,
   reducers: {
     addCustomer: (state, action) => {
-      const existingCustomer = state.customers.find(
-        (customer) => customer.email === action.payload.email
-      );
-      if (!existingCustomer) {
-        state.customers.push(action.payload);
-      }
+      const newCustomer = {
+        ...action.payload,
+        id: Date.now().toString(), // Generate unique ID
+      };
+      state.customers.push(newCustomer);
     },
     updateCustomer: (state, action) => {
       const index = state.customers.findIndex(
@@ -29,9 +29,17 @@ const customersSlice = createSlice({
         (customer) => customer.id !== action.payload
       );
     },
+    setSelectedCustomerId: (state, action) => {
+      state.selectedCustomerId = action.payload;
+    },
   },
 });
 
-export const { addCustomer, updateCustomer, deleteCustomer } =
-  customersSlice.actions;
+export const {
+  addCustomer,
+  updateCustomer,
+  deleteCustomer,
+  setSelectedCustomerId,
+} = customersSlice.actions;
+
 export default customersSlice.reducer;

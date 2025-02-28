@@ -8,6 +8,7 @@ import { normalizeArabicText } from "../utils/arabicNormalization";
 const Invoices = () => {
   const dispatch = useDispatch();
   const { invoiceHistory } = useSelector((state) => state.main.invoice);
+  const customers = useSelector((state) => state.customers.customers);
   const [selectedInvoice, setSelectedInvoice] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -56,6 +57,15 @@ const Invoices = () => {
     if (!searchQuery) return true;
     return searchInObject(invoice, searchQuery);
   });
+
+  const getCustomerById = (customerId) => {
+    return (
+      customers.find((customer) => customer.id === customerId) || {
+        name: "N/A",
+        email: "N/A",
+      }
+    );
+  };
 
   return (
     <div className="min-h-screen bg-gray-50/50 p-4 sm:p-6 md:p-8">
@@ -111,10 +121,10 @@ const Invoices = () => {
                     To
                   </h3>
                   <p className="text-sm sm:text-base text-gray-800">
-                    {invoice.recipient.name}
+                    {getCustomerById(invoice.customerId).name}
                   </p>
                   <p className="text-xs sm:text-sm text-gray-600">
-                    {invoice.recipient.email || ""}
+                    {getCustomerById(invoice.customerId).email}
                   </p>
                 </div>
                 <div className="space-y-1 sm:space-y-2">
