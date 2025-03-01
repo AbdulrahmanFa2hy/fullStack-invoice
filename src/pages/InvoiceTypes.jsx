@@ -6,7 +6,6 @@ function InvoiceTypes() {
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const companyData = useSelector((state) => state.company);
-  console.log(companyData);
   const invoiceTypes = [
     {
       name: "Commercial Invoice",
@@ -61,7 +60,7 @@ function InvoiceTypes() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 py-8 sm:py-12 md:py-16 px-3 sm:px-4 md:px-6 lg:px-8">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 py-8 px-3 sm:px-4 md:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto">
         <div className="text-center mb-8 sm:mb-12 md:mb-16">
           <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold bg-gradient-to-r from-primary-600 via-purple-500 to-pink-500 bg-clip-text text-transparent pb-2 inline-block">

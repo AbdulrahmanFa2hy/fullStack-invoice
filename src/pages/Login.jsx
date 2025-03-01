@@ -1,8 +1,10 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { useSelector } from "react-redux";
 
 function Login({ onLogin }) {
   const navigate = useNavigate();
+  const selectedInvoiceType = useSelector((state) => state.main.invoice.type);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [rememberMe, setRememberMe] = useState(false);
@@ -11,7 +13,13 @@ function Login({ onLogin }) {
     e.preventDefault();
     // TODO: Add actual login logic
     onLogin();
-    navigate("/invoice-types"); // Changed from "/subscription-plans" to "/"
+
+    // Navigate based on invoice type selection
+    if (selectedInvoiceType && selectedInvoiceType !== "") {
+      navigate("/");
+    } else {
+      navigate("/invoice-types");
+    }
   };
 
   return (

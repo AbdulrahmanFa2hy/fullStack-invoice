@@ -1,8 +1,10 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { useSelector } from "react-redux";
 
 function Signup({ onSignup }) {
   const navigate = useNavigate();
+  const selectedInvoiceType = useSelector((state) => state.main.invoice.type);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -21,7 +23,13 @@ function Signup({ onSignup }) {
     }
     // TODO: Add actual signup logic
     onSignup();
-    navigate("/");
+
+    // Navigate based on invoice type selection
+    if (selectedInvoiceType && selectedInvoiceType !== "") {
+      navigate("/");
+    } else {
+      navigate("/invoice-types");
+    }
   };
 
   return (
