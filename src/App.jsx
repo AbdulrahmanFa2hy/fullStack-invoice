@@ -5,46 +5,35 @@ import {
   Navigate,
 } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
-import { setAuthenticated, setSubscription } from "./store/profileSlice";
+import { setAuthenticated } from "./store/profileSlice";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
 import Navbar from "./components/Navbar";
 import Home from "./pages/Home";
 import Invoices from "./pages/Invoices";
-import SubscriptionPlans from "./pages/SubscriptionPlans";
+import InvoiceTypes from "./pages/InvoiceTypes"; // Renamed from SubscriptionPlans
 import Customers from "./pages/Customers";
 import Profile from "./pages/Profile";
 import CompanyForm from "./pages/CompanyForm";
 
 function App() {
   const dispatch = useDispatch();
-  const { isAuthenticated, hasSubscription } = useSelector(
-    (state) => state.profile.userData
-  );
+  const { isAuthenticated } = useSelector((state) => state.profile.userData);
 
   const handleAuth = () => {
     dispatch(setAuthenticated(true));
-  };
-
-  const handleSubscription = () => {
-    dispatch(setSubscription(true));
   };
 
   const AuthRoute = ({ children }) => {
     if (!isAuthenticated) {
       return <Navigate to="/login" replace />;
     }
-
-    if (!hasSubscription) {
-      return <Navigate to="/subscription-plans" replace />;
-    }
-
     return children;
   };
 
   return (
     <Router>
-      {isAuthenticated && hasSubscription && <Navbar />}
+      {isAuthenticated && <Navbar />}
       <Routes>
         <Route
           path="/"
@@ -79,13 +68,11 @@ function App() {
           }
         />
         <Route
-          path="/subscription-plans"
+          path="/invoice-types"
           element={
-            isAuthenticated && !hasSubscription ? (
-              <SubscriptionPlans onSubscribe={handleSubscription} />
-            ) : (
-              <Navigate to="/" replace />
-            )
+            <AuthRoute>
+              <InvoiceTypes />
+            </AuthRoute>
           }
         />
         <Route
@@ -102,10 +89,7 @@ function App() {
             !isAuthenticated ? (
               <Login onLogin={handleAuth} />
             ) : (
-              <Navigate
-                to={hasSubscription ? "/" : "/subscription-plans"}
-                replace
-              />
+              <Navigate to="/" replace />
             )
           }
         />
@@ -115,10 +99,7 @@ function App() {
             !isAuthenticated ? (
               <Signup onSignup={handleAuth} />
             ) : (
-              <Navigate
-                to={hasSubscription ? "/" : "/subscription-plans"}
-                replace
-              />
+              <Navigate to="/" replace />
             )
           }
         />

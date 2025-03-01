@@ -11,7 +11,7 @@ function Login({ onLogin }) {
     e.preventDefault();
     // TODO: Add actual login logic
     onLogin();
-    navigate("/subscription-plans");
+    navigate("/invoice-types"); // Changed from "/subscription-plans" to "/"
   };
 
   return (

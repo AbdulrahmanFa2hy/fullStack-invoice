@@ -21,7 +21,7 @@ function Signup({ onSignup }) {
     }
     // TODO: Add actual signup logic
     onSignup();
-    navigate("/subscription-plans");
+    navigate("/");
   };
 
   return (

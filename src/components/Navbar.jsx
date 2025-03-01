@@ -112,7 +112,7 @@ const Navbar = () => {
                 }`
               }
             >
-              Invoices
+              Invoice history
             </NavLink>
             <NavLink
               to="/customers"
@@ -133,6 +133,16 @@ const Navbar = () => {
               }
             >
               Company
+            </NavLink>
+            <NavLink
+              to="/invoice-types"
+              className={({ isActive }) =>
+                `text-white hover:bg-blue-700 px-4 py-2 rounded-md transition-colors ${
+                  isActive ? activeStyle : ""
+                }`
+              }
+            >
+              Invoice Type
             </NavLink>
           </div>
         </div>
@@ -195,7 +205,7 @@ const Navbar = () => {
               }
               onClick={() => setIsMenuOpen(false)}
             >
-              Invoices
+              Invoice history
             </NavLink>
             <NavLink
               to="/customers"
@@ -218,6 +228,17 @@ const Navbar = () => {
               onClick={() => setIsMenuOpen(false)}
             >
               Company
+            </NavLink>
+            <NavLink
+              to="/invoice-types"
+              className={({ isActive }) =>
+                `text-white hover:bg-blue-700 px-4 py-2 rounded-md transition-colors block mb-2 ${
+                  isActive ? activeStyle : ""
+                }`
+              }
+              onClick={() => setIsMenuOpen(false)}
+            >
+              Invoice Type
             </NavLink>
           </div>
 

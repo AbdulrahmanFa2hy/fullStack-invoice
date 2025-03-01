@@ -1,10 +1,18 @@
 import { useRef, useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { FiPlus, FiTrash2, FiSave, FiDownload, FiShare2 } from "react-icons/fi";
+import {
+  FiPlus,
+  FiTrash2,
+  FiSave,
+  FiDownload,
+  FiShare2,
+  FiEye,
+} from "react-icons/fi";
 import { format } from "date-fns";
 import { pdf } from "@react-pdf/renderer";
 import Swal from "sweetalert2";
 import InvoicePDF from "../components/InvoicePDF";
+import PDFPreview from "../components/PDFPreview";
 import { useInvoiceNumber } from "../hooks/useInvoiceNumber";
 import {
   addItem,
@@ -32,6 +40,7 @@ function Home() {
   const selectedCustomer = customers.find(
     (customer) => customer.id === selectedCustomerId
   ) || {
+    id: "",
     name: "",
     phone: "",
     email: "",
@@ -44,8 +53,8 @@ function Home() {
   const [discount, setDiscount] = useState(0);
   const [privacy, setPrivacy] = useState("");
   const [notes, setNotes] = useState("");
-  const [showLogoInput, setShowLogoInput] = useState(false);
   const [isLogoModalOpen, setIsLogoModalOpen] = useState(false);
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
 
   useEffect(() => {
     if (!invoiceNumber) {
@@ -119,7 +128,18 @@ function Home() {
   });
 
   const handleCustomerChange = (field, value) => {
-    if (selectedCustomerId) {
+    if (!selectedCustomerId) {
+      // Create new customer when typing for the first time
+      const newCustomer = {
+        id: Date.now().toString(),
+        name: field === "name" ? value : "",
+        phone: field === "phone" ? value : "",
+        email: field === "email" ? value : "",
+        address: field === "address" ? value : "",
+      };
+      dispatch(addCustomer(newCustomer));
+      dispatch(setSelectedCustomerId(newCustomer.id));
+    } else {
       // Update existing customer
       dispatch(
         updateCustomer({
@@ -128,24 +148,21 @@ function Home() {
           [field]: value,
         })
       );
-    } else {
-      // Create new customer with ID before adding
-      const newCustomer = {
-        id: Date.now().toString(),
-        name: "",
-        phone: "",
-        email: "",
-        address: "",
-        [field]: value,
-      };
-      dispatch(addCustomer(newCustomer));
-      dispatch(setSelectedCustomerId(newCustomer.id));
     }
   };
 
   const handleCustomerSelect = (customerId) => {
     if (customerId === "") {
       dispatch(setSelectedCustomerId(null));
+      // Clear all customer fields when selecting empty option
+      const emptyCustomer = {
+        id: "",
+        name: "",
+        phone: "",
+        email: "",
+        address: "",
+      };
+      dispatch(addCustomer(emptyCustomer));
     } else {
       dispatch(setSelectedCustomerId(customerId));
     }
@@ -195,6 +212,10 @@ function Home() {
       };
       reader.readAsDataURL(file);
     }
+  };
+
+  const handlePreview = () => {
+    setIsPreviewOpen(true);
   };
 
   return (
@@ -516,12 +537,18 @@ function Home() {
       <div className="md:min-w-72 md:ml-2">
         <div className="bg-white p-2 md:p-6 rounded-xl drop-shadow-2xl md:drop-shadow-none md:shadow-lg sticky top-8">
           <div className="flex flex-col-reverse md:flex-col gap-4">
-            <div className="flex flex-col gap-3">
+            <div className="flex flex-col-reverse md:flex-col gap-3">
               <button
                 onClick={downloadPDF}
                 className="btn btn-accent flex items-center gap-2 w-full justify-center text-sm md:text-base"
               >
                 <FiDownload /> Download PDF
+              </button>
+              <button
+                onClick={handlePreview}
+                className="btn btn-accent flex items-center gap-2 w-full justify-center text-sm md:text-base"
+              >
+                <FiEye /> Preview PDF
               </button>
               <button
                 onClick={shareOnWhatsApp}
@@ -648,6 +675,35 @@ function Home() {
           </div>
         </div>
       </div>
+
+      {/* Preview Modal */}
+      {isPreviewOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-lg w-full max-w-4xl h-[90vh] flex flex-col">
+            <div className="p-4 border-b flex justify-between items-center">
+              <h2 className="text-xl font-semibold">Invoice Preview</h2>
+              <button
+                onClick={() => setIsPreviewOpen(false)}
+                className="text-gray-500 hover:text-gray-700"
+              >
+                ×
+              </button>
+            </div>
+            <div className="flex-1 overflow-auto">
+              <PDFPreview
+                sender={company}
+                customer={selectedCustomer}
+                items={items}
+                invoiceNumber={invoiceNumber}
+                tax={tax}
+                discount={discount}
+                privacy={privacy}
+                notes={notes}
+              />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
