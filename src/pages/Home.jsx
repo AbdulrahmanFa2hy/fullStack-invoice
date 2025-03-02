@@ -239,164 +239,9 @@ function Home() {
 
   return (
     <div
-      className="min-h-screen py-4 px-0 md:py-8 md:px-2 bg-gray-100 flex flex-col md:flex-row-reverse gap-2 sm:gap-8 md:gap-0"
+      className="min-h-screen py-4 px-0 md:py-8 md:px-2 bg-gray-100 flex flex-col md:flex-row gap-1 sm:gap-8 md:gap-0"
       dir={i18n.language === "ar" ? "rtl" : "ltr"}
     >
-      {/* Action buttons container */}
-      <div className="md:min-w-72 md:ms-2">
-        <div className="bg-white p-2 md:p-6 rounded-xl drop-shadow-2xl md:drop-shadow-none md:shadow-lg sticky top-8">
-          <div className="flex flex-col-reverse md:flex-col gap-4">
-            <div className="flex flex-col-reverse md:flex-col gap-3">
-              <button
-                onClick={downloadPDF}
-                className="btn btn-accent flex items-center gap-2 w-full justify-center text-sm md:text-base"
-              >
-                <FiDownload /> {t("downloadPDF")}
-              </button>
-              <button
-                onClick={handlePreview}
-                className="btn btn-accent flex items-center gap-2 w-full justify-center text-sm md:text-base"
-              >
-                <FiEye /> {t("previewPDF")}
-              </button>
-              <button
-                onClick={shareOnWhatsApp}
-                className="btn btn-accent flex items-center gap-2 w-full justify-center text-sm md:text-base"
-              >
-                <FiShare2 /> {t("shareWhatsApp")}
-              </button>
-              <button
-                onClick={handleSaveInvoice}
-                className="btn btn-primary flex items-center gap-2 w-full justify-center text-sm md:text-base"
-              >
-                <FiSave /> {t("saveInvoice")}
-              </button>
-            </div>
-
-            <div className="md:border-t pt-4">
-              <div className="space-y-3">
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-600 mb-1 text-center">
-                      {t("taxRate")}
-                    </label>
-                    <div className="relative">
-                      <input
-                        type="number"
-                        className={getInputClassName(
-                          "input w-full ps-4 py-1.5 text-sm"
-                        )}
-                        value={tax || ""}
-                        onChange={(e) => {
-                          const value = Math.max(0, e.target.value);
-                          setTax(parseFloat(value) || 0);
-                        }}
-                        onFocus={(e) => e.target.select()}
-                        onKeyDown={(e) => {
-                          if (e.key === "ArrowUp") {
-                            e.preventDefault();
-                            setTax((prev) => Math.min(100, (prev || 0) + 1));
-                          } else if (e.key === "ArrowDown") {
-                            e.preventDefault();
-                            setTax((prev) => Math.max(0, (prev || 0) - 1));
-                          }
-                        }}
-                        min="0"
-                        max="100"
-                        step="0.1"
-                        placeholder="0.0"
-                      />
-                    </div>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-600 mb-1 text-center">
-                      {t("discount")}
-                    </label>
-                    <div className="relative">
-                      <input
-                        type="number"
-                        className={getInputClassName(
-                          "input w-full ps-4 py-1.5 text-sm"
-                        )}
-                        value={discount || ""}
-                        onChange={(e) => {
-                          const value = Math.max(0, e.target.value);
-                          setDiscount(parseFloat(value) || 0);
-                        }}
-                        onFocus={(e) => e.target.select()}
-                        onKeyDown={(e) => {
-                          if (e.key === "ArrowUp") {
-                            e.preventDefault();
-                            setDiscount((prev) =>
-                              Math.min(100, (prev || 0) + 1)
-                            );
-                          } else if (e.key === "ArrowDown") {
-                            e.preventDefault();
-                            setDiscount((prev) => Math.max(0, (prev || 0) - 1));
-                          }
-                        }}
-                        min="0"
-                        max="100"
-                        step="0.1"
-                        placeholder="0.0"
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                {/* Compact Summary */}
-                <div className="bg-gray-50 rounded-lg p-3 space-y-1">
-                  <div className="flex justify-between text-sm text-gray-600">
-                    <span className="ms-0">{t("subtotal")}:</span>
-                    <span className="me-0">${subtotal.toFixed(2)}</span>
-                  </div>
-                  {discount > 0 && (
-                    <div className="flex justify-between text-sm text-gray-500">
-                      <span>
-                        {t("discount")} ({discount}%):
-                      </span>
-                      <span>-${discountAmount.toFixed(2)}</span>
-                    </div>
-                  )}
-                  {tax > 0 && (
-                    <div className="flex justify-between text-sm text-gray-500">
-                      <span>
-                        {t("taxRate")} ({tax}%):
-                      </span>
-                      <span>+${taxAmount.toFixed(2)}</span>
-                    </div>
-                  )}
-                  <div className="flex justify-between font-medium pt-1 border-t text-sm sm:text-base">
-                    <span>{t("total")}:</span>
-                    <span>${total.toFixed(2)}</span>
-                  </div>
-                </div>
-
-                {/* Privacy and Notes Sections */}
-                <div className="space-y-3 mt-4 md:border-t pt-4">
-                  <textarea
-                    className={getInputClassName(
-                      "input w-full text-sm min-h-[60px] resize-none bg-gray-50"
-                    )}
-                    placeholder={t("addPrivacyTerms")}
-                    value={privacy}
-                    onChange={(e) => setPrivacy(e.target.value)}
-                  ></textarea>
-                  <textarea
-                    className={getInputClassName(
-                      "input w-full text-sm min-h-[60px] resize-none bg-gray-50"
-                    )}
-                    placeholder={t("addNotes")}
-                    value={notes}
-                    onChange={(e) => setNotes(e.target.value)}
-                  ></textarea>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
       {/* Main invoice content */}
       <div className="flex-grow max-w-6xl">
         <div
@@ -721,7 +566,160 @@ function Home() {
           </button>
         </div>
       </div>
+      {/* Action buttons container */}
+      <div className="md:min-w-72 md:ms-2">
+        <div className="bg-white p-2 md:p-6 rounded-xl drop-shadow-2xl md:drop-shadow-none md:shadow-lg sticky top-8">
+          <div className="flex flex-col-reverse md:flex-col gap-4">
+            <div className="flex flex-col-reverse md:flex-col gap-3">
+              <button
+                onClick={downloadPDF}
+                className="btn btn-accent flex items-center gap-2 w-full justify-center text-sm md:text-base"
+              >
+                <FiDownload /> {t("downloadPDF")}
+              </button>
+              <button
+                onClick={handlePreview}
+                className="btn btn-accent flex items-center gap-2 w-full justify-center text-sm md:text-base"
+              >
+                <FiEye /> {t("previewPDF")}
+              </button>
+              <button
+                onClick={shareOnWhatsApp}
+                className="btn btn-accent flex items-center gap-2 w-full justify-center text-sm md:text-base"
+              >
+                <FiShare2 /> {t("shareWhatsApp")}
+              </button>
+              <button
+                onClick={handleSaveInvoice}
+                className="btn btn-primary flex items-center gap-2 w-full justify-center text-sm md:text-base"
+              >
+                <FiSave /> {t("saveInvoice")}
+              </button>
+            </div>
 
+            <div className="md:border-t pt-4">
+              <div className="space-y-3">
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-600 mb-1 text-center">
+                      {t("taxRate")}
+                    </label>
+                    <div className="relative">
+                      <input
+                        type="number"
+                        className={getInputClassName(
+                          "input w-full ps-4 py-1.5 text-sm"
+                        )}
+                        value={tax || ""}
+                        onChange={(e) => {
+                          const value = Math.max(0, e.target.value);
+                          setTax(parseFloat(value) || 0);
+                        }}
+                        onFocus={(e) => e.target.select()}
+                        onKeyDown={(e) => {
+                          if (e.key === "ArrowUp") {
+                            e.preventDefault();
+                            setTax((prev) => Math.min(100, (prev || 0) + 1));
+                          } else if (e.key === "ArrowDown") {
+                            e.preventDefault();
+                            setTax((prev) => Math.max(0, (prev || 0) - 1));
+                          }
+                        }}
+                        min="0"
+                        max="100"
+                        step="0.1"
+                        placeholder="0.0"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-600 mb-1 text-center">
+                      {t("discount")}
+                    </label>
+                    <div className="relative">
+                      <input
+                        type="number"
+                        className={getInputClassName(
+                          "input w-full ps-4 py-1.5 text-sm"
+                        )}
+                        value={discount || ""}
+                        onChange={(e) => {
+                          const value = Math.max(0, e.target.value);
+                          setDiscount(parseFloat(value) || 0);
+                        }}
+                        onFocus={(e) => e.target.select()}
+                        onKeyDown={(e) => {
+                          if (e.key === "ArrowUp") {
+                            e.preventDefault();
+                            setDiscount((prev) =>
+                              Math.min(100, (prev || 0) + 1)
+                            );
+                          } else if (e.key === "ArrowDown") {
+                            e.preventDefault();
+                            setDiscount((prev) => Math.max(0, (prev || 0) - 1));
+                          }
+                        }}
+                        min="0"
+                        max="100"
+                        step="0.1"
+                        placeholder="0.0"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Compact Summary */}
+                <div className="bg-gray-50 rounded-lg p-3 space-y-1">
+                  <div className="flex justify-between text-sm text-gray-600">
+                    <span className="ms-0">{t("subtotal")}:</span>
+                    <span className="me-0">${subtotal.toFixed(2)}</span>
+                  </div>
+                  {discount > 0 && (
+                    <div className="flex justify-between text-sm text-gray-500">
+                      <span>
+                        {t("discount")} ({discount}%):
+                      </span>
+                      <span>-${discountAmount.toFixed(2)}</span>
+                    </div>
+                  )}
+                  {tax > 0 && (
+                    <div className="flex justify-between text-sm text-gray-500">
+                      <span>
+                        {t("taxRate")} ({tax}%):
+                      </span>
+                      <span>+${taxAmount.toFixed(2)}</span>
+                    </div>
+                  )}
+                  <div className="flex justify-between font-medium pt-1 border-t text-sm sm:text-base">
+                    <span>{t("total")}:</span>
+                    <span>${total.toFixed(2)}</span>
+                  </div>
+                </div>
+
+                {/* Privacy and Notes Sections */}
+                <div className="space-y-3 mt-4 md:border-t pt-4">
+                  <textarea
+                    className={getInputClassName(
+                      "input w-full text-sm min-h-[60px] resize-none bg-gray-50"
+                    )}
+                    placeholder={t("addPrivacyTerms")}
+                    value={privacy}
+                    onChange={(e) => setPrivacy(e.target.value)}
+                  ></textarea>
+                  <textarea
+                    className={getInputClassName(
+                      "input w-full text-sm min-h-[60px] resize-none bg-gray-50"
+                    )}
+                    placeholder={t("addNotes")}
+                    value={notes}
+                    onChange={(e) => setNotes(e.target.value)}
+                  ></textarea>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
       {/* Preview Modal */}
       {isPreviewOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
