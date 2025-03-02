@@ -69,14 +69,17 @@ const Navbar = () => {
   };
 
   return (
-    <nav className="bg-blue-600 px-4 md:px-8 py-4 shadow-md relative" dir="ltr">
+    <nav
+      className="bg-blue-600 px-4 md:px-8 py-4 shadow-md relative"
+      dir={i18n.dir()}
+    >
       <div className="mx-auto flex items-center justify-between">
-        {/* Left side - Profile and Language buttons */}
-        <div className="flex items-center gap-4">
-          {/* Profile button - visible on desktop */}
+        {/* Left side - Profile and Navigation Links */}
+        <div className="hidden md:flex items-center gap-4">
+          {/* Profile button */}
           <NavLink
             to="/profile"
-            className="hidden md:block text-white hover:bg-blue-700 p-2 rounded-full transition-colors"
+            className="text-white hover:bg-blue-700 p-2 rounded-full transition-colors"
           >
             {userData?.image ? (
               <img
@@ -91,30 +94,8 @@ const Navbar = () => {
             )}
           </NavLink>
 
-          {/* Language toggle button */}
-          <button
-            onClick={toggleLanguage}
-            className="flex justify-center items-center text-white px-3 py-1 ltr:pb-2 rounded-md hover:bg-blue-800 transition-colors"
-          >
-            {i18n.language === "ar" ? "English" : "عربي"}
-          </button>
-        </div>
-
-        {/* Mobile Menu Button */}
-        <button
-          onClick={() => setIsMenuOpen(!isMenuOpen)}
-          className="md:hidden text-white p-2"
-        >
-          {isMenuOpen ? <FiX size={24} /> : <FiMenu size={24} />}
-        </button>
-
-        {/* Center - Navigation Links */}
-        <div
-          className="hidden md:flex items-center gap-4 md:gap-8"
-          dir={i18n.language === "ar" ? "rtl" : "ltr"}
-        >
           {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center gap-4">
+          <div className="flex items-center gap-4">
             <NavLink
               to="/"
               className={({ isActive }) =>
@@ -168,8 +149,28 @@ const Navbar = () => {
           </div>
         </div>
 
-        {/* Right side - Create Invoice Button */}
-        <div className="flex justify-between items-center gap-2">
+        {/* Mobile Menu Button */}
+        <button
+          onClick={() => setIsMenuOpen(!isMenuOpen)}
+          className="md:hidden text-white p-2"
+        >
+          {isMenuOpen ? <FiX size={24} /> : <FiMenu size={24} />}
+        </button>
+
+        {/* Right side - Language Toggle and Create Invoice Button */}
+        <div className="flex items-center gap-4">
+          {/* Language Toggle - Visible only on desktop */}
+          <button
+            onClick={toggleLanguage}
+            className="hidden md:flex justify-center items-center text-white px-3 py-1 rounded-md hover:bg-blue-800 transition-colors"
+            title={
+              i18n.language === "ar"
+                ? "تغيير اللغة إلى الأنجليزية"
+                : "change language to  AR"
+            }
+          >
+            {i18n.language === "ar" ? "EN" : "AR"}
+          </button>
           <button
             onClick={handleCreateInvoice}
             className="bg-white text-blue-600 p-2 rounded-full hover:bg-blue-50 hover:rotate-90 hover:scale-105 transition-all duration-300 hover:shadow-lg"
@@ -191,8 +192,14 @@ const Navbar = () => {
       />
       <div
         ref={menuRef}
-        className={`md:hidden fixed left-0 top-0 h-screen w-64 bg-blue-600 border-r border-blue-500 shadow-lg transition-transform duration-300 z-50 ${
-          isMenuOpen ? "translate-x-0" : "-translate-x-full"
+        className={`md:hidden fixed ${
+          i18n.language === "ar" ? "right-0" : "left-0"
+        } top-0 h-screen w-64 bg-blue-600 border-x border-blue-500 shadow-lg transition-transform duration-300 z-50 ${
+          isMenuOpen
+            ? "translate-x-0"
+            : i18n.language === "ar"
+            ? "translate-x-full"
+            : "-translate-x-full"
         }`}
       >
         <div className="flex flex-col h-full relative">
@@ -261,6 +268,17 @@ const Navbar = () => {
             >
               {t("invoiceType")}
             </NavLink>
+
+            {/* Language Toggle Button */}
+            <button
+              onClick={() => {
+                toggleLanguage();
+                setIsMenuOpen(false);
+              }}
+              className="w-full text-start text-white hover:bg-blue-700 px-4 py-2 rounded-md transition-colors block mb-2"
+            >
+              {i18n.language === "ar" ? "EN" : "AR"}
+            </button>
           </div>
 
           {/* Profile Link at Bottom */}
