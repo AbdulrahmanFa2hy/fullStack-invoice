@@ -4,6 +4,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { resetInvoice, generateInvoiceNumber } from "../store/mainSlice";
 import { setSelectedCustomerId } from "../store/customersSlice"; // Add this import
 import { useState, useRef, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 
 const getInitials = (name = "") => {
   if (!name || typeof name !== "string") return "?";
@@ -27,6 +28,7 @@ const Navbar = () => {
     (state) => state.main.invoice
   );
   const { userData } = useSelector((state) => state.profile);
+  const { t, i18n } = useTranslation();
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -62,19 +64,16 @@ const Navbar = () => {
     navigate("/");
   };
 
-  return (
-    <nav className="bg-blue-600 px-4 md:px-8 py-4 shadow-md relative">
-      <div className="mx-auto flex items-center justify-between">
-        {/* Mobile Menu Button - Now First Item */}
-        <button
-          onClick={() => setIsMenuOpen(!isMenuOpen)}
-          className="md:hidden text-white p-2"
-        >
-          {isMenuOpen ? <FiX size={24} /> : <FiMenu size={24} />}
-        </button>
+  const toggleLanguage = () => {
+    i18n.changeLanguage(i18n.language === "ar" ? "en" : "ar");
+  };
 
-        <div className="hidden md:flex items-center gap-4 md:gap-8">
-          {/* Hide profile link on mobile - it will be in dropdown */}
+  return (
+    <nav className="bg-blue-600 px-4 md:px-8 py-4 shadow-md relative" dir="ltr">
+      <div className="mx-auto flex items-center justify-between">
+        {/* Left side - Profile and Language buttons */}
+        <div className="flex items-center gap-4">
+          {/* Profile button - visible on desktop */}
           <NavLink
             to="/profile"
             className="hidden md:block text-white hover:bg-blue-700 p-2 rounded-full transition-colors"
@@ -92,6 +91,28 @@ const Navbar = () => {
             )}
           </NavLink>
 
+          {/* Language toggle button */}
+          <button
+            onClick={toggleLanguage}
+            className="flex justify-center items-center text-white px-3 py-1 ltr:pb-2 rounded-md hover:bg-blue-800 transition-colors"
+          >
+            {i18n.language === "ar" ? "English" : "عربي"}
+          </button>
+        </div>
+
+        {/* Mobile Menu Button */}
+        <button
+          onClick={() => setIsMenuOpen(!isMenuOpen)}
+          className="md:hidden text-white p-2"
+        >
+          {isMenuOpen ? <FiX size={24} /> : <FiMenu size={24} />}
+        </button>
+
+        {/* Center - Navigation Links */}
+        <div
+          className="hidden md:flex items-center gap-4 md:gap-8"
+          dir={i18n.language === "ar" ? "rtl" : "ltr"}
+        >
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center gap-4">
             <NavLink
@@ -102,7 +123,7 @@ const Navbar = () => {
                 }`
               }
             >
-              Home
+              {t("home")}
             </NavLink>
             <NavLink
               to="/invoices"
@@ -112,7 +133,7 @@ const Navbar = () => {
                 }`
               }
             >
-              Invoice history
+              {t("invoiceHistory")}
             </NavLink>
             <NavLink
               to="/customers"
@@ -122,7 +143,7 @@ const Navbar = () => {
                 }`
               }
             >
-              Customers
+              {t("customers")}
             </NavLink>
             <NavLink
               to="/company"
@@ -132,7 +153,7 @@ const Navbar = () => {
                 }`
               }
             >
-              Company
+              {t("company")}
             </NavLink>
             <NavLink
               to="/invoice-types"
@@ -142,17 +163,17 @@ const Navbar = () => {
                 }`
               }
             >
-              Invoice Type
+              {t("invoiceType")}
             </NavLink>
           </div>
         </div>
 
-        {/* Create Invoice Button */}
+        {/* Right side - Create Invoice Button */}
         <div className="flex justify-between items-center gap-2">
           <button
             onClick={handleCreateInvoice}
             className="bg-white text-blue-600 p-2 rounded-full hover:bg-blue-50 hover:rotate-90 hover:scale-105 transition-all duration-300 hover:shadow-lg"
-            title="Create New Invoice"
+            title={t("createNewInvoice")}
           >
             <FiPlus />
           </button>
@@ -194,7 +215,7 @@ const Navbar = () => {
               }
               onClick={() => setIsMenuOpen(false)}
             >
-              Home
+              {t("home")}
             </NavLink>
             <NavLink
               to="/invoices"
@@ -205,7 +226,7 @@ const Navbar = () => {
               }
               onClick={() => setIsMenuOpen(false)}
             >
-              Invoice history
+              {t("invoiceHistory")}
             </NavLink>
             <NavLink
               to="/customers"
@@ -216,7 +237,7 @@ const Navbar = () => {
               }
               onClick={() => setIsMenuOpen(false)}
             >
-              Customers
+              {t("customers")}
             </NavLink>
             <NavLink
               to="/company"
@@ -227,7 +248,7 @@ const Navbar = () => {
               }
               onClick={() => setIsMenuOpen(false)}
             >
-              Company
+              {t("company")}
             </NavLink>
             <NavLink
               to="/invoice-types"
@@ -238,7 +259,7 @@ const Navbar = () => {
               }
               onClick={() => setIsMenuOpen(false)}
             >
-              Invoice Type
+              {t("invoiceType")}
             </NavLink>
           </div>
 
@@ -260,7 +281,7 @@ const Navbar = () => {
                   {getInitials(userData?.name)}
                 </div>
               )}
-              <span>Profile</span>
+              <span>{t("profile")}</span>
             </NavLink>
           </div>
         </div>

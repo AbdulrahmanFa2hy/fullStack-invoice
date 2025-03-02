@@ -28,6 +28,7 @@ import {
 } from "../store/customersSlice";
 import { updateCompany } from "../store/companySlice";
 import LogoModal from "../components/LogoModal";
+import { useTranslation } from "react-i18next";
 
 function Home() {
   const dispatch = useDispatch();
@@ -55,6 +56,7 @@ function Home() {
   const [notes, setNotes] = useState("");
   const [isLogoModalOpen, setIsLogoModalOpen] = useState(false);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+  const { t, i18n } = useTranslation();
 
   useEffect(() => {
     if (!invoiceNumber) {
@@ -65,6 +67,12 @@ function Home() {
       dispatch(addItem());
     }
   }, [dispatch, invoiceNumber, items.length]);
+
+  useEffect(() => {
+    // Add this effect to handle RTL/LTR
+    document.documentElement.dir = i18n.language === "ar" ? "rtl" : "ltr";
+    document.documentElement.lang = i18n.language;
+  }, [i18n.language]);
 
   const handleUpdateItem = (id, field, value) => {
     dispatch(updateItem({ id, field, value }));
@@ -173,7 +181,7 @@ function Home() {
     dispatch(saveToHistory(invoiceData));
     Swal.fire({
       icon: "success",
-      title: isExistingInvoice() ? "Invoice Updated!" : "Invoice Created!",
+      title: isExistingInvoice() ? t("updated") : t("created"),
       toast: true,
       position: "bottom-end",
       showConfirmButton: false,
@@ -194,7 +202,10 @@ function Home() {
   };
 
   const shareOnWhatsApp = async () => {
-    const message = `Invoice ${invoiceNumber} from ${company.name}`;
+    const message = t("shareMessage", {
+      number: invoiceNumber,
+      company: company.name,
+    });
     const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
     window.open(whatsappUrl, "_blank");
   };
@@ -218,16 +229,183 @@ function Home() {
     setIsPreviewOpen(true);
   };
 
+  // Update getInputClassName to handle phone inputs more specifically
+  const getInputClassName = (baseClass, inputType = "text") => {
+    if (inputType === "tel") {
+      return `${baseClass} text-start rtl:text-right ltr:text-left [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none`;
+    }
+    return `${baseClass} text-start`;
+  };
+
   return (
-    <div className="min-h-screen py-4 px-0 md:py-8 md:px-2 bg-gray-100 flex flex-col md:flex-row gap-2 sm:gap-8 md:gap-0">
+    <div
+      className="min-h-screen py-4 px-0 md:py-8 md:px-2 bg-gray-100 flex flex-col md:flex-row-reverse gap-2 sm:gap-8 md:gap-0"
+      dir={i18n.language === "ar" ? "rtl" : "ltr"}
+    >
+      {/* Action buttons container */}
+      <div className="md:min-w-72 md:ms-2">
+        <div className="bg-white p-2 md:p-6 rounded-xl drop-shadow-2xl md:drop-shadow-none md:shadow-lg sticky top-8">
+          <div className="flex flex-col-reverse md:flex-col gap-4">
+            <div className="flex flex-col-reverse md:flex-col gap-3">
+              <button
+                onClick={downloadPDF}
+                className="btn btn-accent flex items-center gap-2 w-full justify-center text-sm md:text-base"
+              >
+                <FiDownload /> {t("downloadPDF")}
+              </button>
+              <button
+                onClick={handlePreview}
+                className="btn btn-accent flex items-center gap-2 w-full justify-center text-sm md:text-base"
+              >
+                <FiEye /> {t("previewPDF")}
+              </button>
+              <button
+                onClick={shareOnWhatsApp}
+                className="btn btn-accent flex items-center gap-2 w-full justify-center text-sm md:text-base"
+              >
+                <FiShare2 /> {t("shareWhatsApp")}
+              </button>
+              <button
+                onClick={handleSaveInvoice}
+                className="btn btn-primary flex items-center gap-2 w-full justify-center text-sm md:text-base"
+              >
+                <FiSave /> {t("saveInvoice")}
+              </button>
+            </div>
+
+            <div className="md:border-t pt-4">
+              <div className="space-y-3">
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-600 mb-1 text-center">
+                      {t("taxRate")}
+                    </label>
+                    <div className="relative">
+                      <input
+                        type="number"
+                        className={getInputClassName(
+                          "input w-full ps-4 py-1.5 text-sm"
+                        )}
+                        value={tax || ""}
+                        onChange={(e) => {
+                          const value = Math.max(0, e.target.value);
+                          setTax(parseFloat(value) || 0);
+                        }}
+                        onFocus={(e) => e.target.select()}
+                        onKeyDown={(e) => {
+                          if (e.key === "ArrowUp") {
+                            e.preventDefault();
+                            setTax((prev) => Math.min(100, (prev || 0) + 1));
+                          } else if (e.key === "ArrowDown") {
+                            e.preventDefault();
+                            setTax((prev) => Math.max(0, (prev || 0) - 1));
+                          }
+                        }}
+                        min="0"
+                        max="100"
+                        step="0.1"
+                        placeholder="0.0"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-600 mb-1 text-center">
+                      {t("discount")}
+                    </label>
+                    <div className="relative">
+                      <input
+                        type="number"
+                        className={getInputClassName(
+                          "input w-full ps-4 py-1.5 text-sm"
+                        )}
+                        value={discount || ""}
+                        onChange={(e) => {
+                          const value = Math.max(0, e.target.value);
+                          setDiscount(parseFloat(value) || 0);
+                        }}
+                        onFocus={(e) => e.target.select()}
+                        onKeyDown={(e) => {
+                          if (e.key === "ArrowUp") {
+                            e.preventDefault();
+                            setDiscount((prev) =>
+                              Math.min(100, (prev || 0) + 1)
+                            );
+                          } else if (e.key === "ArrowDown") {
+                            e.preventDefault();
+                            setDiscount((prev) => Math.max(0, (prev || 0) - 1));
+                          }
+                        }}
+                        min="0"
+                        max="100"
+                        step="0.1"
+                        placeholder="0.0"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Compact Summary */}
+                <div className="bg-gray-50 rounded-lg p-3 space-y-1">
+                  <div className="flex justify-between text-sm text-gray-600">
+                    <span className="ms-0">{t("subtotal")}:</span>
+                    <span className="me-0">${subtotal.toFixed(2)}</span>
+                  </div>
+                  {discount > 0 && (
+                    <div className="flex justify-between text-sm text-gray-500">
+                      <span>
+                        {t("discount")} ({discount}%):
+                      </span>
+                      <span>-${discountAmount.toFixed(2)}</span>
+                    </div>
+                  )}
+                  {tax > 0 && (
+                    <div className="flex justify-between text-sm text-gray-500">
+                      <span>
+                        {t("taxRate")} ({tax}%):
+                      </span>
+                      <span>+${taxAmount.toFixed(2)}</span>
+                    </div>
+                  )}
+                  <div className="flex justify-between font-medium pt-1 border-t text-sm sm:text-base">
+                    <span>{t("total")}:</span>
+                    <span>${total.toFixed(2)}</span>
+                  </div>
+                </div>
+
+                {/* Privacy and Notes Sections */}
+                <div className="space-y-3 mt-4 md:border-t pt-4">
+                  <textarea
+                    className={getInputClassName(
+                      "input w-full text-sm min-h-[60px] resize-none bg-gray-50"
+                    )}
+                    placeholder={t("addPrivacyTerms")}
+                    value={privacy}
+                    onChange={(e) => setPrivacy(e.target.value)}
+                  ></textarea>
+                  <textarea
+                    className={getInputClassName(
+                      "input w-full text-sm min-h-[60px] resize-none bg-gray-50"
+                    )}
+                    placeholder={t("addNotes")}
+                    value={notes}
+                    onChange={(e) => setNotes(e.target.value)}
+                  ></textarea>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Main invoice content */}
       <div className="flex-grow max-w-6xl">
         <div
           ref={invoiceRef}
           className="bg-white rounded-2xl shadow-lg md:shadow-2xl p-2 sm:p-5 md:p-8"
         >
           <div className="flex flex-col lg:flex-row justify-between items-center gap-4 mb-4 lg:mb-8">
-            <h1 className="self-start text-2xl sm:text-3xl md:text-4xl font-bold bg-gradient-to-r from-primary-500 to-accent-500 bg-clip-text text-transparent">
-              Invoice Generator
+            <h1 className="self-start text-2xl sm:text-3xl  font-bold bg-gradient-to-r from-primary-500 to-accent-500 bg-clip-text text-transparent py-2">
+              {t("invoiceGenerator")}
             </h1>
             <div className="flex flex-col items-center relative">
               {company.logo ? (
@@ -246,7 +424,7 @@ function Home() {
                   onClick={() => setIsLogoModalOpen(true)}
                   className="text-sm text-primary-600 hover:text-primary-700"
                 >
-                  Add logo
+                  {t("addLogo")}
                 </button>
               )}
               <LogoModal
@@ -261,11 +439,11 @@ function Home() {
                 }
               />
             </div>
-            <div className="text-right self-end">
-              <p className="text-xs sm:text-base text-gray-600">
+            <div className="self-end">
+              <p className="text-xs sm:text-base text-gray-600 text-end">
                 {format(new Date(), "PPP")}
               </p>
-              <p className="text-sm sm:text-base text-gray-600">
+              <p className="text-sm sm:text-base text-gray-600 text-end">
                 {invoiceNumber}
               </p>
             </div>
@@ -275,13 +453,13 @@ function Home() {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <div>
                 <h2 className="text-base sm:text-lg font-semibold mb-4 text-gray-700">
-                  From:
+                  {t("from")}:
                 </h2>
                 <div className="space-y-3">
                   <input
                     type="text"
-                    placeholder="Name"
-                    className="input"
+                    placeholder={t("name")}
+                    className={getInputClassName("input")}
                     value={company.name}
                     onChange={(e) =>
                       dispatch(
@@ -291,8 +469,9 @@ function Home() {
                   />
                   <input
                     type="tel"
-                    placeholder="Phone"
-                    className="input"
+                    dir="auto"
+                    placeholder={t("phone")}
+                    className={getInputClassName("input", "tel")}
                     value={company.phone}
                     onChange={(e) =>
                       dispatch(
@@ -302,8 +481,8 @@ function Home() {
                   />
                   <input
                     type="email"
-                    placeholder="Email"
-                    className="input"
+                    placeholder={t("email")}
+                    className={getInputClassName("input")}
                     value={company.email}
                     onChange={(e) =>
                       dispatch(
@@ -312,8 +491,8 @@ function Home() {
                     }
                   />
                   <textarea
-                    placeholder="Address"
-                    className="input h-24"
+                    placeholder={t("address")}
+                    className={getInputClassName("input h-24")}
                     value={company.address}
                     onChange={(e) =>
                       dispatch(
@@ -329,14 +508,16 @@ function Home() {
               <div>
                 <div className="flex justify-between items-start">
                   <h2 className="text-base sm:text-lg font-semibold text-gray-700">
-                    To:
+                    {t("to")}:
                   </h2>
                   <select
-                    className="input w-48 sm:w-72 text-sm p-1 mb-4 inline-block"
+                    className={getInputClassName(
+                      "input w-48 sm:w-72 text-sm p-1 mb-4 inline-block"
+                    )}
                     onChange={(e) => handleCustomerSelect(e.target.value)}
                     value={selectedCustomerId || ""}
                   >
-                    <option value="">Select Customer</option>
+                    <option value="">{t("selectCustomer")}</option>
                     {customers.map((customer) => (
                       <option key={customer.id} value={customer.id}>
                         {customer.name} ({customer.email})
@@ -347,8 +528,8 @@ function Home() {
                 <div className="space-y-3">
                   <input
                     type="text"
-                    placeholder="Name"
-                    className="input"
+                    placeholder={t("name")}
+                    className={getInputClassName("input")}
                     value={selectedCustomer.name}
                     onChange={(e) =>
                       handleCustomerChange("name", e.target.value)
@@ -356,8 +537,9 @@ function Home() {
                   />
                   <input
                     type="tel"
-                    placeholder="Phone"
-                    className="input"
+                    dir="auto"
+                    placeholder={t("phone")}
+                    className={getInputClassName("input", "tel")}
                     value={selectedCustomer.phone}
                     onChange={(e) =>
                       handleCustomerChange("phone", e.target.value)
@@ -365,16 +547,16 @@ function Home() {
                   />
                   <input
                     type="email"
-                    placeholder="Email"
-                    className="input"
+                    placeholder={t("email")}
+                    className={getInputClassName("input")}
                     value={selectedCustomer.email}
                     onChange={(e) =>
                       handleCustomerChange("email", e.target.value)
                     }
                   />
                   <textarea
-                    placeholder="Address"
-                    className="input h-24"
+                    placeholder={t("address")}
+                    className={getInputClassName("input h-24")}
                     value={selectedCustomer.address}
                     onChange={(e) =>
                       handleCustomerChange("address", e.target.value)
@@ -388,20 +570,22 @@ function Home() {
           <div className="mb-4">
             <div className="hidden lg:grid  bg-gray-50 p-4 rounded-lg mb-4">
               <div className="hidden lg:grid grid-cols-12 gap-4 mb-2 font-semibold text-gray-600">
-                <div className="col-span-4 text-sm sm:text-base">Product</div>
                 <div className="col-span-4 text-sm sm:text-base">
-                  Description
+                  {t("productName")}
+                </div>
+                <div className="col-span-4 text-sm sm:text-base">
+                  {t("desc")}
                 </div>
                 <div className="col-span-1 text-sm sm:text-base text-center">
-                  Qty
+                  {t("qty")}
                 </div>
                 <div className="col-span-1 text-sm sm:text-base text-center">
-                  Price
+                  {t("price")}
                 </div>
                 <div className="col-span-1 text-sm sm:text-base text-center">
-                  Total
+                  {t("total")}
                 </div>
-                <div className="col-span-1"></div>
+                <div className="col-span-1">{t("actions")}</div>
               </div>
             </div>
 
@@ -411,18 +595,20 @@ function Home() {
                   <div className="col-span-12 sm:col-span-6 lg:col-span-4">
                     <input
                       type="text"
-                      className="input bg-gray-50"
+                      className={getInputClassName("input bg-gray-50")}
                       value={item.name}
                       onChange={(e) =>
                         handleUpdateItem(item.id, "name", e.target.value)
                       }
-                      placeholder="Product name"
+                      placeholder={t("productName")}
                     />
                   </div>
                   <div className="col-span-12 sm:col-span-6 lg:col-span-4">
                     <div className="flex justify-center items-center">
                       <textarea
-                        className="input h-full resize-none overflow-hidden bg-gray-50"
+                        className={getInputClassName(
+                          "input h-full resize-none overflow-hidden bg-gray-50"
+                        )}
                         value={item.description}
                         onChange={(e) => {
                           handleUpdateItem(
@@ -433,7 +619,7 @@ function Home() {
                           handleTextareaResize(e);
                         }}
                         onInput={handleTextareaResize}
-                        placeholder="description"
+                        placeholder={t("desc")}
                         rows={1}
                         style={{
                           resize: "none",
@@ -445,7 +631,7 @@ function Home() {
                   <div className="col-span-3 lg:col-span-1">
                     <input
                       type="number"
-                      className="input bg-gray-50"
+                      className={getInputClassName("input bg-gray-50")}
                       value={item.quantity || ""}
                       onChange={(e) => {
                         const value = Math.max(0, e.target.value);
@@ -478,7 +664,7 @@ function Home() {
                   <div className="col-span-3 lg:col-span-1">
                     <input
                       type="number"
-                      className="input bg-gray-50"
+                      className={getInputClassName("input bg-gray-50")}
                       value={item.price || ""}
                       placeholder="0.00"
                       onChange={(e) => {
@@ -510,12 +696,14 @@ function Home() {
                     />
                   </div>
                   <div className="col-span-3 lg:col-span-1 text-center font-medium text-sm sm:text-base">
-                    ${(item.quantity * item.price).toFixed(2)}
+                    {t("currency")}
+                    {(item.quantity * item.price).toFixed(2)}
                   </div>
                   <div className="col-span-3 lg:col-span-1 flex justify-center">
                     <button
                       onClick={() => dispatch(removeItem(item.id))}
                       className="text-red-500 hover:text-red-700"
+                      title={t("deleteItem")}
                     >
                       <FiTrash2 size={20} />
                     </button>
@@ -527,152 +715,10 @@ function Home() {
 
           <button
             onClick={() => dispatch(addItem())}
-            className="btn btn-accent flex items-center gap-2 text-sm md:text-base mb-2"
+            className="btn btn-accent flex items-center space-s-2 text-sm md:text-base mb-2"
           >
-            <FiPlus size={20} /> Add Item
+            <FiPlus size={20} /> {t("addItem")}
           </button>
-        </div>
-      </div>
-
-      <div className="md:min-w-72 md:ml-2">
-        <div className="bg-white p-2 md:p-6 rounded-xl drop-shadow-2xl md:drop-shadow-none md:shadow-lg sticky top-8">
-          <div className="flex flex-col-reverse md:flex-col gap-4">
-            <div className="flex flex-col-reverse md:flex-col gap-3">
-              <button
-                onClick={downloadPDF}
-                className="btn btn-accent flex items-center gap-2 w-full justify-center text-sm md:text-base"
-              >
-                <FiDownload /> Download PDF
-              </button>
-              <button
-                onClick={handlePreview}
-                className="btn btn-accent flex items-center gap-2 w-full justify-center text-sm md:text-base"
-              >
-                <FiEye /> Preview PDF
-              </button>
-              <button
-                onClick={shareOnWhatsApp}
-                className="btn btn-accent flex items-center gap-2 w-full justify-center text-sm md:text-base"
-              >
-                <FiShare2 /> Share on WhatsApp
-              </button>
-              <button
-                onClick={handleSaveInvoice}
-                className="btn btn-primary flex items-center gap-2 w-full justify-center text-sm md:text-base"
-              >
-                <FiSave /> Save Invoice
-              </button>
-            </div>
-
-            <div className="md:border-t pt-4">
-              <div className="space-y-3">
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-600 mb-1 text-center">
-                      Tax Rate
-                    </label>
-                    <div className="relative">
-                      <input
-                        type="number"
-                        className="input w-full pl-7 py-1.5 text-sm"
-                        value={tax || ""}
-                        onChange={(e) => {
-                          const value = Math.max(0, e.target.value);
-                          setTax(parseFloat(value) || 0);
-                        }}
-                        onFocus={(e) => e.target.select()}
-                        onKeyDown={(e) => {
-                          if (e.key === "ArrowUp") {
-                            e.preventDefault();
-                            setTax((prev) => Math.min(100, (prev || 0) + 1));
-                          } else if (e.key === "ArrowDown") {
-                            e.preventDefault();
-                            setTax((prev) => Math.max(0, (prev || 0) - 1));
-                          }
-                        }}
-                        min="0"
-                        max="100"
-                        step="0.1"
-                        placeholder="0.0"
-                      />
-                    </div>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-600 mb-1 text-center">
-                      Discount
-                    </label>
-                    <div className="relative">
-                      <input
-                        type="number"
-                        className="input w-full pl-7 py-1.5 text-sm"
-                        value={discount || ""}
-                        onChange={(e) => {
-                          const value = Math.max(0, e.target.value);
-                          setDiscount(parseFloat(value) || 0);
-                        }}
-                        onFocus={(e) => e.target.select()}
-                        onKeyDown={(e) => {
-                          if (e.key === "ArrowUp") {
-                            e.preventDefault();
-                            setDiscount((prev) =>
-                              Math.min(100, (prev || 0) + 1)
-                            );
-                          } else if (e.key === "ArrowDown") {
-                            e.preventDefault();
-                            setDiscount((prev) => Math.max(0, (prev || 0) - 1));
-                          }
-                        }}
-                        min="0"
-                        max="100"
-                        step="0.1"
-                        placeholder="0.0"
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                {/* Compact Summary */}
-                <div className="bg-gray-50 rounded-lg p-3 space-y-1">
-                  <div className="flex justify-between text-sm text-gray-600">
-                    <span>Subtotal:</span>
-                    <span>${subtotal.toFixed(2)}</span>
-                  </div>
-                  {discount > 0 && (
-                    <div className="flex justify-between text-sm text-gray-500">
-                      <span>Discount ({discount}%):</span>
-                      <span>-${discountAmount.toFixed(2)}</span>
-                    </div>
-                  )}
-                  {tax > 0 && (
-                    <div className="flex justify-between text-sm text-gray-500">
-                      <span>Tax ({tax}%):</span>
-                      <span>+${taxAmount.toFixed(2)}</span>
-                    </div>
-                  )}
-                  <div className="flex justify-between font-medium pt-1 border-t text-sm sm:text-base">
-                    <span>Total:</span>
-                    <span>${total.toFixed(2)}</span>
-                  </div>
-                </div>
-
-                {/* Privacy and Notes Sections */}
-                <div className="space-y-3 mt-4 md:border-t pt-4">
-                  <textarea
-                    className="input w-full text-sm min-h-[60px] resize-none bg-gray-50"
-                    placeholder="Add privacy and terms"
-                    value={privacy}
-                    onChange={(e) => setPrivacy(e.target.value)}
-                  ></textarea>
-                  <textarea
-                    className="input w-full text-sm min-h-[60px] resize-none bg-gray-50"
-                    placeholder="Add notes"
-                    value={notes}
-                    onChange={(e) => setNotes(e.target.value)}
-                  ></textarea>
-                </div>
-              </div>
-            </div>
-          </div>
         </div>
       </div>
 
@@ -681,7 +727,7 @@ function Home() {
         <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-lg w-full max-w-4xl h-[90vh] flex flex-col">
             <div className="p-4 border-b flex justify-between items-center">
-              <h2 className="text-xl font-semibold">Invoice Preview</h2>
+              <h2 className="text-xl font-semibold">{t("invoicePreview")}</h2>
               <button
                 onClick={() => setIsPreviewOpen(false)}
                 className="text-gray-500 hover:text-gray-700"
