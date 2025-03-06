@@ -2,6 +2,21 @@ import i18n from "i18next";
 import { initReactI18next } from "react-i18next";
 import LanguageDetector from "i18next-browser-languagedetector";
 
+// Function to set document direction
+const setDocumentDirection = (language) => {
+  const dir = language === 'ar' ? 'rtl' : 'ltr';
+  document.documentElement.dir = dir;
+  document.documentElement.lang = language;
+  // Add appropriate class for RTL/LTR styling
+  if (dir === 'rtl') {
+    document.documentElement.classList.add('rtl');
+    document.documentElement.classList.remove('ltr');
+  } else {
+    document.documentElement.classList.add('ltr');
+    document.documentElement.classList.remove('rtl');
+  }
+};
+
 i18n
   .use(LanguageDetector)
   .use(initReactI18next)
@@ -49,6 +64,7 @@ i18n
           addPrivacyTerms: "أضف الخصوصية والشروط",
           addNotes: "أضف ملاحظات",
           created: "تم إنشاء الفاتورة!",
+          createdِAt: "تم الإنشاء في",
           updated: "تم تحديث الفاتورة!",
           currency: "$",
           shareMessage: "فاتورة رقم {number} من {company}",
@@ -65,6 +81,97 @@ i18n
             enterTax: "أدخل نسبة الضريبة",
             enterDiscount: "أدخل نسبة الخصم",
           },
+          // New translations for Invoices page
+          searchInvoices: "البحث في الفواتير...",
+          noMatchingInvoices: "لا توجد فواتير مطابقة",
+          noInvoices: "لا توجد فواتير",
+          invalidDate: "تاريخ غير صالح",
+          notAvailable: "غير متوفر",
+          confirmDelete: "هل أنت متأكد من حذف هذه الفاتورة؟",
+          // Invoice Detail Modal translations
+          edit: "تعديل",
+          delete: "حذف",
+          save: "حفظ",
+          cancel: "إلغاء",
+          saveChanges: "حفظ التغييرات",
+          items: "العناصر",
+          termsAndPrivacy: "الشروط والخصوصية",
+          lastUpdated: "آخر تحديث",
+          totalAmount: "المبلغ الإجمالي",
+          taxAmount: "مبلغ الضريبة",
+          discountAmount: "مبلغ الخصم",
+          totalMustBePositive: "يجب أن يكون المبلغ الإجمالي أكبر من صفر",
+          close: "إغلاق",
+          downloadPdf: "تحميل PDF",
+          subtotalAmount: "المجموع الفرعي",
+          discountLabel: "خصم",
+          taxLabel: "ضريبة",
+          totalLabel: "المجموع النهائي",
+          editInvoice: "تعديل الفاتورة",
+          deleteInvoice: "حذف الفاتورة",
+          invoiceDetails: "تفاصيل الفاتورة",
+          senderDetails: "من",
+          customerDetails: "إلى",
+          itemDetails: "تفاصيل العناصر",
+          addNewItem: "إضافة عنصر جديد",
+          removeItem: "حذف العنصر",
+          // Field placeholders
+          enterItemName: "أدخل اسم العنصر",
+          enterItemDescription: "أدخل وصف العنصر",
+          enterQuantity: "أدخل الكمية",
+          enterPrice: "أدخل السعر",
+          enterTaxRate: "أدخل نسبة الضريبة",
+          enterDiscountRate: "أدخل نسبة الخصم",
+          enterTerms: "أدخل الشروط والخصوصية",
+          enterNotes: "أدخل الملاحظات",
+          // Validation messages
+          required: "هذا الحقل مطلوب",
+          invalidNumber: "يرجى إدخال رقم صحيح",
+          invalidEmail: "يرجى إدخال بريد إلكتروني صحيح",
+          // Company Form translations
+          companyInformation: "معلومات الشركة",
+          setupCompanyProfile: "دعنا نقوم بإعداد ملف شركتك",
+          uploadLogo: "تحميل الشعار",
+          companyName: "اسم الشركة",
+          companyEmail: "البريد الإلكتروني للشركة",
+          contactNumber: "رقم الاتصال",
+          companyAddress: "عنوان الشركة",
+          saveAndContinue: "حفظ والمتابعة",
+          // Customers page translations
+          searchCustomers: "البحث عن العملاء...",
+          noCustomersFound: "لم يتم العثور على عملاء",
+          editCustomer: "تعديل العميل",
+          // Login page translations
+          welcomeBack: "مرحباً بعودتك",
+          signInToAccount: "تسجيل الدخول إلى حسابك",
+          emailAddress: "البريد الإلكتروني",
+          password: "كلمة المرور",
+          rememberMe: "تذكرني",
+          forgotPassword: "نسيت كلمة المرور؟",
+          dontHaveAccount: "ليس لديك حساب؟ سجل الآن",
+          signIn: "تسجيل الدخول",
+          // Signup page translations
+          createAccount: "إنشاء حساب",
+          joinUs: "انضم إلينا وابدأ رحلتك",
+          fullName: "الاسم الكامل",
+          confirmPassword: "تأكيد كلمة المرور",
+          acceptTerms: "أوافق على",
+          termsAndConditions: "الشروط والأحكام",
+          privacyPolicy: "سياسة الخصوصية",
+          alreadyHaveAccount: "لديك حساب بالفعل؟ سجل دخول",
+          createAccountButton: "إنشاء حساب",
+          // Profile page translations
+          editProfile: "تعديل الملف الشخصي",
+          logout: "تسجيل الخروج",
+          // Invoice Types page translations
+          selectInvoiceType: "اختر نوع الفاتورة",
+          chooseInvoiceType: "اختر نوع الفاتورة الذي يناسب احتياجات عملك",
+          completeInvoice: "فاتورة كاملة",
+          quickInvoice: "فاتورة سريعة",
+          completeInvoiceDesc: "فاتورة قياسية مع جميع التفاصيل بما في ذلك معلومات المرسل والمستلم. مثالية للمعاملات التجارية الرسمية.",
+          quickInvoiceDesc: "فاتورة مبسطة بدون تفاصيل المرسل والمستلم. مثالية للمعاملات السريعة والإيصالات غير الرسمية.",
+          features: "المميزات",
+          createInvoice: "إنشاء",
         },
       },
       en: {
@@ -125,6 +232,97 @@ i18n
             enterTax: "Enter tax rate",
             enterDiscount: "Enter discount",
           },
+          // New translations for Invoices page
+          searchInvoices: "Search invoices...",
+          noMatchingInvoices: "No matching invoices found",
+          noInvoices: "No invoices found",
+          invalidDate: "Invalid date",
+          notAvailable: "N/A",
+          confirmDelete: "Are you sure you want to delete this invoice?",
+          // Invoice Detail Modal translations
+          edit: "Edit",
+          delete: "Delete",
+          save: "Save",
+          cancel: "Cancel",
+          saveChanges: "Save Changes",
+          items: "Items",
+          termsAndPrivacy: "Terms & Privacy",
+          lastUpdated: "Last updated",
+          totalAmount: "Total Amount",
+          taxAmount: "Tax Amount",
+          discountAmount: "Discount Amount",
+          totalMustBePositive: "Total amount must be greater than 0",
+          close: "Close",
+          downloadPdf: "Download PDF",
+          subtotalAmount: "Subtotal",
+          discountLabel: "Discount ({value}%)",
+          taxLabel: "Tax ({value}%)",
+          totalLabel: "Total",
+          editInvoice: "Edit Invoice",
+          deleteInvoice: "Delete Invoice",
+          invoiceDetails: "Invoice Details",
+          senderDetails: "Sender Details",
+          customerDetails: "Customer Details",
+          itemDetails: "Item Details",
+          addNewItem: "Add New Item",
+          removeItem: "Remove Item",
+          // Field placeholders
+          enterItemName: "Enter item name",
+          enterItemDescription: "Enter item description",
+          enterQuantity: "Enter quantity",
+          enterPrice: "Enter price",
+          enterTaxRate: "Enter tax rate",
+          enterDiscountRate: "Enter discount rate",
+          enterTerms: "Enter terms and privacy",
+          enterNotes: "Enter notes",
+          // Validation messages
+          required: "This field is required",
+          invalidNumber: "Please enter a valid number",
+          invalidEmail: "Please enter a valid email",
+          // Company Form translations
+          companyInformation: "Company Information",
+          setupCompanyProfile: "Let's set up your company profile",
+          uploadLogo: "Upload Logo",
+          companyName: "Company Name",
+          companyEmail: "Company Email",
+          contactNumber: "Contact Number",
+          companyAddress: "Company Address",
+          saveAndContinue: "Save and Continue",
+          // Customers page translations
+          searchCustomers: "Search customers...",
+          noCustomersFound: "No customers found",
+          editCustomer: "Edit Customer",
+          // Login page translations
+          welcomeBack: "Welcome back",
+          signInToAccount: "Sign in to your account",
+          emailAddress: "Email Address",
+          password: "Password",
+          rememberMe: "Remember me",
+          forgotPassword: "Forgot password?",
+          dontHaveAccount: "Don't have an account? Sign up now",
+          signIn: "Sign In",
+          // Signup page translations
+          createAccount: "Create Account",
+          joinUs: "Join us and start your journey",
+          fullName: "Full Name",
+          confirmPassword: "Confirm Password",
+          acceptTerms: "I accept the",
+          termsAndConditions: "Terms and Conditions",
+          privacyPolicy: "Privacy Policy",
+          alreadyHaveAccount: "Already have an account? Sign In",
+          createAccountButton: "Create Account",
+          // Profile page translations
+          editProfile: "Edit Profile",
+          logout: "Logout",
+          // Invoice Types page translations
+          selectInvoiceType: "Select Invoice Type",
+          chooseInvoiceType: "Choose the invoice type that suits your needs",
+          completeInvoice: "Complete Invoice",
+          quickInvoice: "Quick Invoice",
+          completeInvoiceDesc: "A complete invoice with all details including sender and recipient information. Ideal for formal business transactions.",
+          quickInvoiceDesc: "A simplified invoice without sender and recipient details. Ideal for quick and informal transactions.",
+          features: "Features",
+          createInvoice: "Create Invoice",
         },
       },
     },
@@ -139,5 +337,13 @@ i18n
       caches: ["localStorage"],
     },
   });
+
+// Set initial direction
+setDocumentDirection(i18n.language);
+
+// Listen for language changes
+i18n.on('languageChanged', (lng) => {
+  setDocumentDirection(lng);
+});
 
 export default i18n;

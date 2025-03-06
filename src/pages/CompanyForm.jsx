@@ -4,8 +4,10 @@ import { useNavigate } from "react-router-dom";
 import { updateCompany } from "../store/companySlice";
 import { motion } from "framer-motion";
 import { FaTrash } from "react-icons/fa";
+import { useTranslation } from "react-i18next";
 
 function CompanyForm() {
+  const { t } = useTranslation();
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const [previewLogo, setPreviewLogo] = useState(null);
@@ -88,7 +90,7 @@ function CompanyForm() {
                                shadow-md z-50 bg-white hover:text-red-500 
                                transition-all duration-200
                                opacity-0 group-hover:opacity-100 text-sm"
-                        title="Delete logo"
+                        title={t('deleteItem')}
                       >
                         <FaTrash />
                       </button>
@@ -96,7 +98,7 @@ function CompanyForm() {
                   ) : (
                     <div className="text-center p-4">
                       <i className="fas fa-cloud-upload-alt text-2xl text-gray-400 mb-2"></i>
-                      <p className="text-xs text-gray-500">Upload Logo</p>
+                      <p className="text-xs text-gray-500">{t('uploadLogo')}</p>
                     </div>
                   )}
                 </div>
@@ -112,11 +114,11 @@ function CompanyForm() {
 
             {/* Title section */}
             <div className="md:col-span-2 text-center">
-              <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-2 bg-gradient-to-r from-primary-500 to-accent-500 bg-clip-text text-transparent">
-                Company Information
+              <h2 className="py-2 text-2xl sm:text-3xl md:text-4xl font-bold mb-2 bg-gradient-to-r from-primary-500 to-accent-500 bg-clip-text text-transparent">
+                {t('companyInformation')}
               </h2>
               <p className="text-sm sm:text-base text-gray-500">
-                Let's set up your company profile
+                {t('setupCompanyProfile')}
               </p>
             </div>
           </div>
@@ -127,32 +129,34 @@ function CompanyForm() {
               {[
                 {
                   field: "name",
-                  placeholder: "Company Name",
+                  placeholder: t('companyName'),
                   icon: "far fa-building",
                   colSpan: "sm:col-span-2",
                 },
                 {
                   field: "email",
-                  placeholder: "Company Email Address",
+                  placeholder: t('companyEmail'),
                   icon: "far fa-envelope",
                   colSpan: "",
                 },
                 {
                   field: "phone",
-                  placeholder: "Contact Number",
+                  placeholder: t('contactNumber'),
                   icon: "far fa-phone",
                   colSpan: "",
-                  type: "tel", // Changed from 'number' to 'tel'
+                  type: "tel",
+                  dir: "ltr",
+                  className: "text-right",
                 },
                 {
                   field: "address",
-                  placeholder: "Company Address",
+                  placeholder: t('companyAddress'),
                   icon: "far fa-map-marker-alt",
                   colSpan: "sm:col-span-2",
                   isTextarea: true,
                 },
               ].map(
-                ({ field, placeholder, icon, colSpan, isTextarea, type }) => (
+                ({ field, placeholder, icon, colSpan, isTextarea, type, dir, className }) => (
                   <motion.div
                     key={field}
                     initial={{ opacity: 0, y: 10 }}
@@ -196,7 +200,6 @@ function CompanyForm() {
                         value={companyData[field] || ""}
                         onChange={(e) => {
                           if (field === "phone") {
-                            // Only allow numbers and common phone number characters
                             const value = e.target.value.replace(
                               /[^\d\s+-]/g,
                               ""
@@ -208,7 +211,8 @@ function CompanyForm() {
                         }}
                         onKeyDown={handleKeyDown}
                         placeholder={placeholder}
-                        className="appearance-none block w-full pl-8 sm:pl-10 md:pl-12 pr-3 sm:pr-4 
+                        dir={dir}
+                        className={`appearance-none block w-full pl-8 sm:pl-10 md:pl-12 pr-3 sm:pr-4 
                           py-2.5 sm:py-3 md:py-3.5 lg:py-4 border-2
                           border-gray-100 rounded-lg sm:rounded-xl placeholder-gray-400
                           text-sm sm:text-base
@@ -217,7 +221,7 @@ function CompanyForm() {
                           hover:border-gray-200 hover:bg-gray-50/80
                           focus:outline-none focus:border-primary-500 focus:bg-white
                           [&::-webkit-inner-spin-button]:appearance-none
-                          [&::-webkit-outer-spin-button]:appearance-none"
+                          [&::-webkit-outer-spin-button]:appearance-none ${className || ''}`}
                       />
                     )}
                   </motion.div>
@@ -238,7 +242,7 @@ function CompanyForm() {
                     transform transition-all duration-300 shadow-md 
                     hover:shadow-lg"
           >
-            Save and Continue
+            {t('saveAndContinue')}
           </motion.button>
         </motion.form>
       </motion.div>

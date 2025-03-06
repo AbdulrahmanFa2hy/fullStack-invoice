@@ -1,8 +1,10 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
+import { useTranslation } from "react-i18next";
 
 function Signup({ onSignup }) {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const selectedInvoiceType = useSelector((state) => state.main.invoice.type);
   const [name, setName] = useState("");
@@ -37,10 +39,10 @@ function Signup({ onSignup }) {
       <div className="max-w-md w-full space-y-8 bg-white p-8 rounded-xl shadow-lg">
         <div>
           <h2 className="mt-2 text-center text-3xl font-extrabold text-gray-900">
-            Create your account
+            {t('createAccount')}
           </h2>
           <p className="mt-2 text-center text-sm text-gray-600">
-            Join us and start your journey
+            {t('joinUs')}
           </p>
         </div>
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
@@ -50,7 +52,7 @@ function Signup({ onSignup }) {
                 htmlFor="name"
                 className="text-sm font-medium text-gray-700"
               >
-                Full Name
+                {t('fullName')}
               </label>
               <input
                 id="name"
@@ -68,7 +70,7 @@ function Signup({ onSignup }) {
                 htmlFor="email-address"
                 className="text-sm font-medium text-gray-700"
               >
-                Email address
+                {t('emailAddress')}
               </label>
               <input
                 id="email-address"
@@ -87,7 +89,7 @@ function Signup({ onSignup }) {
                 htmlFor="password"
                 className="text-sm font-medium text-gray-700"
               >
-                Password
+                {t('password')}
               </label>
               <input
                 id="password"
@@ -106,7 +108,7 @@ function Signup({ onSignup }) {
                 htmlFor="confirm-password"
                 className="text-sm font-medium text-gray-700"
               >
-                Confirm Password
+                {t('confirmPassword')}
               </label>
               <input
                 id="confirm-password"
@@ -135,19 +137,19 @@ function Signup({ onSignup }) {
                 htmlFor="accept-terms"
                 className="ml-2 block text-sm text-gray-900"
               >
-                I accept the{" "}
+                {t('acceptTerms')}{" "}
                 <a
                   href="/terms"
                   className="text-primary-600 hover:text-primary-500"
                 >
-                  Terms and Conditions
+                  {t('termsAndConditions')}
                 </a>{" "}
-                and{" "}
+                {t('and')}{" "}
                 <a
                   href="/privacy"
                   className="text-primary-600 hover:text-primary-500"
                 >
-                  Privacy Policy
+                  {t('privacyPolicy')}
                 </a>
               </label>
             </div>
@@ -158,7 +160,7 @@ function Signup({ onSignup }) {
               type="submit"
               className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors duration-200"
             >
-              Create Account
+              {t('createAccountButton')}
             </button>
           </div>
 
@@ -167,7 +169,7 @@ function Signup({ onSignup }) {
               to="/login"
               className="font-medium text-primary-600 hover:text-primary-500 transition-colors duration-200"
             >
-              Already have an account? Sign in
+              {t('alreadyHaveAccount')}
             </Link>
           </div>
         </form>

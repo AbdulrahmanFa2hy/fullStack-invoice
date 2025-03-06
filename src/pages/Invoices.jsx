@@ -1,11 +1,13 @@
 import { useSelector, useDispatch } from "react-redux";
 import { format, parseISO } from "date-fns";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { updateInvoice, deleteInvoice } from "../store/mainSlice";
 import InvoiceDetailModal from "../components/InvoiceDetailModal";
 import { normalizeArabicText } from "../utils/arabicNormalization";
 
 const Invoices = () => {
+  const { t } = useTranslation();
   const dispatch = useDispatch();
   const { invoiceHistory } = useSelector((state) => state.main.invoice);
   const customers = useSelector((state) => state.customers.customers);
@@ -16,7 +18,7 @@ const Invoices = () => {
     try {
       return format(parseISO(dateString), "PPP");
     } catch (error) {
-      return "Invalid date";
+      return t("invalidDate", "Invalid date");
     }
   };
 
@@ -29,7 +31,7 @@ const Invoices = () => {
   };
 
   const handleDelete = (id) => {
-    if (window.confirm("Are you sure you want to delete this invoice?")) {
+    if (window.confirm(t("confirmDelete", "Are you sure you want to delete this invoice?"))) {
       dispatch(deleteInvoice(id));
       setSelectedInvoice(null);
     }
@@ -61,8 +63,8 @@ const Invoices = () => {
   const getCustomerById = (customerId) => {
     return (
       customers.find((customer) => customer.id === customerId) || {
-        name: "N/A",
-        email: "N/A",
+        name: t("notAvailable", "N/A"),
+        email: t("notAvailable", "N/A"),
       }
     );
   };
@@ -72,12 +74,12 @@ const Invoices = () => {
       <div className="max-w-7xl mx-auto">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6 md:mb-8">
           <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-800 tracking-tight">
-            Invoice History
+            {t("invoiceHistory")}
           </h1>
           <div className="w-full md:w-96">
             <input
               type="text"
-              placeholder="Search invoices..."
+              placeholder={t("searchInvoices", "Search invoices...")}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full px-3 sm:px-4 py-2 text-sm sm:text-base rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -109,7 +111,7 @@ const Invoices = () => {
                   <>
                     <div className="space-y-1 sm:space-y-2">
                       <h3 className="text-xs sm:text-sm font-medium text-gray-500">
-                        From
+                        {t("from")}
                       </h3>
                       <p className="text-sm sm:text-base text-gray-800">
                         {invoice.sender.name}
@@ -120,7 +122,7 @@ const Invoices = () => {
                     </div>
                     <div className="space-y-1 sm:space-y-2">
                       <h3 className="text-xs sm:text-sm font-medium text-gray-500">
-                        To
+                        {t("to")}
                       </h3>
                       <p className="text-sm sm:text-base text-gray-800">
                         {getCustomerById(invoice.customerId).name}
@@ -137,10 +139,10 @@ const Invoices = () => {
                   }`}
                 >
                   <h3 className="text-xs sm:text-sm font-medium text-gray-500">
-                    Amount
+                    {t("total")}
                   </h3>
                   <p className="text-xl sm:text-2xl font-semibold text-gray-800">
-                    ${invoice.total.toFixed(2)}
+                    {t("currency")}{invoice.total.toFixed(2)}
                   </p>
                 </div>
               </div>
@@ -151,7 +153,7 @@ const Invoices = () => {
         {filteredInvoices.length === 0 && (
           <div className="text-center py-8 sm:py-12">
             <p className="text-gray-500 text-base sm:text-lg">
-              {searchQuery ? "No matching invoices found" : "No invoices found"}
+              {searchQuery ? t("noMatchingInvoices", "No matching invoices found") : t("noInvoices", "No invoices found")}
             </p>
           </div>
         )}

@@ -1,34 +1,36 @@
 import { useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { setInvoiceType } from "../store/mainSlice";
+import { useTranslation } from "react-i18next";
 
 function InvoiceTypes() {
+  const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const companyData = useSelector((state) => state.company);
+  const isRTL = i18n.dir() === 'rtl';
+
   const invoiceTypes = [
     {
-      name: "Complete Invoice",
-      description:
-        "Standard invoice with all details including sender and recipient information. Best for formal business transactions.",
+      name: t('completeInvoice'),
+      description: t('completeInvoiceDesc'),
       type: "complete",
       features: [
-        "Sender & recipient details",
-        "Item breakdown",
-        "Tax calculations",
-        "Full business information",
+        t('senderRecipientDetails'),
+        t('itemBreakdown'),
+        t('taxCalculations'),
+        t('fullBusinessInfo'),
       ],
     },
     {
-      name: "Quick Invoice",
-      description:
-        "Simplified invoice without sender and recipient details. Perfect for quick transactions and informal receipts.",
+      name: t('quickInvoice'),
+      description: t('quickInvoiceDesc'),
       type: "quick",
       features: [
-        "Item breakdown only",
-        "Tax calculations",
-        "Faster creation",
-        "Simplified format",
+        t('itemBreakdownOnly'),
+        t('taxCalculations'),
+        t('fasterCreation'),
+        t('simplifiedFormat'),
       ],
     },
   ];
@@ -48,14 +50,14 @@ function InvoiceTypes() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 py-8 px-3 sm:px-4 md:px-6 lg:px-8">
-      <div className="max-w-4xl mx-auto ">
-        <div className="text-center mb-8 sm:mb-12 md:mb-16 ">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 py-8 px-3 sm:px-4 md:px-6 lg:px-8" dir={isRTL ? 'rtl' : 'ltr'}>
+      <div className="max-w-4xl mx-auto">
+        <div className="text-center mb-8 sm:mb-12 md:mb-16">
           <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold bg-gradient-to-r from-primary-600 via-purple-500 to-pink-500 bg-clip-text text-transparent pb-2 inline-block">
-            Select Invoice Type
+            {t('selectInvoiceType')}
           </h2>
           <p className="mt-3 sm:mt-4 text-base sm:text-lg md:text-xl text-gray-600">
-            Choose the invoice type that matches your business needs
+            {t('chooseInvoiceType')}
           </p>
         </div>
 
@@ -66,7 +68,7 @@ function InvoiceTypes() {
               className="group relative bg-white rounded-xl sm:rounded-2xl shadow-lg sm:shadow-xl overflow-hidden cursor-pointer transform transition-all duration-500 hover:scale-[1.02] hover:shadow-2xl h-full"
               onClick={() => handleTypeSelection(type.type)}
             >
-              <div className="absolute inset-0 bg-gradient-to-r from-primary-500/10 to-primary-700/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+              <div className={`absolute inset-0 bg-gradient-to-r ${isRTL ? 'from-primary-700/10 to-primary-500/10' : 'from-primary-500/10 to-primary-700/10'} opacity-0 group-hover:opacity-100 transition-opacity duration-500`} />
               <div className="relative p-4 sm:p-6 md:p-8 flex flex-col h-full">
                 <h3 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2 sm:mb-3 group-hover:text-primary-600 transition-colors duration-300">
                   {type.name}
@@ -75,12 +77,13 @@ function InvoiceTypes() {
                   {type.description}
                 </p>
                 <div className="space-y-1.5 sm:space-y-2">
+                  <div className="text-sm font-medium text-gray-700 mb-2">{t('features')}:</div>
                   {type.features.map((feature, index) => (
                     <div
                       key={index}
                       className="flex items-center text-gray-700 text-xs sm:text-sm"
                     >
-                      <span className="w-1 h-1 sm:w-1.5 sm:h-1.5 bg-primary-500 rounded-full mr-2" />
+                      <span className={`w-1 h-1 sm:w-1.5 sm:h-1.5 bg-primary-500 rounded-full ${isRTL ? 'ml-3' : 'mr-2'}`} />
                       {feature}
                     </div>
                   ))}
@@ -88,12 +91,12 @@ function InvoiceTypes() {
                 <div className="mt-4 sm:mt-6">
                   <button
                     className="w-full bg-gray-900 text-white py-2.5 sm:py-3 md:py-3.5 px-4 
-                                 text-sm sm:text-base font-semibold
-                                 rounded-lg sm:rounded-xl
-                                 hover:bg-primary-600 transform transition-all duration-300 
-                                 hover:scale-[1.02]"
+                             text-sm sm:text-base font-semibold
+                             rounded-lg sm:rounded-xl
+                             hover:bg-primary-600 transform transition-all duration-300 
+                             hover:scale-[1.02]"
                   >
-                    Create {type.name}
+                    {t('createInvoice')} {type.name}
                   </button>
                 </div>
               </div>

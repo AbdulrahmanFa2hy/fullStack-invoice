@@ -1,13 +1,14 @@
 import { useState, useEffect } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import {
-  addCustomer,
   updateCustomer,
   deleteCustomer,
 } from "../store/customersSlice";
 import { normalizeArabicText } from "../utils/arabicNormalization";
+import { useTranslation } from "react-i18next";
 
 const CustomerModal = ({ customer, onClose, onEdit, onDelete }) => {
+  const { t } = useTranslation();
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({});
 
@@ -22,7 +23,6 @@ const CustomerModal = ({ customer, onClose, onEdit, onDelete }) => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    // Make sure to pass the complete form data including the ID
     onEdit({ ...formData, id: customer.id });
     setIsEditing(false);
   };
@@ -31,13 +31,13 @@ const CustomerModal = ({ customer, onClose, onEdit, onDelete }) => {
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
       <div className="bg-white rounded-xl shadow-lg p-6 w-full max-w-md">
         <h3 className="text-xl font-semibold mb-4">
-          {isEditing ? "Edit Customer" : "Customer Details"}
+          {isEditing ? t('editCustomer') : t('customerDetails')}
         </h3>
 
         {isEditing ? (
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="text-gray-600 text-sm">Name</label>
+              <label className="text-gray-600 text-sm">{t('name')}</label>
               <input
                 type="text"
                 value={formData.name}
@@ -49,7 +49,7 @@ const CustomerModal = ({ customer, onClose, onEdit, onDelete }) => {
               />
             </div>
             <div>
-              <label className="text-gray-600 text-sm">Email</label>
+              <label className="text-gray-600 text-sm">{t('email')}</label>
               <input
                 type="email"
                 value={formData.email}
@@ -61,19 +61,20 @@ const CustomerModal = ({ customer, onClose, onEdit, onDelete }) => {
               />
             </div>
             <div>
-              <label className="text-gray-600 text-sm">Phone</label>
+              <label className="text-gray-600 text-sm">{t('phone')}</label>
               <input
                 type="tel"
                 value={formData.phone}
                 onChange={(e) =>
                   setFormData({ ...formData, phone: e.target.value })
                 }
-                className="w-full px-4 py-2 rounded-lg border border-gray-200 bg-gray-50 focus:bg-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none"
+                dir="ltr"
+                className="w-full px-4 py-2 rounded-lg border border-gray-200 bg-gray-50 focus:bg-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none text-right"
                 required
               />
             </div>
             <div>
-              <label className="text-gray-600 text-sm">Address</label>
+              <label className="text-gray-600 text-sm">{t('address')}</label>
               <input
                 type="text"
                 value={formData.address}
@@ -89,14 +90,14 @@ const CustomerModal = ({ customer, onClose, onEdit, onDelete }) => {
                 type="submit"
                 className="bg-indigo-500 text-white px-4 py-2 rounded-lg hover:bg-indigo-600"
               >
-                Save Changes
+                {t('save')}
               </button>
               <button
                 type="button"
                 onClick={() => setIsEditing(false)}
                 className="bg-gray-100 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-200"
               >
-                Cancel
+                {t('cancel')}
               </button>
             </div>
           </form>
@@ -104,19 +105,19 @@ const CustomerModal = ({ customer, onClose, onEdit, onDelete }) => {
           <>
             <div className="space-y-3">
               <div>
-                <label className="text-gray-600 text-sm">Name</label>
+                <label className="text-gray-600 text-sm">{t('name')}</label>
                 <p className="font-medium">{customer.name}</p>
               </div>
               <div>
-                <label className="text-gray-600 text-sm">Email</label>
+                <label className="text-gray-600 text-sm">{t('email')}</label>
                 <p className="font-medium">{customer.email}</p>
               </div>
               <div>
-                <label className="text-gray-600 text-sm">Phone</label>
-                <p className="font-medium">{customer.phone}</p>
+                <label className="text-gray-600 text-sm">{t('phone')}</label>
+                <p className="font-medium text-right" dir="ltr">{customer.phone}</p>
               </div>
               <div>
-                <label className="text-gray-600 text-sm">Address</label>
+                <label className="text-gray-600 text-sm">{t('address')}</label>
                 <p className="font-medium">{customer.address}</p>
               </div>
             </div>
@@ -125,19 +126,19 @@ const CustomerModal = ({ customer, onClose, onEdit, onDelete }) => {
                 onClick={() => setIsEditing(true)}
                 className="bg-amber-100 text-amber-700 px-4 py-2 rounded-lg hover:bg-amber-200"
               >
-                Edit
+                {t('edit')}
               </button>
               <button
                 onClick={() => onDelete(customer.id)}
                 className="bg-red-100 text-red-700 px-4 py-2 rounded-lg hover:bg-red-200"
               >
-                Delete
+                {t('delete')}
               </button>
               <button
                 onClick={onClose}
                 className="bg-gray-100 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-200"
               >
-                Close
+                {t('close')}
               </button>
             </div>
           </>
@@ -148,6 +149,7 @@ const CustomerModal = ({ customer, onClose, onEdit, onDelete }) => {
 };
 
 const Customers = () => {
+  const { t } = useTranslation();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCustomer, setSelectedCustomer] = useState(null);
 
@@ -166,7 +168,6 @@ const Customers = () => {
   };
 
   const handleEdit = (updatedCustomer) => {
-    // Now updatedCustomer will have the ID
     dispatch(updateCustomer(updatedCustomer));
     setSelectedCustomer(null);
   };
@@ -174,7 +175,7 @@ const Customers = () => {
   return (
     <div className="p-4 sm:p-8 max-w-7xl mx-auto bg-gray-50 min-h-screen text-sm sm:text-base">
       <h2 className="text-xl sm:text-2xl lg:text-3xl font-semibold mb-4 sm:mb-8 text-gray-700 tracking-tight">
-        Customers
+        {t('customers')}
       </h2>
 
       {/* Search box */}
@@ -182,7 +183,7 @@ const Customers = () => {
         <div className="relative">
           <input
             type="text"
-            placeholder="Search customers..."
+            placeholder={t('searchCustomers')}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full px-4 py-2.5 sm:py-3 pl-11 rounded-lg border border-gray-200 bg-gray-50 focus:bg-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none transition-all duration-200 text-sm sm:text-base"
@@ -209,17 +210,17 @@ const Customers = () => {
           <table className="min-w-full table-auto">
             <thead>
               <tr className="bg-gray-50 border-b border-gray-100">
-                <th className="px-4 sm:px-6 py-3 sm:py-4 text-left text-xs sm:text-sm font-medium text-gray-600">
-                  Name
+                <th className="px-4 sm:px-6 py-3 sm:py-4 text-start text-xs sm:text-sm font-medium text-gray-600">
+                  {t('name')}
                 </th>
-                <th className="hidden sm:table-cell px-6 py-4 text-left text-xs sm:text-sm font-medium text-gray-600">
-                  Email
+                <th className="hidden sm:table-cell px-6 py-4 text-start text-xs sm:text-sm font-medium text-gray-600">
+                  {t('email')}
                 </th>
-                <th className="hidden sm:table-cell px-6 py-4 text-left text-xs sm:text-sm font-medium text-gray-600">
-                  Phone
+                <th className="hidden sm:table-cell px-6 py-4 text-start text-xs sm:text-sm font-medium text-gray-600">
+                  {t('phone')}
                 </th>
-                <th className="hidden sm:table-cell px-6 py-4 text-left text-xs sm:text-sm font-medium text-gray-600">
-                  Address
+                <th className="hidden sm:table-cell px-6 py-4 text-start text-xs sm:text-sm font-medium text-gray-600">
+                  {t('address')}
                 </th>
               </tr>
             </thead>
@@ -230,11 +231,11 @@ const Customers = () => {
                   onClick={() => setSelectedCustomer(customer)}
                   className="hover:bg-gray-50 transition-colors duration-200 cursor-pointer"
                 >
-                  <td className="px-4 sm:px-6 py-3 sm:py-4 text-gray-700">
+                  <td className="px-4 sm:px-6 py-3 sm:py-4 text-gray-700 text-start">
                     <div className="sm:hidden font-medium mb-1 text-sm">
                       {customer.name}
                     </div>
-                    <div className="sm:hidden text-xs text-gray-500">
+                    <div className="sm:hidden text-xs text-gray-500 text-start">
                       {customer.email}
                       <br />
                       {customer.phone}
@@ -243,13 +244,13 @@ const Customers = () => {
                     </div>
                     <div className="hidden sm:block">{customer.name}</div>
                   </td>
-                  <td className="hidden sm:table-cell px-6 py-4 text-gray-700">
+                  <td className="hidden sm:table-cell px-6 py-4 text-gray-700 text-start">
                     {customer.email}
                   </td>
-                  <td className="hidden sm:table-cell px-6 py-4 text-gray-700">
+                  <td className="hidden sm:table-cell px-6 py-4 text-gray-700 text-start" dir="ltr">
                     {customer.phone}
                   </td>
-                  <td className="hidden sm:table-cell px-6 py-4 text-gray-700">
+                  <td className="hidden sm:table-cell px-6 py-4 text-gray-700 text-start">
                     {customer.address}
                   </td>
                 </tr>
@@ -260,7 +261,7 @@ const Customers = () => {
                     colSpan="4"
                     className="px-4 sm:px-6 py-6 sm:py-8 text-center text-sm sm:text-base text-gray-500 bg-gray-50"
                   >
-                    No customers found
+                    {t('noCustomersFound')}
                   </td>
                 </tr>
               )}

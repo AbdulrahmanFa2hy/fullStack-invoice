@@ -25,3 +25,78 @@
     @apply w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent;
   }
 }
+
+:root {
+  --direction: 1;
+}
+
+html.rtl {
+  --direction: -1;
+}
+
+/* Add smooth transitions for direction changes */
+* {
+  transition: transform 0.3s ease;
+}
+
+/* Handle direction-specific transforms and transitions */
+html {
+  transition: direction 0.3s ease;
+}
+
+/* Ensure proper text alignment in RTL mode */
+html.rtl {
+  direction: rtl;
+  text-align: right;
+}
+
+/* Ensure proper text alignment in LTR mode */
+html.ltr {
+  direction: ltr;
+  text-align: left;
+}
+
+/* Handle input fields in RTL mode */
+html.rtl input,
+html.rtl textarea {
+  text-align: right;
+}
+
+/* Except for number and tel inputs */
+html.rtl input[type="number"],
+html.rtl input[type="tel"] {
+  direction: ltr;
+  text-align: right;
+}
+
+/* Handle table alignment in RTL mode */
+html.rtl th,
+html.rtl td {
+  text-align: right;
+}
+
+/* Handle flexbox order in RTL mode */
+html.rtl .flex-row {
+  flex-direction: row-reverse;
+}
+
+/* Handle margins and paddings in RTL mode */
+html.rtl .ml-2 {
+  margin-left: 0;
+  margin-right: 0.5rem;
+}
+
+html.rtl .mr-2 {
+  margin-right: 0;
+  margin-left: 0.5rem;
+}
+
+html.rtl .pl-2 {
+  padding-left: 0;
+  padding-right: 0.5rem;
+}
+
+html.rtl .pr-2 {
+  padding-right: 0;
+  padding-left: 0.5rem;
+}

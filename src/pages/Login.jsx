@@ -1,8 +1,10 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
+import { useTranslation } from "react-i18next";
 
 function Login({ onLogin }) {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const selectedInvoiceType = useSelector((state) => state.main.invoice.type);
   const [email, setEmail] = useState("");
@@ -27,10 +29,10 @@ function Login({ onLogin }) {
       <div className="max-w-md w-full space-y-8 bg-white p-8 rounded-xl shadow-lg">
         <div>
           <h2 className="mt-2 text-center text-3xl font-extrabold text-gray-900">
-            Welcome back
+            {t('welcomeBack')}
           </h2>
           <p className="mt-2 text-center text-sm text-gray-600">
-            Sign in to your account
+            {t('signInToAccount')}
           </p>
         </div>
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
@@ -40,7 +42,7 @@ function Login({ onLogin }) {
                 htmlFor="email-address"
                 className="text-sm font-medium text-gray-700"
               >
-                Email address
+                {t('emailAddress')}
               </label>
               <input
                 id="email-address"
@@ -59,7 +61,7 @@ function Login({ onLogin }) {
                 htmlFor="password"
                 className="text-sm font-medium text-gray-700"
               >
-                Password
+                {t('password')}
               </label>
               <input
                 id="password"
@@ -88,7 +90,7 @@ function Login({ onLogin }) {
                   htmlFor="remember-me"
                   className="ml-2 block text-sm text-gray-900"
                 >
-                  Remember me
+                  {t('rememberMe')}
                 </label>
               </div>
 
@@ -97,7 +99,7 @@ function Login({ onLogin }) {
                   to="/forgot-password"
                   className="font-medium text-primary-600 hover:text-primary-500"
                 >
-                  Forgot your password?
+                  {t('forgotPassword')}
                 </Link>
               </div>
             </div>
@@ -108,7 +110,7 @@ function Login({ onLogin }) {
               type="submit"
               className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors duration-200"
             >
-              Sign in
+              {t('signIn')}
             </button>
           </div>
 
@@ -117,7 +119,7 @@ function Login({ onLogin }) {
               to="/signup"
               className="font-medium text-primary-600 hover:text-primary-500 transition-colors duration-200"
             >
-              Don't have an account? Sign up
+              {t('dontHaveAccount')}
             </Link>
           </div>
         </form>
