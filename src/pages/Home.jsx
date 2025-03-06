@@ -9,10 +9,7 @@ import {
   FiEye,
 } from "react-icons/fi";
 import { format } from "date-fns";
-import { pdf } from "@react-pdf/renderer";
 import Swal from "sweetalert2";
-import InvoicePDF from "../components/InvoicePDF";
-import PDFPreview from "../components/PDFPreview";
 import { useInvoiceNumber } from "../hooks/useInvoiceNumber";
 import {
   addItem,
@@ -32,7 +29,11 @@ import { useTranslation } from "react-i18next";
 
 function Home() {
   const dispatch = useDispatch();
-  const { items, invoiceHistory } = useSelector((state) => state.main.invoice);
+  const {
+    items,
+    invoiceHistory,
+    type: invoiceType,
+  } = useSelector((state) => state.main.invoice);
   const company = useSelector((state) => state.company);
   const invoiceNumber = useInvoiceNumber();
   const { customers, selectedCustomerId } = useSelector(
@@ -93,28 +94,6 @@ function Home() {
   const taxAmount = (subtotalAfterDiscount * tax) / 100;
   const total = subtotalAfterDiscount + taxAmount;
 
-  const generatePDF = async () => {
-    // Create businessInfo object
-    const businessInfo = {
-      businessName: "INVOICE",
-    };
-
-    const pdfDoc = (
-      <InvoicePDF
-        sender={company}
-        customer={selectedCustomer} // Pass customer directly instead of using customerId
-        items={items}
-        invoiceNumber={invoiceNumber}
-        tax={tax}
-        discount={discount}
-        businessInfo={businessInfo} // Add businessInfo
-        privacy={privacy}
-        notes={notes}
-      />
-    );
-    return await pdf(pdfDoc).toBlob();
-  };
-
   const isExistingInvoice = () => {
     return invoiceHistory.some((inv) => inv.invoiceNumber === invoiceNumber);
   };
@@ -133,6 +112,7 @@ function Home() {
     privacy,
     notes,
     date: new Date().toISOString(),
+    type: invoiceType, // Include the invoice type when saving
   });
 
   const handleCustomerChange = (field, value) => {
@@ -187,27 +167,6 @@ function Home() {
       showConfirmButton: false,
       timer: 1500,
     });
-  };
-
-  const downloadPDF = async () => {
-    const blob = await generatePDF();
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = `invoice-${invoiceNumber}.pdf`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
-  };
-
-  const shareOnWhatsApp = async () => {
-    const message = t("shareMessage", {
-      number: invoiceNumber,
-      company: company.name,
-    });
-    const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
-    window.open(whatsappUrl, "_blank");
   };
 
   const handleSaveInvoice = () => {
@@ -294,123 +253,135 @@ function Home() {
             </div>
           </div>
 
-          <div className="mb-4 md:mb-8">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <div>
-                <h2 className="text-base sm:text-lg font-semibold mb-4 text-gray-700">
-                  {t("from")}:
-                </h2>
-                <div className="space-y-3">
-                  <input
-                    type="text"
-                    placeholder={t("name")}
-                    className={getInputClassName("input")}
-                    value={company.name}
-                    onChange={(e) =>
-                      dispatch(
-                        updateCompany({ field: "name", value: e.target.value })
-                      )
-                    }
-                  />
-                  <input
-                    type="tel"
-                    dir="auto"
-                    placeholder={t("phone")}
-                    className={getInputClassName("input", "tel")}
-                    value={company.phone}
-                    onChange={(e) =>
-                      dispatch(
-                        updateCompany({ field: "phone", value: e.target.value })
-                      )
-                    }
-                  />
-                  <input
-                    type="email"
-                    placeholder={t("email")}
-                    className={getInputClassName("input")}
-                    value={company.email}
-                    onChange={(e) =>
-                      dispatch(
-                        updateCompany({ field: "email", value: e.target.value })
-                      )
-                    }
-                  />
-                  <textarea
-                    placeholder={t("address")}
-                    className={getInputClassName("input h-24")}
-                    value={company.address}
-                    onChange={(e) =>
-                      dispatch(
-                        updateCompany({
-                          field: "address",
-                          value: e.target.value,
-                        })
-                      )
-                    }
-                  ></textarea>
-                </div>
-              </div>
-              <div>
-                <div className="flex justify-between items-start">
-                  <h2 className="text-base sm:text-lg font-semibold text-gray-700">
-                    {t("to")}:
+          {/* Conditionally render the 'to' and 'from' sections based on invoice type */}
+          {invoiceType !== "quick" && (
+            <div className="mb-4 md:mb-8">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div>
+                  <h2 className="text-base sm:text-lg font-semibold mb-4 text-gray-700">
+                    {t("from")}:
                   </h2>
-                  <select
-                    className={getInputClassName(
-                      "input w-48 sm:w-72 text-sm p-1 mb-4 inline-block"
-                    )}
-                    onChange={(e) => handleCustomerSelect(e.target.value)}
-                    value={selectedCustomerId || ""}
-                  >
-                    <option value="">{t("selectCustomer")}</option>
-                    {customers.map((customer) => (
-                      <option key={customer.id} value={customer.id}>
-                        {customer.name} ({customer.email})
-                      </option>
-                    ))}
-                  </select>
+                  <div className="space-y-3">
+                    <input
+                      type="text"
+                      placeholder={t("name")}
+                      className={getInputClassName("input")}
+                      value={company.name}
+                      onChange={(e) =>
+                        dispatch(
+                          updateCompany({
+                            field: "name",
+                            value: e.target.value,
+                          })
+                        )
+                      }
+                    />
+                    <input
+                      type="tel"
+                      dir="auto"
+                      placeholder={t("phone")}
+                      className={getInputClassName("input", "tel")}
+                      value={company.phone}
+                      onChange={(e) =>
+                        dispatch(
+                          updateCompany({
+                            field: "phone",
+                            value: e.target.value,
+                          })
+                        )
+                      }
+                    />
+                    <input
+                      type="email"
+                      placeholder={t("email")}
+                      className={getInputClassName("input")}
+                      value={company.email}
+                      onChange={(e) =>
+                        dispatch(
+                          updateCompany({
+                            field: "email",
+                            value: e.target.value,
+                          })
+                        )
+                      }
+                    />
+                    <textarea
+                      placeholder={t("address")}
+                      className={getInputClassName("input h-24")}
+                      value={company.address}
+                      onChange={(e) =>
+                        dispatch(
+                          updateCompany({
+                            field: "address",
+                            value: e.target.value,
+                          })
+                        )
+                      }
+                    ></textarea>
+                  </div>
                 </div>
-                <div className="space-y-3">
-                  <input
-                    type="text"
-                    placeholder={t("name")}
-                    className={getInputClassName("input")}
-                    value={selectedCustomer.name}
-                    onChange={(e) =>
-                      handleCustomerChange("name", e.target.value)
-                    }
-                  />
-                  <input
-                    type="tel"
-                    dir="auto"
-                    placeholder={t("phone")}
-                    className={getInputClassName("input", "tel")}
-                    value={selectedCustomer.phone}
-                    onChange={(e) =>
-                      handleCustomerChange("phone", e.target.value)
-                    }
-                  />
-                  <input
-                    type="email"
-                    placeholder={t("email")}
-                    className={getInputClassName("input")}
-                    value={selectedCustomer.email}
-                    onChange={(e) =>
-                      handleCustomerChange("email", e.target.value)
-                    }
-                  />
-                  <textarea
-                    placeholder={t("address")}
-                    className={getInputClassName("input h-24")}
-                    value={selectedCustomer.address}
-                    onChange={(e) =>
-                      handleCustomerChange("address", e.target.value)
-                    }
-                  ></textarea>
+                <div>
+                  <div className="flex justify-between items-start">
+                    <h2 className="text-base sm:text-lg font-semibold text-gray-700">
+                      {t("to")}:
+                    </h2>
+                    <select
+                      className={getInputClassName(
+                        "input w-48 sm:w-72 text-sm p-1 mb-4 inline-block"
+                      )}
+                      onChange={(e) => handleCustomerSelect(e.target.value)}
+                      value={selectedCustomerId || ""}
+                    >
+                      <option value="">{t("selectCustomer")}</option>
+                      {customers.map((customer) => (
+                        <option key={customer.id} value={customer.id}>
+                          {customer.name} ({customer.email})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="space-y-3">
+                    <input
+                      type="text"
+                      placeholder={t("name")}
+                      className={getInputClassName("input")}
+                      value={selectedCustomer.name}
+                      onChange={(e) =>
+                        handleCustomerChange("name", e.target.value)
+                      }
+                    />
+                    <input
+                      type="tel"
+                      dir="auto"
+                      placeholder={t("phone")}
+                      className={getInputClassName("input", "tel")}
+                      value={selectedCustomer.phone}
+                      onChange={(e) =>
+                        handleCustomerChange("phone", e.target.value)
+                      }
+                    />
+                    <input
+                      type="email"
+                      placeholder={t("email")}
+                      className={getInputClassName("input")}
+                      value={selectedCustomer.email}
+                      onChange={(e) =>
+                        handleCustomerChange("email", e.target.value)
+                      }
+                    />
+                    <textarea
+                      placeholder={t("address")}
+                      className={getInputClassName("input h-24")}
+                      value={selectedCustomer.address}
+                      onChange={(e) =>
+                        handleCustomerChange("address", e.target.value)
+                      }
+                    ></textarea>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
+          )}
 
           <div className="mb-4">
             <div className="hidden lg:grid  bg-gray-50 p-4 rounded-lg mb-4">
@@ -571,22 +542,13 @@ function Home() {
         <div className="bg-white p-2 md:p-6 rounded-xl drop-shadow-2xl md:drop-shadow-none md:shadow-lg sticky top-8">
           <div className="flex flex-col-reverse md:flex-col gap-4">
             <div className="flex flex-col-reverse md:flex-col gap-3">
-              <button
-                onClick={downloadPDF}
-                className="btn btn-accent flex items-center gap-2 w-full justify-center text-sm md:text-base"
-              >
+              <button className="btn btn-accent flex items-center gap-2 w-full justify-center text-sm md:text-base">
                 <FiDownload /> {t("downloadPDF")}
               </button>
-              <button
-                onClick={handlePreview}
-                className="btn btn-accent flex items-center gap-2 w-full justify-center text-sm md:text-base"
-              >
+              <button className="btn btn-accent flex items-center gap-2 w-full justify-center text-sm md:text-base">
                 <FiEye /> {t("previewPDF")}
               </button>
-              <button
-                onClick={shareOnWhatsApp}
-                className="btn btn-accent flex items-center gap-2 w-full justify-center text-sm md:text-base"
-              >
+              <button className="btn btn-accent flex items-center gap-2 w-full justify-center text-sm md:text-base">
                 <FiShare2 /> {t("shareWhatsApp")}
               </button>
               <button
@@ -732,18 +694,6 @@ function Home() {
               >
                 ×
               </button>
-            </div>
-            <div className="flex-1 overflow-auto">
-              <PDFPreview
-                sender={company}
-                customer={selectedCustomer}
-                items={items}
-                invoiceNumber={invoiceNumber}
-                tax={tax}
-                discount={discount}
-                privacy={privacy}
-                notes={notes}
-              />
             </div>
           </div>
         </div>

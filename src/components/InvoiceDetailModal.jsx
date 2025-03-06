@@ -1,7 +1,5 @@
 import { format, parseISO } from "date-fns";
 import { useState, useRef, useEffect } from "react"; // Add useRef and useEffect import
-import { pdf } from "@react-pdf/renderer";
-import InvoicePDF from "./InvoicePDF";
 import { motion } from "framer-motion";
 import { useSelector, useDispatch } from "react-redux"; // Add this import
 import { updateCustomer } from "../store/customersSlice"; // Add this import
@@ -31,9 +29,11 @@ const InvoiceDetailModal = ({ invoice, onClose, onUpdate, onDelete }) => {
     discount: invoice.discount || 0,
   });
 
-  // Add this selector to get customers
+  // Add these selectors to get customers and check invoice type
   const customers = useSelector((state) => state.customers.customers);
   const company = useSelector((state) => state.company);
+  // Get the invoice type from the invoice data or default to "complete"
+  const invoiceType = invoice?.type || "complete";
 
   // Find customer based on customerId
   const customer = customers.find((c) => c.id === invoice?.customerId) || {
@@ -172,53 +172,6 @@ const InvoiceDetailModal = ({ invoice, onClose, onUpdate, onDelete }) => {
     }));
   };
 
-  const handleDownload = async () => {
-    try {
-      const customerData =
-        customers.find((c) => c.id === currentInvoice.customerId) || {};
-      const businessInfo = {
-        businessName: "INVOICE", // You can customize this or get it from state/props
-      };
-
-      const blob = await pdf(
-        <InvoicePDF
-          sender={currentInvoice.sender}
-          customerId={currentInvoice.customerId}
-          customer={customerData}
-          items={currentInvoice.items}
-          invoiceNumber={currentInvoice.invoiceNumber}
-          tax={currentInvoice.tax}
-          discount={currentInvoice.discount}
-          businessInfo={businessInfo} // Pass businessInfo object
-          privacy={currentInvoice.privacy}
-          notes={currentInvoice.notes}
-        />
-      ).toBlob();
-
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = `invoice-${currentInvoice.invoiceNumber}.pdf`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url);
-    } catch (error) {
-      console.error("Error generating PDF:", error);
-      alert("Error generating PDF. Please try again.");
-    }
-  };
-
-  const handleWhatsAppShare = () => {
-    const customer =
-      customers.find((c) => c.id === currentInvoice.customerId) || {};
-    const message = encodeURIComponent(`Invoice #${currentInvoice.invoiceNumber}
-From: ${currentInvoice.sender.name}
-To: ${customer.name}
-Total Amount: $${currentInvoice.total.toFixed(2)}
-    `);
-  };
-
   // Add ref for the modal content
   const modalContentRef = useRef();
 
@@ -230,18 +183,6 @@ Total Amount: $${currentInvoice.total.toFixed(2)}
     ) {
       onClose();
     }
-  };
-
-  const handlePrint = async () => {
-    const pdfDoc = (
-      <InvoicePDF
-        sender={company}
-        customer={getCustomerById(invoice.customerId)}
-        items={invoice.items}
-        // ...other props...
-      />
-    );
-    // ...rest of the existing code...
   };
 
   return (
@@ -271,117 +212,120 @@ Total Amount: $${currentInvoice.total.toFixed(2)}
           {/* Adjust bottom margin for floating buttons */}
           {isEditing ? (
             <div className="space-y-4 sm:space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
-                {/* From Section */}
-                <div className="space-y-4">
-                  <h3 className="text-base sm:text-lg font-semibold">From</h3>
+              {/* Conditionally render the 'from' and 'to' sections based on invoice type */}
+              {invoiceType !== "quick" && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
+                  {/* From Section */}
                   <div className="space-y-4">
-                    {["name", "email", "phone", "address"].map((field) => (
-                      <div key={field}>
-                        <label className="block text-sm text-gray-600 capitalize mb-1">
-                          {field}
-                        </label>
-                        {field === "address" ? (
-                          <textarea
-                            value={editForm.sender[field] || ""}
-                            onChange={(e) =>
-                              setEditForm({
-                                ...editForm,
-                                sender: {
-                                  ...editForm.sender,
-                                  [field]: e.target.value,
-                                },
-                              })
-                            }
-                            className="w-full p-2 border rounded min-h-[80px]"
-                          />
-                        ) : (
-                          <input
-                            type={field === "email" ? "email" : "text"}
-                            value={editForm.sender[field] || ""}
-                            onChange={(e) =>
-                              setEditForm({
-                                ...editForm,
-                                sender: {
-                                  ...editForm.sender,
-                                  [field]: e.target.value,
-                                },
-                              })
-                            }
-                            className="w-full p-2 border rounded h-10"
-                          />
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* To Section */}
-                <div className="">
-                  <div className="flex justify-between items-center mb-1">
-                    <h3 className="text-base sm:text-lg font-semibold">To</h3>
-                    <select
-                      className="w-4/5 p-2 border rounded h-10"
-                      value={editForm.customerId || ""}
-                      onChange={(e) =>
-                        setEditForm({
-                          ...editForm,
-                          customerId: e.target.value,
-                        })
-                      }
-                    >
-                      <option value="">Select Customer</option>
-                      {customers.map((c) => (
-                        <option key={c.id} value={c.id}>
-                          {c.name} ({c.email})
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  {editForm.customerId && (
+                    <h3 className="text-base sm:text-lg font-semibold">From</h3>
                     <div className="space-y-4">
-                      {[
-                        { key: "name", type: "text" },
-                        { key: "email", type: "email" },
-                        { key: "phone", type: "tel" },
-                        { key: "address", type: "textarea" },
-                      ].map(({ key, type }) => (
-                        <div key={key}>
+                      {["name", "email", "phone", "address"].map((field) => (
+                        <div key={field}>
                           <label className="block text-sm text-gray-600 capitalize mb-1">
-                            {key}
+                            {field}
                           </label>
-                          {type === "textarea" ? (
+                          {field === "address" ? (
                             <textarea
-                              className="w-full p-2 border rounded min-h-[80px]"
-                              value={
-                                customers.find(
-                                  (c) => c.id === editForm.customerId
-                                )?.[key] || ""
-                              }
+                              value={editForm.sender[field] || ""}
                               onChange={(e) =>
-                                handleCustomerUpdate(key, e.target.value)
+                                setEditForm({
+                                  ...editForm,
+                                  sender: {
+                                    ...editForm.sender,
+                                    [field]: e.target.value,
+                                  },
+                                })
                               }
+                              className="w-full p-2 border rounded min-h-[80px]"
                             />
                           ) : (
                             <input
-                              type={type}
-                              className="w-full p-2 border rounded h-10"
-                              value={
-                                customers.find(
-                                  (c) => c.id === editForm.customerId
-                                )?.[key] || ""
-                              }
+                              type={field === "email" ? "email" : "text"}
+                              value={editForm.sender[field] || ""}
                               onChange={(e) =>
-                                handleCustomerUpdate(key, e.target.value)
+                                setEditForm({
+                                  ...editForm,
+                                  sender: {
+                                    ...editForm.sender,
+                                    [field]: e.target.value,
+                                  },
+                                })
                               }
+                              className="w-full p-2 border rounded h-10"
                             />
                           )}
                         </div>
                       ))}
                     </div>
-                  )}
+                  </div>
+
+                  {/* To Section */}
+                  <div className="">
+                    <div className="flex justify-between items-center mb-1">
+                      <h3 className="text-base sm:text-lg font-semibold">To</h3>
+                      <select
+                        className="w-4/5 p-2 border rounded h-10"
+                        value={editForm.customerId || ""}
+                        onChange={(e) =>
+                          setEditForm({
+                            ...editForm,
+                            customerId: e.target.value,
+                          })
+                        }
+                      >
+                        <option value="">Select Customer</option>
+                        {customers.map((c) => (
+                          <option key={c.id} value={c.id}>
+                            {c.name} ({c.email})
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    {editForm.customerId && (
+                      <div className="space-y-4">
+                        {[
+                          { key: "name", type: "text" },
+                          { key: "email", type: "email" },
+                          { key: "phone", type: "tel" },
+                          { key: "address", type: "textarea" },
+                        ].map(({ key, type }) => (
+                          <div key={key}>
+                            <label className="block text-sm text-gray-600 capitalize mb-1">
+                              {key}
+                            </label>
+                            {type === "textarea" ? (
+                              <textarea
+                                className="w-full p-2 border rounded min-h-[80px]"
+                                value={
+                                  customers.find(
+                                    (c) => c.id === editForm.customerId
+                                  )?.[key] || ""
+                                }
+                                onChange={(e) =>
+                                  handleCustomerUpdate(key, e.target.value)
+                                }
+                              />
+                            ) : (
+                              <input
+                                type={type}
+                                className="w-full p-2 border rounded h-10"
+                                value={
+                                  customers.find(
+                                    (c) => c.id === editForm.customerId
+                                  )?.[key] || ""
+                                }
+                                onChange={(e) =>
+                                  handleCustomerUpdate(key, e.target.value)
+                                }
+                              />
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 </div>
-              </div>
+              )}
 
               <div className="overflow-x-auto -mx-3 sm:mx-0">
                 <div className="inline-block min-w-full align-middle">
@@ -613,22 +557,25 @@ Total Amount: $${currentInvoice.total.toFixed(2)}
             </div>
           ) : (
             <div className="space-y-4 sm:space-y-6">
-              <div className="grid md:grid-cols-2 gap-6">
-                <div className="space-y-2">
-                  <h3 className="font-semibold">From</h3>
-                  <p className="text-lg">{currentInvoice.sender.name}</p>
-                  <p>{currentInvoice.sender.email}</p>
-                  <p>{currentInvoice.sender.phone}</p>
-                  <p>{currentInvoice.sender.address}</p>
+              {/* Conditionally render the 'from' and 'to' sections based on invoice type */}
+              {invoiceType !== "quick" && (
+                <div className="grid md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <h3 className="font-semibold">From</h3>
+                    <p className="text-lg">{currentInvoice.sender.name}</p>
+                    <p>{currentInvoice.sender.email}</p>
+                    <p>{currentInvoice.sender.phone}</p>
+                    <p>{currentInvoice.sender.address}</p>
+                  </div>
+                  <div className="space-y-2">
+                    <h3 className="font-semibold">To</h3>
+                    <p className="text-lg">{customer.name}</p>
+                    <p>{customer.email}</p>
+                    <p>{customer.phone}</p>
+                    <p>{customer.address}</p>
+                  </div>
                 </div>
-                <div className="space-y-2">
-                  <h3 className="font-semibold">To</h3>
-                  <p className="text-lg">{customer.name}</p>
-                  <p>{customer.email}</p>
-                  <p>{customer.phone}</p>
-                  <p>{customer.address}</p>
-                </div>
-              </div>
+              )}
 
               <div className="flex justify-between text-xs md text-gray-500">
                 <div className="flex flex-col">
@@ -749,7 +696,6 @@ Total Amount: $${currentInvoice.total.toFixed(2)}
             <motion.button
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
-              onClick={handleDownload}
               className="w-full sm:w-auto flex-1 sm:flex-none px-3 sm:px-4 py-2 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-lg shadow-lg hover:shadow-xl transition-all duration-200 flex items-center justify-center gap-2 text-sm sm:text-base"
             >
               <svg

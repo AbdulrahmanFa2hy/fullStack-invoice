@@ -8,39 +8,27 @@ function InvoiceTypes() {
   const companyData = useSelector((state) => state.company);
   const invoiceTypes = [
     {
-      name: "Commercial Invoice",
+      name: "Complete Invoice",
       description:
-        "Most common type for business transactions. Used for selling goods and services between businesses.",
-      type: "commercial",
+        "Standard invoice with all details including sender and recipient information. Best for formal business transactions.",
+      type: "complete",
       features: [
-        "Payment tracking",
-        "Tax calculations",
-        "Business details",
+        "Sender & recipient details",
         "Item breakdown",
+        "Tax calculations",
+        "Full business information",
       ],
     },
     {
-      name: "Proforma Invoice",
+      name: "Quick Invoice",
       description:
-        "Preliminary bill of sale sent to buyers before the delivery of goods.",
-      type: "proforma",
+        "Simplified invoice without sender and recipient details. Perfect for quick transactions and informal receipts.",
+      type: "quick",
       features: [
-        "Shipping details",
-        "Estimated costs",
-        "Product details",
-        "Terms & conditions",
-      ],
-    },
-    {
-      name: "Tax Invoice",
-      description:
-        "Specialized invoice that includes tax calculations and GST/VAT details.",
-      type: "tax",
-      features: [
-        "Tax breakdown",
-        "GST/VAT details",
-        "Legal compliance",
-        "Input credits",
+        "Item breakdown only",
+        "Tax calculations",
+        "Faster creation",
+        "Simplified format",
       ],
     },
   ];
@@ -61,8 +49,8 @@ function InvoiceTypes() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 py-8 px-3 sm:px-4 md:px-6 lg:px-8">
-      <div className="max-w-7xl mx-auto">
-        <div className="text-center mb-8 sm:mb-12 md:mb-16">
+      <div className="max-w-4xl mx-auto ">
+        <div className="text-center mb-8 sm:mb-12 md:mb-16 ">
           <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold bg-gradient-to-r from-primary-600 via-purple-500 to-pink-500 bg-clip-text text-transparent pb-2 inline-block">
             Select Invoice Type
           </h2>
@@ -71,7 +59,7 @@ function InvoiceTypes() {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
           {invoiceTypes.map((type) => (
             <div
               key={type.type}

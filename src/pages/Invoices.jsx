@@ -105,29 +105,37 @@ const Invoices = () => {
                 </div>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6">
-                <div className="space-y-1 sm:space-y-2">
-                  <h3 className="text-xs sm:text-sm font-medium text-gray-500">
-                    From
-                  </h3>
-                  <p className="text-sm sm:text-base text-gray-800">
-                    {invoice.sender.name}
-                  </p>
-                  <p className="text-xs sm:text-sm text-gray-600">
-                    {invoice.sender.email || ""}
-                  </p>
-                </div>
-                <div className="space-y-1 sm:space-y-2">
-                  <h3 className="text-xs sm:text-sm font-medium text-gray-500">
-                    To
-                  </h3>
-                  <p className="text-sm sm:text-base text-gray-800">
-                    {getCustomerById(invoice.customerId).name}
-                  </p>
-                  <p className="text-xs sm:text-sm text-gray-600">
-                    {getCustomerById(invoice.customerId).email}
-                  </p>
-                </div>
-                <div className="space-y-1 sm:space-y-2">
+                {invoice.type !== "quick" && (
+                  <>
+                    <div className="space-y-1 sm:space-y-2">
+                      <h3 className="text-xs sm:text-sm font-medium text-gray-500">
+                        From
+                      </h3>
+                      <p className="text-sm sm:text-base text-gray-800">
+                        {invoice.sender.name}
+                      </p>
+                      <p className="text-xs sm:text-sm text-gray-600">
+                        {invoice.sender.email || ""}
+                      </p>
+                    </div>
+                    <div className="space-y-1 sm:space-y-2">
+                      <h3 className="text-xs sm:text-sm font-medium text-gray-500">
+                        To
+                      </h3>
+                      <p className="text-sm sm:text-base text-gray-800">
+                        {getCustomerById(invoice.customerId).name}
+                      </p>
+                      <p className="text-xs sm:text-sm text-gray-600">
+                        {getCustomerById(invoice.customerId).email}
+                      </p>
+                    </div>
+                  </>
+                )}
+                <div
+                  className={`space-y-1 sm:space-y-2 ${
+                    invoice.type === "quick" ? "col-span-full" : ""
+                  }`}
+                >
                   <h3 className="text-xs sm:text-sm font-medium text-gray-500">
                     Amount
                   </h3>

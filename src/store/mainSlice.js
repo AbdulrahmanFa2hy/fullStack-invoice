@@ -15,7 +15,7 @@ const initialState = {
     invoiceHistory: [],
     lastInvoiceDate: new Date().toISOString().slice(0, 10).replace(/-/g, ""),
     dailyCounter: 1,
-    type: "", // default type
+    type: "complete", // default type
   },
 };
 
