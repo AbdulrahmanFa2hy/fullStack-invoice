@@ -16,6 +16,10 @@ const initialState = {
     lastInvoiceDate: new Date().toISOString().slice(0, 10).replace(/-/g, ""),
     dailyCounter: 1,
     type: "complete", // default type
+    tax: 0,
+    discount: 0,
+    privacy: "",
+    notes: "",
   },
 };
 
@@ -129,9 +133,25 @@ const invoiceSlice = createSlice({
           price: 0,
         },
       ];
+      state.invoice.tax = 0;
+      state.invoice.discount = 0;
+      state.invoice.privacy = "";
+      state.invoice.notes = "";
     },
     setInvoiceType: (state, action) => {
       state.invoice.type = action.payload;
+    },
+    updateTax: (state, action) => {
+      state.invoice.tax = action.payload;
+    },
+    updateDiscount: (state, action) => {
+      state.invoice.discount = action.payload;
+    },
+    updatePrivacy: (state, action) => {
+      state.invoice.privacy = action.payload;
+    },
+    updateNotes: (state, action) => {
+      state.invoice.notes = action.payload;
     },
   },
 });
@@ -147,6 +167,10 @@ export const {
   generateInvoiceNumber,
   resetInvoice,
   setInvoiceType,
+  updateTax,
+  updateDiscount,
+  updatePrivacy,
+  updateNotes,
 } = invoiceSlice.actions;
 
 export default invoiceSlice.reducer;

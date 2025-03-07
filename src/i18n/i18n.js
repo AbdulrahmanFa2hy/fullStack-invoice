@@ -128,6 +128,9 @@ i18n
           required: "هذا الحقل مطلوب",
           invalidNumber: "يرجى إدخال رقم صحيح",
           invalidEmail: "يرجى إدخال بريد إلكتروني صحيح",
+          pleaseFillCompanyDetails: "يرجى ملء جميع تفاصيل الشركة",
+          pleaseFillCustomerDetails: "يرجى ملء جميع تفاصيل العميل",
+          pleaseFillRequiredItemFields: "أكمل بيانات المنتج",
           // Company Form translations
           companyInformation: "معلومات الشركة",
           setupCompanyProfile: "دعنا نقوم بإعداد ملف شركتك",
@@ -279,6 +282,9 @@ i18n
           required: "This field is required",
           invalidNumber: "Please enter a valid number",
           invalidEmail: "Please enter a valid email",
+          pleaseFillCompanyDetails: "Please fill in all company details",
+          pleaseFillCustomerDetails: "Please fill in all customer details",
+          pleaseFillRequiredItemFields: "Complete all product fields",
           // Company Form translations
           companyInformation: "Company Information",
           setupCompanyProfile: "Let's set up your company profile",

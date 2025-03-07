@@ -17,6 +17,10 @@ import {
   updateItem,
   saveToHistory,
   generateInvoiceNumber,
+  updateTax,
+  updateDiscount,
+  updatePrivacy,
+  updateNotes,
 } from "../store/invoiceSlice";
 import {
   addCustomer,
@@ -33,6 +37,10 @@ function Home() {
     items,
     invoiceHistory,
     type: invoiceType,
+    tax,
+    discount,
+    privacy,
+    notes,
   } = useSelector((state) => state.main.invoice);
   const company = useSelector((state) => state.company);
   const invoiceNumber = useInvoiceNumber();
@@ -51,12 +59,9 @@ function Home() {
 
   const invoiceRef = useRef(null);
 
-  const [tax, setTax] = useState(0);
-  const [discount, setDiscount] = useState(0);
-  const [privacy, setPrivacy] = useState("");
-  const [notes, setNotes] = useState("");
   const [isLogoModalOpen, setIsLogoModalOpen] = useState(false);
-  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+  const [emailErrors, setEmailErrors] = useState({ from: "", to: "" });
+  const [itemErrors, setItemErrors] = useState({});
   const { t, i18n } = useTranslation();
 
   useEffect(() => {
@@ -75,8 +80,33 @@ function Home() {
     document.documentElement.lang = i18n.language;
   }, [i18n.language]);
 
+  // Add validation for items
+  const validateItems = () => {
+    const errors = {};
+    items.forEach((item) => {
+      if (!item.name.trim()) {
+        errors[item.id] = { ...errors[item.id], name: t("nameRequired") };
+      }
+      if (!item.price || item.price <= 0) {
+        errors[item.id] = { ...errors[item.id], price: t("priceRequired") };
+      }
+      if (!item.quantity || item.quantity <= 0) {
+        errors[item.id] = { ...errors[item.id], quantity: t("quantityRequired") };
+      }
+    });
+    setItemErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
   const handleUpdateItem = (id, field, value) => {
     dispatch(updateItem({ id, field, value }));
+    // Clear error when user starts typing
+    if (itemErrors[id]?.[field]) {
+      setItemErrors(prev => ({
+        ...prev,
+        [id]: { ...prev[id], [field]: undefined }
+      }));
+    }
   };
 
   const handleTextareaResize = (e) => {
@@ -169,23 +199,113 @@ function Home() {
     });
   };
 
-  const handleSaveInvoice = () => {
-    saveInvoiceData();
+  const validateEmail = (email) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
   };
 
-  const handleLogoUpload = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        dispatch(updateCompany({ field: "logo", value: reader.result }));
-      };
-      reader.readAsDataURL(file);
+  const handleEmailChange = (type, value) => {
+    if (type === 'from') {
+      dispatch(updateCompany({ field: "email", value }));
+      setEmailErrors(prev => ({
+        ...prev,
+        from: validateEmail(value) ? "" : t("invalidEmail")
+      }));
+    } else {
+      handleCustomerChange("email", value);
+      setEmailErrors(prev => ({
+        ...prev,
+        to: validateEmail(value) ? "" : t("invalidEmail")
+      }));
     }
   };
 
-  const handlePreview = () => {
-    setIsPreviewOpen(true);
+  const validateCompleteInvoice = () => {
+    if (invoiceType === 'complete') {
+      // Check company (from) fields
+      const requiredCompanyFields = ['name', 'phone', 'email', 'address'];
+      const missingCompanyFields = requiredCompanyFields.filter(field => !company[field]);
+      
+      if (missingCompanyFields.length > 0) {
+        Swal.fire({
+          icon: "error",
+          title: t("required"),
+          text: t("pleaseFillCompanyDetails"),
+          toast: true,
+          position: "bottom-end",
+          showConfirmButton: false,
+          timer: 3000,
+        });
+        return false;
+      }
+
+      // Validate company email
+      if (!validateEmail(company.email)) {
+        Swal.fire({
+          icon: "error",
+          title: t("invalidEmail"),
+          text: t("pleaseEnterValidCompanyEmail"),
+          toast: true,
+          position: "bottom-end",
+          showConfirmButton: false,
+          timer: 3000,
+        });
+        return false;
+      }
+
+      // Check customer (to) fields
+      const requiredCustomerFields = ['name', 'phone', 'email', 'address'];
+      const missingCustomerFields = requiredCustomerFields.filter(field => !selectedCustomer[field]);
+      
+      if (missingCustomerFields.length > 0) {
+        Swal.fire({
+          icon: "error",
+          title: t("required"),
+          text: t("pleaseFillCustomerDetails"),
+          toast: true,
+          position: "bottom-end",
+          showConfirmButton: false,
+          timer: 3000,
+        });
+        return false;
+      }
+
+      // Validate customer email
+      if (!validateEmail(selectedCustomer.email)) {
+        Swal.fire({
+          icon: "error",
+          title: t("invalidEmail"),
+          text: t("pleaseEnterValidCustomerEmail"),
+          toast: true,
+          position: "bottom-end",
+          showConfirmButton: false,
+          timer: 3000,
+        });
+        return false;
+      }
+    }
+
+    // Validate items
+    if (!validateItems()) {
+      Swal.fire({
+        icon: "error",
+        title: t("required"),
+        text: t("pleaseFillRequiredItemFields"),
+        toast: true,
+        position: "bottom-end",
+        showConfirmButton: false,
+        timer: 3000,
+      });
+      return false;
+    }
+
+    return true;
+  };
+
+  const handleSaveInvoice = () => {
+    if (validateCompleteInvoice()) {
+      saveInvoiceData();
+    }
   };
 
   // Update getInputClassName to handle phone inputs more specifically
@@ -275,6 +395,7 @@ function Home() {
                           })
                         )
                       }
+                      required={invoiceType === 'complete'}
                     />
                     <input
                       type="tel"
@@ -282,28 +403,27 @@ function Home() {
                       placeholder={t("phone")}
                       className={getInputClassName("input", "tel")}
                       value={company.phone}
-                      onChange={(e) =>
+                      onChange={(e) => {
+                        // Only allow numbers
+                        const value = e.target.value.replace(/[^0-9]/g, '');
                         dispatch(
                           updateCompany({
                             field: "phone",
-                            value: e.target.value,
+                            value: value,
                           })
-                        )
-                      }
+                        );
+                      }}
+                      required={invoiceType === 'complete'}
+                      pattern="[0-9]*"
+                      inputMode="numeric"
                     />
                     <input
                       type="email"
                       placeholder={t("email")}
-                      className={getInputClassName("input")}
+                      className={`${getInputClassName("input")} ${emailErrors.from ? "border-red-500" : ""}`}
                       value={company.email}
-                      onChange={(e) =>
-                        dispatch(
-                          updateCompany({
-                            field: "email",
-                            value: e.target.value,
-                          })
-                        )
-                      }
+                      onChange={(e) => handleEmailChange('from', e.target.value)}
+                      required={invoiceType === 'complete'}
                     />
                     <textarea
                       placeholder={t("address")}
@@ -317,6 +437,7 @@ function Home() {
                           })
                         )
                       }
+                      required={invoiceType === 'complete'}
                     ></textarea>
                   </div>
                 </div>
@@ -331,6 +452,7 @@ function Home() {
                       )}
                       onChange={(e) => handleCustomerSelect(e.target.value)}
                       value={selectedCustomerId || ""}
+                      required={invoiceType === 'complete'}
                     >
                       <option value="">{t("selectCustomer")}</option>
                       {customers.map((customer) => (
@@ -349,6 +471,7 @@ function Home() {
                       onChange={(e) =>
                         handleCustomerChange("name", e.target.value)
                       }
+                      required={invoiceType === 'complete'}
                     />
                     <input
                       type="tel"
@@ -356,18 +479,22 @@ function Home() {
                       placeholder={t("phone")}
                       className={getInputClassName("input", "tel")}
                       value={selectedCustomer.phone}
-                      onChange={(e) =>
-                        handleCustomerChange("phone", e.target.value)
-                      }
+                      onChange={(e) => {
+                        // Only allow numbers
+                        const value = e.target.value.replace(/[^0-9]/g, '');
+                        handleCustomerChange("phone", value);
+                      }}
+                      required={invoiceType === 'complete'}
+                      pattern="[0-9]*"
+                      inputMode="numeric"
                     />
                     <input
                       type="email"
                       placeholder={t("email")}
-                      className={getInputClassName("input")}
+                      className={`${getInputClassName("input")} ${emailErrors.to ? "border-red-500" : ""}`}
                       value={selectedCustomer.email}
-                      onChange={(e) =>
-                        handleCustomerChange("email", e.target.value)
-                      }
+                      onChange={(e) => handleEmailChange('to', e.target.value)}
+                      required={invoiceType === 'complete'}
                     />
                     <textarea
                       placeholder={t("address")}
@@ -376,6 +503,7 @@ function Home() {
                       onChange={(e) =>
                         handleCustomerChange("address", e.target.value)
                       }
+                      required={invoiceType === 'complete'}
                     ></textarea>
                   </div>
                 </div>
@@ -411,12 +539,13 @@ function Home() {
                   <div className="col-span-12 sm:col-span-6 lg:col-span-4">
                     <input
                       type="text"
-                      className={getInputClassName("input bg-gray-50")}
+                      className={`${getInputClassName("input bg-gray-50")} ${itemErrors[item.id]?.name ? "border-red-500" : ""}`}
                       value={item.name}
                       onChange={(e) =>
                         handleUpdateItem(item.id, "name", e.target.value)
                       }
                       placeholder={t("productName")}
+                      required
                     />
                   </div>
                   <div className="col-span-12 sm:col-span-6 lg:col-span-4">
@@ -447,7 +576,7 @@ function Home() {
                   <div className="col-span-3 lg:col-span-1">
                     <input
                       type="number"
-                      className={getInputClassName("input bg-gray-50")}
+                      className={`${getInputClassName("input bg-gray-50")} ${itemErrors[item.id]?.quantity ? "border-red-500" : ""}`}
                       value={item.quantity || ""}
                       onChange={(e) => {
                         const value = Math.max(0, e.target.value);
@@ -460,27 +589,13 @@ function Home() {
                       onFocus={(e) => e.target.select()}
                       min="0"
                       step="1"
-                      onKeyDown={(e) => {
-                        if (e.key === "ArrowUp") {
-                          e.preventDefault();
-                          const newValue =
-                            (parseFloat(e.target.value) || 0) + 1;
-                          handleUpdateItem(item.id, "quantity", newValue);
-                        } else if (e.key === "ArrowDown") {
-                          e.preventDefault();
-                          const newValue = Math.max(
-                            0,
-                            (parseFloat(e.target.value) || 0) - 1
-                          );
-                          handleUpdateItem(item.id, "quantity", newValue);
-                        }
-                      }}
+                      required
                     />
                   </div>
                   <div className="col-span-3 lg:col-span-1">
                     <input
                       type="number"
-                      className={getInputClassName("input bg-gray-50")}
+                      className={`${getInputClassName("input bg-gray-50")} ${itemErrors[item.id]?.price ? "border-red-500" : ""}`}
                       value={item.price || ""}
                       placeholder="0.00"
                       onChange={(e) => {
@@ -494,21 +609,7 @@ function Home() {
                       onFocus={(e) => e.target.select()}
                       min="0"
                       step="1"
-                      onKeyDown={(e) => {
-                        if (e.key === "ArrowUp") {
-                          e.preventDefault();
-                          const newValue =
-                            (parseFloat(e.target.value) || 0) + 1;
-                          handleUpdateItem(item.id, "price", newValue);
-                        } else if (e.key === "ArrowDown") {
-                          e.preventDefault();
-                          const newValue = Math.max(
-                            0,
-                            (parseFloat(e.target.value) || 0) - 1
-                          );
-                          handleUpdateItem(item.id, "price", newValue);
-                        }
-                      }}
+                      required
                     />
                   </div>
                   <div className="col-span-3 lg:col-span-1 text-center font-medium text-sm sm:text-base">
@@ -575,16 +676,16 @@ function Home() {
                         value={tax || ""}
                         onChange={(e) => {
                           const value = Math.max(0, e.target.value);
-                          setTax(parseFloat(value) || 0);
+                          dispatch(updateTax(parseFloat(value) || 0));
                         }}
                         onFocus={(e) => e.target.select()}
                         onKeyDown={(e) => {
                           if (e.key === "ArrowUp") {
                             e.preventDefault();
-                            setTax((prev) => Math.min(100, (prev || 0) + 1));
+                            dispatch(updateTax(Math.min(100, (tax || 0) + 1)));
                           } else if (e.key === "ArrowDown") {
                             e.preventDefault();
-                            setTax((prev) => Math.max(0, (prev || 0) - 1));
+                            dispatch(updateTax(Math.max(0, (tax || 0) - 1)));
                           }
                         }}
                         min="0"
@@ -607,18 +708,16 @@ function Home() {
                         value={discount || ""}
                         onChange={(e) => {
                           const value = Math.max(0, e.target.value);
-                          setDiscount(parseFloat(value) || 0);
+                          dispatch(updateDiscount(parseFloat(value) || 0));
                         }}
                         onFocus={(e) => e.target.select()}
                         onKeyDown={(e) => {
                           if (e.key === "ArrowUp") {
                             e.preventDefault();
-                            setDiscount((prev) =>
-                              Math.min(100, (prev || 0) + 1)
-                            );
+                            dispatch(updateDiscount(Math.min(100, (discount || 0) + 1)));
                           } else if (e.key === "ArrowDown") {
                             e.preventDefault();
-                            setDiscount((prev) => Math.max(0, (prev || 0) - 1));
+                            dispatch(updateDiscount(Math.max(0, (discount || 0) - 1)));
                           }
                         }}
                         min="0"
@@ -666,7 +765,7 @@ function Home() {
                     )}
                     placeholder={t("addPrivacyTerms")}
                     value={privacy}
-                    onChange={(e) => setPrivacy(e.target.value)}
+                    onChange={(e) => dispatch(updatePrivacy(e.target.value))}
                   ></textarea>
                   <textarea
                     className={getInputClassName(
@@ -674,7 +773,7 @@ function Home() {
                     )}
                     placeholder={t("addNotes")}
                     value={notes}
-                    onChange={(e) => setNotes(e.target.value)}
+                    onChange={(e) => dispatch(updateNotes(e.target.value))}
                   ></textarea>
                 </div>
               </div>
@@ -682,22 +781,6 @@ function Home() {
           </div>
         </div>
       </div>
-      {/* Preview Modal */}
-      {isPreviewOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-lg w-full max-w-4xl h-[90vh] flex flex-col">
-            <div className="p-4 border-b flex justify-between items-center">
-              <h2 className="text-xl font-semibold">{t("invoicePreview")}</h2>
-              <button
-                onClick={() => setIsPreviewOpen(false)}
-                className="text-gray-500 hover:text-gray-700"
-              >
-                ×
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
