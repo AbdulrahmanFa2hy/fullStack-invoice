@@ -18,8 +18,7 @@ function InvoiceTypes() {
       features: [
         t('senderRecipientDetails'),
         t('itemBreakdown'),
-        t('taxCalculations'),
-        t('fullBusinessInfo'),
+        t('expandedFormat'),
       ],
     },
     {
@@ -28,7 +27,6 @@ function InvoiceTypes() {
       type: "quick",
       features: [
         t('itemBreakdownOnly'),
-        t('taxCalculations'),
         t('fasterCreation'),
         t('simplifiedFormat'),
       ],

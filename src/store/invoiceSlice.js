@@ -11,16 +11,17 @@ const initialState = {
     items: [
       { id: Date.now(), name: "", description: "", quantity: 1, price: 0 },
     ],
-    invoiceNumber: generateInitialInvoiceNumber(),
+    invoiceNumber: generateInitialInvoiceNumber(), // change this to invoiceID
     invoiceHistory: [],
     lastInvoiceDate: new Date().toISOString().slice(0, 10).replace(/-/g, ""),
     dailyCounter: 1,
-    type: "complete", // default type
+    type: "",
     tax: 0,
     discount: 0,
     privacy: "",
     notes: "",
   },
+  // userid: null,
 };
 
 // Helper function to generate unique ID

@@ -7,8 +7,8 @@ import { useTranslation } from "react-i18next";
 const InvoiceDetailModal = ({ invoice, onClose, onUpdate, onDelete }) => {
   const { t, i18n } = useTranslation();
   const modalContentRef = useRef();
-  const isRTL = i18n.language === 'ar';
-  
+  const isRTL = i18n.language === "ar";
+
   const [isEditing, setIsEditing] = useState(false);
   // Fix the initial state to include all required fields
   const [editForm, setEditForm] = useState({
@@ -78,7 +78,7 @@ const InvoiceDetailModal = ({ invoice, onClose, onUpdate, onDelete }) => {
 
   const handleUpdate = () => {
     if (editForm.total <= 0) {
-      alert(t('totalMustBePositive'));
+      alert(t("totalMustBePositive"));
       return;
     }
 
@@ -161,7 +161,7 @@ const InvoiceDetailModal = ({ invoice, onClose, onUpdate, onDelete }) => {
     <div
       className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-2 sm:p-4"
       onClick={handleOverlayClick}
-      dir={isRTL ? 'rtl' : 'ltr'}
+      dir={isRTL ? "rtl" : "ltr"}
     >
       <div
         ref={modalContentRef}
@@ -169,12 +169,12 @@ const InvoiceDetailModal = ({ invoice, onClose, onUpdate, onDelete }) => {
       >
         <div className="flex justify-between items-center mb-4 sm:mb-6">
           <h2 className="text-lg sm:text-xl md:text-2xl font-bold">
-            {t('invoiceDetails')} - {invoice.invoiceNumber}
+            {t("invoiceDetails")} - {invoice.invoiceNumber}
           </h2>
           <button
             onClick={onClose}
             className="p-1.5 sm:p-2 hover:bg-gray-100 rounded-full transition-colors duration-200"
-            aria-label={t('close')}
+            aria-label={t("close")}
           >
             ✕
           </button>
@@ -191,7 +191,9 @@ const InvoiceDetailModal = ({ invoice, onClose, onUpdate, onDelete }) => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
                   {/* From Section */}
                   <div className="space-y-4">
-                    <h3 className="text-base sm:text-lg font-semibold">{t('senderDetails')}</h3>
+                    <h3 className="text-base sm:text-lg font-semibold">
+                      {t("senderDetails")}
+                    </h3>
                     <div className="space-y-4">
                       {["name", "email", "phone", "address"].map((field) => (
                         <div key={field}>
@@ -210,7 +212,11 @@ const InvoiceDetailModal = ({ invoice, onClose, onUpdate, onDelete }) => {
                                   },
                                 })
                               }
-                              placeholder={t(`placeholders.enter${field.charAt(0).toUpperCase() + field.slice(1)}`)}
+                              placeholder={t(
+                                `placeholders.enter${
+                                  field.charAt(0).toUpperCase() + field.slice(1)
+                                }`
+                              )}
                               className="w-full p-2 border rounded min-h-[80px]"
                               dir="auto"
                             />
@@ -227,7 +233,11 @@ const InvoiceDetailModal = ({ invoice, onClose, onUpdate, onDelete }) => {
                                   },
                                 })
                               }
-                              placeholder={t(`placeholders.enter${field.charAt(0).toUpperCase() + field.slice(1)}`)}
+                              placeholder={t(
+                                `placeholders.enter${
+                                  field.charAt(0).toUpperCase() + field.slice(1)
+                                }`
+                              )}
                               className="w-full p-2 border rounded h-10"
                               dir="auto"
                             />
@@ -241,7 +251,7 @@ const InvoiceDetailModal = ({ invoice, onClose, onUpdate, onDelete }) => {
                   <div className="">
                     <div className="flex justify-between items-center mb-1">
                       <h3 className="text-base sm:text-lg font-semibold">
-                        {t('customerDetails')}
+                        {t("customerDetails")}
                       </h3>
                       <select
                         className="w-4/5 p-2 border rounded h-10"
@@ -254,7 +264,7 @@ const InvoiceDetailModal = ({ invoice, onClose, onUpdate, onDelete }) => {
                         }
                         dir="auto"
                       >
-                        <option value="">{t('selectCustomer')}</option>
+                        <option value="">{t("selectCustomer")}</option>
                         {customers.map((c) => (
                           <option key={c.id} value={c.id}>
                             {c.name} ({c.email})
@@ -267,16 +277,20 @@ const InvoiceDetailModal = ({ invoice, onClose, onUpdate, onDelete }) => {
               )}
 
               <div>
-                <h3 className="font-semibold mb-3">{t('itemDetails')}</h3>
+                <h3 className="font-semibold mb-3">{t("itemDetails")}</h3>
                 <div className="overflow-x-auto">
                   <table className="w-full">
                     <thead className="bg-gray-50">
                       <tr>
-                        <th className="px-4 py-2 text-start">{t('product')}</th>
-                        <th className="px-4 py-2 text-start">{t('description')}</th>
-                        <th className="px-4 py-2 text-start">{t('quantity')}</th>
-                        <th className="px-4 py-2 text-start">{t('price')}</th>
-                        <th className="px-4 py-2 text-start">{t('total')}</th>
+                        <th className="px-4 py-2 text-start">{t("product")}</th>
+                        <th className="px-4 py-2 text-start">
+                          {t("description")}
+                        </th>
+                        <th className="px-4 py-2 text-start">
+                          {t("quantity")}
+                        </th>
+                        <th className="px-4 py-2 text-start">{t("price")}</th>
+                        <th className="px-4 py-2 text-start">{t("total")}</th>
                         <th className="px-4 py-2"></th>
                       </tr>
                     </thead>
@@ -284,16 +298,22 @@ const InvoiceDetailModal = ({ invoice, onClose, onUpdate, onDelete }) => {
                       {editForm.items.map((item, index) => (
                         <tr
                           key={item.id}
-                          className={`border-b ${index % 2 === 1 ? "bg-gray-50" : ""}`}
+                          className={`border-b ${
+                            index % 2 === 1 ? "bg-gray-50" : ""
+                          }`}
                         >
                           <td className="px-4 py-2">
                             <input
                               type="text"
                               value={item.name}
                               onChange={(e) =>
-                                handleItemUpdate(item.id, "name", e.target.value)
+                                handleItemUpdate(
+                                  item.id,
+                                  "name",
+                                  e.target.value
+                                )
                               }
-                              placeholder={t('enterItemName')}
+                              placeholder={t("enterItemName")}
                               className="border p-1 rounded w-full min-w-[150px]"
                               dir="auto"
                             />
@@ -309,7 +329,7 @@ const InvoiceDetailModal = ({ invoice, onClose, onUpdate, onDelete }) => {
                                   e.target.value
                                 )
                               }
-                              placeholder={t('enterItemDescription')}
+                              placeholder={t("enterItemDescription")}
                               className="border p-1 rounded w-full min-w-[200px]"
                               dir="auto"
                             />
@@ -335,7 +355,7 @@ const InvoiceDetailModal = ({ invoice, onClose, onUpdate, onDelete }) => {
                           <td className="px-4 py-2">
                             <div className="relative">
                               <span className="absolute inset-y-0 start-2 flex items-center text-gray-500">
-                                {t('currency')}
+                                {t("currency")}
                               </span>
                               <input
                                 type="number"
@@ -356,13 +376,19 @@ const InvoiceDetailModal = ({ invoice, onClose, onUpdate, onDelete }) => {
                             </div>
                           </td>
                           <td className="px-4 py-2 text-end">
-                            {isRTL ? `${(item.quantity * item.price).toFixed(2)}${t('currency')}` : `${t('currency')}${(item.quantity * item.price).toFixed(2)}`}
+                            {isRTL
+                              ? `${(item.quantity * item.price).toFixed(2)}${t(
+                                  "currency"
+                                )}`
+                              : `${t("currency")}${(
+                                  item.quantity * item.price
+                                ).toFixed(2)}`}
                           </td>
                           <td className="px-4 py-2">
                             <button
                               onClick={() => handleRemoveItem(item.id)}
                               className="text-red-500 hover:text-red-700"
-                              aria-label={t('removeItem')}
+                              aria-label={t("removeItem")}
                             >
                               ✕
                             </button>
@@ -393,14 +419,14 @@ const InvoiceDetailModal = ({ invoice, onClose, onUpdate, onDelete }) => {
                       d="M12 6v6m0 0v6m0-6h6m-6 0H6"
                     />
                   </svg>
-                  {t('addNewItem')}
+                  {t("addNewItem")}
                 </button>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-[400px] ms-auto">
                 <div className="space-y-1">
                   <label className="text-sm text-gray-600 block">
-                    {t('discount')} (%)
+                    {t("discount")} (%)
                   </label>
                   <input
                     type="number"
@@ -408,7 +434,10 @@ const InvoiceDetailModal = ({ invoice, onClose, onUpdate, onDelete }) => {
                     onChange={(e) =>
                       setEditForm((prev) => ({
                         ...prev,
-                        discount: Math.max(0, Math.min(100, parseFloat(e.target.value) || 0)),
+                        discount: Math.max(
+                          0,
+                          Math.min(100, parseFloat(e.target.value) || 0)
+                        ),
                       }))
                     }
                     className="w-full border rounded p-2 text-end"
@@ -420,7 +449,7 @@ const InvoiceDetailModal = ({ invoice, onClose, onUpdate, onDelete }) => {
                 </div>
                 <div className="space-y-1">
                   <label className="text-sm text-gray-600 block">
-                    {t('taxRate')} (%)
+                    {t("taxRate")} (%)
                   </label>
                   <input
                     type="number"
@@ -428,7 +457,10 @@ const InvoiceDetailModal = ({ invoice, onClose, onUpdate, onDelete }) => {
                     onChange={(e) =>
                       setEditForm((prev) => ({
                         ...prev,
-                        tax: Math.max(0, Math.min(100, parseFloat(e.target.value) || 0)),
+                        tax: Math.max(
+                          0,
+                          Math.min(100, parseFloat(e.target.value) || 0)
+                        ),
                       }))
                     }
                     className="w-full border rounded p-2 text-end"
@@ -443,7 +475,7 @@ const InvoiceDetailModal = ({ invoice, onClose, onUpdate, onDelete }) => {
               <div className="space-y-3">
                 <div>
                   <label className="text-sm text-gray-600 block">
-                    {t('termsAndPrivacy')}
+                    {t("termsAndPrivacy")}
                   </label>
                   <textarea
                     className="w-full p-2 mt-1 border rounded bg-gray-50"
@@ -454,14 +486,14 @@ const InvoiceDetailModal = ({ invoice, onClose, onUpdate, onDelete }) => {
                         privacy: e.target.value,
                       }))
                     }
-                    placeholder={t('enterTerms')}
+                    placeholder={t("enterTerms")}
                     rows={3}
                     dir="auto"
                   />
                 </div>
                 <div>
                   <label className="text-sm text-gray-600 block">
-                    {t('notes')}
+                    {t("notes")}
                   </label>
                   <textarea
                     className="w-full p-2 mt-1 border rounded bg-gray-50"
@@ -472,7 +504,7 @@ const InvoiceDetailModal = ({ invoice, onClose, onUpdate, onDelete }) => {
                         notes: e.target.value,
                       }))
                     }
-                    placeholder={t('enterNotes')}
+                    placeholder={t("enterNotes")}
                     rows={3}
                     dir="auto"
                   />
@@ -481,20 +513,23 @@ const InvoiceDetailModal = ({ invoice, onClose, onUpdate, onDelete }) => {
 
               <div className="flex flex-col sm:flex-row justify-between items-center gap-4 pt-4 border-t">
                 <div className="self-end text-base min-w-fit sm:text-lg md:text-xl font-bold">
-                  {t('totalLabel')}: {isRTL ? `${editForm.total.toFixed(2)}${t('currency')}` : `${t('currency')}${editForm.total.toFixed(2)}`}
+                  {t("totalLabel")}:{" "}
+                  {isRTL
+                    ? `${editForm.total.toFixed(2)}${t("currency")}`
+                    : `${t("currency")}${editForm.total.toFixed(2)}`}
                 </div>
                 <div className="flex sm:flex-nowrap md:justify-end gap-2 w-full">
                   <button
                     onClick={() => setIsEditing(false)}
                     className="w-1/2 md:w-1/4 px-4 py-2 bg-gray-500 text-white rounded text-sm sm:text-base"
                   >
-                    {t('cancel')}
+                    {t("cancel")}
                   </button>
                   <button
                     onClick={handleUpdate}
                     className="w-1/2 md:w-1/4 px-4 py-2 bg-blue-500 text-white rounded text-sm sm:text-base"
                   >
-                    {t('saveChanges')}
+                    {t("saveChanges")}
                   </button>
                 </div>
               </div>
@@ -505,14 +540,14 @@ const InvoiceDetailModal = ({ invoice, onClose, onUpdate, onDelete }) => {
               {invoiceType !== "quick" && (
                 <div className="grid md:grid-cols-2 gap-6">
                   <div className="space-y-2">
-                    <h3 className="font-semibold">{t('from')}</h3>
+                    <h3 className="font-semibold">{t("from")}</h3>
                     <p className="text-lg">{currentInvoice.sender.name}</p>
                     <p>{currentInvoice.sender.email}</p>
                     <p>{currentInvoice.sender.phone}</p>
                     <p>{currentInvoice.sender.address}</p>
                   </div>
                   <div className="space-y-2">
-                    <h3 className="font-semibold">{t('to')}</h3>
+                    <h3 className="font-semibold">{t("to")}</h3>
                     <p className="text-lg">{customer.name}</p>
                     <p>{customer.email}</p>
                     <p>{customer.phone}</p>
@@ -523,42 +558,56 @@ const InvoiceDetailModal = ({ invoice, onClose, onUpdate, onDelete }) => {
 
               <div className="flex justify-between text-xs md text-gray-500">
                 <div className="flex flex-col">
-                  {t('createdِAt')}
+                  {t("createdِAt")}
                   <span>{formatDate(currentInvoice.createdAt)}</span>
                 </div>
                 <div className="flex flex-col">
-                  {t('lastUpdated')}
+                  {t("lastUpdated")}
                   <span>{formatDate(currentInvoice.updatedAt)}</span>
                 </div>
               </div>
 
               <div>
-                <h3 className="font-semibold mb-3">{t('items')}</h3>
+                <h3 className="font-semibold mb-3">{t("items")}</h3>
                 <div className="overflow-x-auto">
                   <table className="w-full">
                     <thead className="bg-gray-50">
                       <tr>
-                        <th className="px-4 py-2 text-start">{t('product')}</th>
-                        <th className="px-4 py-2 text-start">{t('description')}</th>
-                        <th className="px-4 py-2 text-end">{t('quantity')}</th>
-                        <th className="px-4 py-2 text-end">{t('price')}</th>
-                        <th className="px-4 py-2 text-end">{t('total')}</th>
+                        <th className="px-4 py-2 text-start">{t("product")}</th>
+                        <th className="px-4 py-2 text-start">
+                          {t("description")}
+                        </th>
+                        <th className="px-4 py-2 text-end">{t("quantity")}</th>
+                        <th className="px-4 py-2 text-end">{t("price")}</th>
+                        <th className="px-4 py-2 text-end">{t("total")}</th>
                       </tr>
                     </thead>
                     <tbody>
                       {currentInvoice.items.map((item, index) => (
                         <tr
                           key={item.id}
-                          className={`border-b ${index % 2 === 1 ? "bg-gray-50" : ""}`}
+                          className={`border-b ${
+                            index % 2 === 1 ? "bg-gray-50" : ""
+                          }`}
                         >
                           <td className="px-4 py-2">{item.name}</td>
                           <td className="px-4 py-2">{item.description}</td>
-                          <td className="px-4 py-2 text-end">{item.quantity}</td>
                           <td className="px-4 py-2 text-end">
-                            {isRTL ? `${item.price.toFixed(2)}${t('currency')}` : `${t('currency')}${item.price.toFixed(2)}`}
+                            {item.quantity}
                           </td>
                           <td className="px-4 py-2 text-end">
-                            {isRTL ? `${(item.quantity * item.price).toFixed(2)}${t('currency')}` : `${t('currency')}${(item.quantity * item.price).toFixed(2)}`}
+                            {isRTL
+                              ? `${item.price.toFixed(2)}${t("currency")}`
+                              : `${t("currency")}${item.price.toFixed(2)}`}
+                          </td>
+                          <td className="px-4 py-2 text-end">
+                            {isRTL
+                              ? `${(item.quantity * item.price).toFixed(2)}${t(
+                                  "currency"
+                                )}`
+                              : `${t("currency")}${(
+                                  item.quantity * item.price
+                                ).toFixed(2)}`}
                           </td>
                         </tr>
                       ))}
@@ -571,37 +620,61 @@ const InvoiceDetailModal = ({ invoice, onClose, onUpdate, onDelete }) => {
                 <div className="text-right space-y-2 min-w-[200px] sm:min-w-[250px] md:min-w-[300px]">
                   <div className="text-xs sm:text-sm text-gray-600">
                     <div className="flex justify-between">
-                      <span>{t('subtotalAmount')}:</span>
+                      <span>{t("subtotalAmount")}:</span>
                       <span>
-                        {isRTL ? `${currentInvoice.subtotal.toFixed(2)}${t('currency')}` : `${t('currency')}${currentInvoice.subtotal.toFixed(2)}`}
+                        {isRTL
+                          ? `${currentInvoice.subtotal.toFixed(2)}${t(
+                              "currency"
+                            )}`
+                          : `${t("currency")}${currentInvoice.subtotal.toFixed(
+                              2
+                            )}`}
                       </span>
                     </div>
                     {currentInvoice.discount > 0 && (
                       <div className="flex justify-between">
                         <span>
-                          {t('discountLabel')} ({currentInvoice.discount}%)
+                          {t("discountLabel")} ({currentInvoice.discount}%)
                         </span>
                         <span>
-                          -{isRTL ? `${currentInvoice.discountAmount.toFixed(2)}${t('currency')}` : `${t('currency')}${currentInvoice.discountAmount.toFixed(2)}`}
+                          -
+                          {isRTL
+                            ? `${currentInvoice.discountAmount.toFixed(2)}${t(
+                                "currency"
+                              )}`
+                            : `${t(
+                                "currency"
+                              )}${currentInvoice.discountAmount.toFixed(2)}`}
                         </span>
                       </div>
                     )}
                     {currentInvoice.tax > 0 && (
                       <div className="flex justify-between">
                         <span>
-                          {t('taxLabel')} ({currentInvoice.tax}%)
+                          {t("taxLabel")} ({currentInvoice.tax}%)
                         </span>
                         <span>
-                          +{isRTL ? `${currentInvoice.taxAmount.toFixed(2)}${t('currency')}` : `${t('currency')}${currentInvoice.taxAmount.toFixed(2)}`}
+                          +
+                          {isRTL
+                            ? `${currentInvoice.taxAmount.toFixed(2)}${t(
+                                "currency"
+                              )}`
+                            : `${t(
+                                "currency"
+                              )}${currentInvoice.taxAmount.toFixed(2)}`}
                         </span>
                       </div>
                     )}
                   </div>
                   <div className="text-base sm:text-lg md:text-xl font-bold border-t pt-2">
                     <div className="flex justify-between">
-                      <span>{t('totalLabel')}:</span>
+                      <span>{t("totalLabel")}:</span>
                       <span>
-                        {isRTL ? `${currentInvoice.total.toFixed(2)}${t('currency')}` : `${t('currency')}${currentInvoice.total.toFixed(2)}`}
+                        {isRTL
+                          ? `${currentInvoice.total.toFixed(2)}${t("currency")}`
+                          : `${t("currency")}${currentInvoice.total.toFixed(
+                              2
+                            )}`}
                       </span>
                     </div>
                   </div>
@@ -611,7 +684,9 @@ const InvoiceDetailModal = ({ invoice, onClose, onUpdate, onDelete }) => {
                 <div className="space-y-4">
                   {currentInvoice.privacy && (
                     <div>
-                      <h3 className="font-semibold mb-2">{t('termsAndPrivacy')}</h3>
+                      <h3 className="font-semibold mb-2">
+                        {t("termsAndPrivacy")}
+                      </h3>
                       <p className="text-sm text-gray-600">
                         {currentInvoice.privacy}
                       </p>
@@ -619,7 +694,7 @@ const InvoiceDetailModal = ({ invoice, onClose, onUpdate, onDelete }) => {
                   )}
                   {currentInvoice.notes && (
                     <div>
-                      <h3 className="font-semibold mb-2">{t('notes')}</h3>
+                      <h3 className="font-semibold mb-2">{t("notes")}</h3>
                       <p className="text-sm text-gray-600">
                         {currentInvoice.notes}
                       </p>
@@ -648,8 +723,7 @@ const InvoiceDetailModal = ({ invoice, onClose, onUpdate, onDelete }) => {
               whileTap={{ scale: 0.98 }}
               className="w-full sm:w-auto flex-1 sm:flex-none px-3 sm:px-4 py-2 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-lg shadow-lg hover:shadow-xl transition-all duration-200 flex items-center justify-center gap-2 text-sm sm:text-base"
             >
-             
-              <span>{t('downloadPdf')}</span>
+              <span>{t("downloadPdf")}</span>
             </motion.button>
 
             <motion.button
@@ -658,22 +732,20 @@ const InvoiceDetailModal = ({ invoice, onClose, onUpdate, onDelete }) => {
               onClick={() => setIsEditing(true)}
               className="w-full sm:w-auto flex-1 sm:flex-none px-3 sm:px-4 py-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg shadow-lg hover:shadow-xl transition-all duration-200 flex items-center justify-center gap-2 text-sm sm:text-base"
             >
-              
-              <span>{t('edit')}</span>
+              <span>{t("edit")}</span>
             </motion.button>
 
             <motion.button
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
               onClick={() => {
-                if (window.confirm(t('confirmDelete'))) {
+                if (window.confirm(t("confirmDelete"))) {
                   onDelete(invoice.id);
                 }
               }}
               className="w-full sm:w-auto flex-1 sm:flex-none px-3 sm:px-4 py-2 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-lg shadow-lg hover:shadow-xl transition-all duration-200 flex items-center justify-center gap-2 text-sm sm:text-base"
             >
-              
-              <span>{t('delete')}</span>
+              <span>{t("delete")}</span>
             </motion.button>
           </motion.div>
         )}

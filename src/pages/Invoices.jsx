@@ -55,10 +55,12 @@ const Invoices = () => {
     });
   };
 
-  const filteredInvoices = invoiceHistory.filter((invoice) => {
-    if (!searchQuery) return true;
-    return searchInObject(invoice, searchQuery);
-  });
+  const filteredInvoices = [...invoiceHistory]
+    .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+    .filter((invoice) => {
+      if (!searchQuery) return true;
+      return searchInObject(invoice, searchQuery);
+    });
 
   const getCustomerById = (customerId) => {
     return (
@@ -91,59 +93,95 @@ const Invoices = () => {
           {filteredInvoices.map((invoice) => (
             <div
               key={invoice.id}
-              className="bg-white p-4 sm:p-6 rounded-xl shadow-sm hover:shadow-md transition-all duration-300 border border-gray-100"
+              className="bg-white p-4 sm:p-6 rounded-xl sm:rounded-2xl shadow-sm hover:shadow-lg transition-all duration-300 border border-gray-100 relative overflow-hidden group"
               onClick={() => handleInvoiceClick(invoice)}
             >
-              <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-3 sm:gap-4 mb-4">
-                <div className="flex items-center gap-3 sm:gap-4">
+              <div className={`absolute top-0 right-0 w-1.5 sm:w-2 h-full ${
+                invoice.type === "complete" 
+                  ? "bg-blue-500" 
+                  : "bg-green-500"
+              }`} />
+              
+              <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 sm:gap-4 mb-3 sm:mb-4">
+                <div className="flex items-center gap-2 sm:gap-4">
                   <div className="flex flex-col">
-                    <h2 className="text-lg sm:text-xl font-semibold text-gray-800">
-                      {invoice.invoiceNumber}
-                    </h2>
+                    <div className="flex items-center gap-2">
+                      <h2 className="text-lg sm:text-xl font-semibold text-gray-800">
+                        {invoice.invoiceNumber}
+                      </h2>
+                      <span className={`px-1.5 sm:px-2 py-0.5 sm:py-1 text-xs font-medium rounded-full ${
+                        invoice.type === "complete" 
+                          ? "bg-blue-100 text-blue-700" 
+                          : "bg-green-100 text-green-700"
+                      }`}>
+                        {invoice.type === "complete" ? t("completeInvoice") : t("quickInvoice")}
+                      </span>
+                    </div>
                     <span className="text-xs sm:text-sm text-gray-500">
                       {formatDate(invoice.createdAt)}
                     </span>
                   </div>
                 </div>
               </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-6">
                 {invoice.type !== "quick" && (
                   <>
                     <div className="space-y-1 sm:space-y-2">
                       <h3 className="text-xs sm:text-sm font-medium text-gray-500">
                         {t("from")}
                       </h3>
-                      <p className="text-sm sm:text-base text-gray-800">
-                        {invoice.sender.name}
-                      </p>
-                      <p className="text-xs sm:text-sm text-gray-600">
-                        {invoice.sender.email || ""}
-                      </p>
+                      <div className="flex items-center gap-2">
+                        <div className="w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-gray-100 flex items-center justify-center">
+                          <span className="text-xs sm:text-sm font-medium text-gray-600">
+                            {invoice.sender.name.charAt(0)}
+                          </span>
+                        </div>
+                        <div>
+                          <p className="text-sm sm:text-base font-medium text-gray-800">
+                            {invoice.sender.name}
+                          </p>
+                          <p className="text-xs sm:text-sm text-gray-600">
+                            {invoice.sender.email || ""}
+                          </p>
+                        </div>
+                      </div>
                     </div>
                     <div className="space-y-1 sm:space-y-2">
                       <h3 className="text-xs sm:text-sm font-medium text-gray-500">
                         {t("to")}
                       </h3>
-                      <p className="text-sm sm:text-base text-gray-800">
-                        {getCustomerById(invoice.customerId).name}
-                      </p>
-                      <p className="text-xs sm:text-sm text-gray-600">
-                        {getCustomerById(invoice.customerId).email}
-                      </p>
+                      <div className="flex items-center gap-2">
+                        <div className="w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-gray-100 flex items-center justify-center">
+                          <span className="text-xs sm:text-sm font-medium text-gray-600">
+                            {getCustomerById(invoice.customerId).name.charAt(0)}
+                          </span>
+                        </div>
+                        <div>
+                          <p className="text-sm sm:text-base font-medium text-gray-800">
+                            {getCustomerById(invoice.customerId).name}
+                          </p>
+                          <p className="text-xs sm:text-sm text-gray-600">
+                            {getCustomerById(invoice.customerId).email}
+                          </p>
+                        </div>
+                      </div>
                     </div>
                   </>
                 )}
-                <div
-                  className={`space-y-1 sm:space-y-2 ${
-                    invoice.type === "quick" ? "col-span-full" : ""
-                  }`}
-                >
+                <div className={`space-y-1 sm:space-y-2 ${
+                  invoice.type === "quick" ? "col-span-full" : ""
+                }`}>
                   <h3 className="text-xs sm:text-sm font-medium text-gray-500">
                     {t("total")}
                   </h3>
-                  <p className="text-xl sm:text-2xl font-semibold text-gray-800">
-                    {t("currency")}{invoice.total.toFixed(2)}
-                  </p>
+                  <div className="flex items-center justify-between">
+                    <p className="text-lg sm:text-2xl font-bold text-gray-800">
+                      {t("currency")}{invoice.total.toFixed(2)}
+                    </p>
+                    <button className="px-2 sm:px-3 py-0.5 sm:py-1 text-xs sm:text-sm font-medium text-gray-600 bg-gray-100 rounded-full hover:bg-gray-200 transition-colors duration-200">
+                      {t("viewDetails")}
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>

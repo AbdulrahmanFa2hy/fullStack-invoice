@@ -6,6 +6,7 @@ const initialState = {
   phone: "",
   email: "",
   address: "",
+  // userid: null,
 };
 
 const companySlice = createSlice({

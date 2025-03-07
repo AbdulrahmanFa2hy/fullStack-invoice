@@ -6,7 +6,6 @@ const initialState = {
     email: "",
     image: "",
     isAuthenticated: false,
-    hasSubscription: false,
   },
   loading: false,
   error: null,
