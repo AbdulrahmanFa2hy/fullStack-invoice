@@ -17,7 +17,7 @@ import {
   updateItem,
   saveToHistory,
   generateInvoiceNumber,
-} from "../store/mainSlice";
+} from "../store/invoiceSlice";
 import {
   addCustomer,
   updateCustomer,

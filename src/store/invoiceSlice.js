@@ -42,7 +42,7 @@ const generateNewInvoiceNumber = (lastDate, counter) => {
   };
 };
 
-const mainSlice = createSlice({
+const invoiceSlice = createSlice({
   name: "main",
   initialState,
   reducers: {
@@ -69,10 +69,6 @@ const mainSlice = createSlice({
       if (item) {
         item[field] = value;
       }
-    },
-    updateBusinessInfo: (state, action) => {
-      const { field, value } = action.payload;
-      state.invoice[field] = value;
     },
     saveToHistory: (state, action) => {
       const currentDate = new Date().toISOString();
@@ -145,13 +141,12 @@ export const {
   addItem,
   removeItem,
   updateItem,
-  updateBusinessInfo,
   saveToHistory,
   updateInvoice,
   deleteInvoice,
   generateInvoiceNumber,
   resetInvoice,
   setInvoiceType,
-} = mainSlice.actions;
+} = invoiceSlice.actions;
 
-export default mainSlice.reducer;
+export default invoiceSlice.reducer;

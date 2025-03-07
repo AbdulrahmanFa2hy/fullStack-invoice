@@ -2,7 +2,7 @@ import { useSelector, useDispatch } from "react-redux";
 import { format, parseISO } from "date-fns";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { updateInvoice, deleteInvoice } from "../store/mainSlice";
+import { updateInvoice, deleteInvoice } from "../store/invoiceSlice";
 import InvoiceDetailModal from "../components/InvoiceDetailModal";
 import { normalizeArabicText } from "../utils/arabicNormalization";
 

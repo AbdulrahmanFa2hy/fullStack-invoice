@@ -1,7 +1,7 @@
 import { NavLink, useNavigate } from "react-router-dom";
 import { FiPlus, FiMenu, FiX } from "react-icons/fi";
 import { useDispatch, useSelector } from "react-redux";
-import { resetInvoice, generateInvoiceNumber } from "../store/mainSlice";
+import { resetInvoice, generateInvoiceNumber } from "../store/invoiceSlice";
 import { setSelectedCustomerId } from "../store/customersSlice"; // Add this import
 import { useState, useRef, useEffect } from "react";
 import { useTranslation } from "react-i18next";

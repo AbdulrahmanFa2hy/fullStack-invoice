@@ -34,9 +34,6 @@ const profileSlice = createSlice({
     updateProfile: (state, action) => {
       state.userData = { ...state.userData, ...action.payload };
     },
-    setSubscription: (state, action) => {
-      state.userData.hasSubscription = action.payload;
-    },
   },
 });
 
@@ -47,7 +44,6 @@ export const {
   setLoading,
   setError,
   updateProfile,
-  setSubscription,
 } = profileSlice.actions;
 
 export default profileSlice.reducer;
