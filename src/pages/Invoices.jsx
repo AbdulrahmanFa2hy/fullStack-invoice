@@ -1,5 +1,6 @@
 import { useSelector, useDispatch } from "react-redux";
 import { format, parseISO } from "date-fns";
+import { ar } from "date-fns/locale";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { updateInvoice, deleteInvoice } from "../store/invoiceSlice";
@@ -7,7 +8,7 @@ import InvoiceDetailModal from "../components/InvoiceDetailModal";
 import { normalizeArabicText } from "../utils/arabicNormalization";
 
 const Invoices = () => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const dispatch = useDispatch();
   const { invoiceHistory } = useSelector((state) => state.main.invoice);
   const customers = useSelector((state) => state.customers.customers);
@@ -16,8 +17,10 @@ const Invoices = () => {
 
   const formatDate = (dateString) => {
     try {
-      return format(parseISO(dateString), "PPP");
-    } catch (error) {
+      return format(parseISO(dateString), "PPP", {
+        locale: i18n.language === "ar" ? ar : undefined,
+      });
+    } catch {
       return t("invalidDate", "Invalid date");
     }
   };
@@ -31,7 +34,11 @@ const Invoices = () => {
   };
 
   const handleDelete = (id) => {
-    if (window.confirm(t("confirmDelete", "Are you sure you want to delete this invoice?"))) {
+    if (
+      window.confirm(
+        t("confirmDelete", "Are you sure you want to delete this invoice?")
+      )
+    ) {
       dispatch(deleteInvoice(id));
       setSelectedInvoice(null);
     }
@@ -96,12 +103,12 @@ const Invoices = () => {
               className="bg-white p-4 sm:p-6 rounded-xl sm:rounded-2xl shadow-sm hover:shadow-lg transition-all duration-300 border border-gray-100 relative overflow-hidden group"
               onClick={() => handleInvoiceClick(invoice)}
             >
-              <div className={`absolute top-0 right-0 w-1.5 sm:w-2 h-full ${
-                invoice.type === "complete" 
-                  ? "bg-blue-500" 
-                  : "bg-green-500"
-              }`} />
-              
+              <div
+                className={`absolute top-0 right-0 w-1.5 sm:w-2 h-full ${
+                  invoice.type === "complete" ? "bg-blue-500" : "bg-green-500"
+                }`}
+              />
+
               <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 sm:gap-4 mb-3 sm:mb-4">
                 <div className="flex items-center gap-2 sm:gap-4">
                   <div className="flex flex-col">
@@ -109,12 +116,16 @@ const Invoices = () => {
                       <h2 className="text-lg sm:text-xl font-semibold text-gray-800">
                         {invoice.invoiceNumber}
                       </h2>
-                      <span className={`px-1.5 sm:px-2 py-0.5 sm:py-1 text-xs font-medium rounded-full ${
-                        invoice.type === "complete" 
-                          ? "bg-blue-100 text-blue-700" 
-                          : "bg-green-100 text-green-700"
-                      }`}>
-                        {invoice.type === "complete" ? t("completeInvoice") : t("quickInvoice")}
+                      <span
+                        className={`px-1.5 sm:px-2 py-0.5 sm:py-1 text-xs font-medium rounded-full ${
+                          invoice.type === "complete"
+                            ? "bg-blue-100 text-blue-700"
+                            : "bg-green-100 text-green-700"
+                        }`}
+                      >
+                        {invoice.type === "complete"
+                          ? t("completeInvoice")
+                          : t("quickInvoice")}
                       </span>
                     </div>
                     <span className="text-xs sm:text-sm text-gray-500">
@@ -168,15 +179,18 @@ const Invoices = () => {
                     </div>
                   </>
                 )}
-                <div className={`space-y-1 sm:space-y-2 ${
-                  invoice.type === "quick" ? "col-span-full" : ""
-                }`}>
+                <div
+                  className={`space-y-1 sm:space-y-2 ${
+                    invoice.type === "quick" ? "col-span-full" : ""
+                  }`}
+                >
                   <h3 className="text-xs sm:text-sm font-medium text-gray-500">
                     {t("total")}
                   </h3>
                   <div className="flex items-center justify-between">
                     <p className="text-lg sm:text-2xl font-bold text-gray-800">
-                      {t("currency")}{invoice.total.toFixed(2)}
+                      {t("currency")}
+                      {invoice.total.toFixed(2)}
                     </p>
                     <button className="px-2 sm:px-3 py-0.5 sm:py-1 text-xs sm:text-sm font-medium text-gray-600 bg-gray-100 rounded-full hover:bg-gray-200 transition-colors duration-200">
                       {t("viewDetails")}
@@ -191,7 +205,9 @@ const Invoices = () => {
         {filteredInvoices.length === 0 && (
           <div className="text-center py-8 sm:py-12">
             <p className="text-gray-500 text-base sm:text-lg">
-              {searchQuery ? t("noMatchingInvoices", "No matching invoices found") : t("noInvoices", "No invoices found")}
+              {searchQuery
+                ? t("noMatchingInvoices", "No matching invoices found")
+                : t("noInvoices", "No invoices found")}
             </p>
           </div>
         )}

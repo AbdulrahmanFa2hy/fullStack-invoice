@@ -1,4 +1,5 @@
 import { format, parseISO } from "date-fns";
+import { ar } from "date-fns/locale";
 import { useState, useRef, useEffect } from "react";
 import { motion } from "framer-motion";
 import { useSelector } from "react-redux";
@@ -72,7 +73,9 @@ const InvoiceDetailModal = ({ invoice, onClose, onUpdate, onDelete }) => {
 
   const formatDate = (dateString) => {
     try {
-      return format(parseISO(dateString), "PPP");
+      return format(parseISO(dateString), "PPP", {
+        locale: i18n.language === "ar" ? ar : undefined,
+      });
     } catch {
       return "Invalid date";
     }
@@ -382,9 +385,9 @@ const InvoiceDetailModal = ({ invoice, onClose, onUpdate, onDelete }) => {
                               ? `${(item.quantity * item.price).toFixed(2)}${t(
                                   "currency"
                                 )}`
-                              : `${t("currency")}${(
-                                  item.quantity * item.price
-                                ).toFixed(2)}`}
+                              : `${t("currency")}${
+                                  item.quantity * item.price.toFixed(2)
+                                }`}
                           </td>
                           <td className="px-4 py-2">
                             <button
