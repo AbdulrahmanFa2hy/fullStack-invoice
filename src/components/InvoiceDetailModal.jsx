@@ -25,6 +25,7 @@ const InvoiceDetailModal = ({ invoice, onClose, onUpdate, onDelete }) => {
     updatedAt: invoice?.updatedAt,
     privacy: invoice?.privacy || "",
     notes: invoice?.notes || "",
+    type: invoice?.type || "complete",
   });
   const [currentInvoice, setCurrentInvoice] = useState({
     ...invoice,
@@ -62,6 +63,7 @@ const InvoiceDetailModal = ({ invoice, onClose, onUpdate, onDelete }) => {
         updatedAt: invoice.updatedAt,
         privacy: invoice.privacy || "",
         notes: invoice.notes || "",
+        type: invoice.type || "complete",
       });
     }
   }, [invoice]);

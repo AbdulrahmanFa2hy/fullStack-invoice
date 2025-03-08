@@ -9,6 +9,7 @@ import {
   FiEye,
 } from "react-icons/fi";
 import { format } from "date-fns";
+import { ar } from "date-fns/locale";
 import Swal from "sweetalert2";
 import { useInvoiceNumber } from "../hooks/useInvoiceNumber";
 import {
@@ -367,13 +368,17 @@ function Home() {
           className="bg-white rounded-2xl shadow-lg md:shadow-2xl p-2 sm:p-5 md:p-8"
         >
           <div className="relative flex flex-col lg:flex-row justify-between items-center gap-4 mb-4 lg:mb-8">
-            <h1 className="self-start text-2xl sm:text-3xl  font-bold bg-gradient-to-r from-primary-500 to-accent-500 bg-clip-text text-transparent py-2">
+            <h1 className="self-start text-2xl sm:text-3xl  font-bold bg-gradient-to-r from-primary-500 to-accent-500 bg-clip-text text-transparent py-3">
               {t("invoiceGenerator")}
             </h1>
-            <div className="absolute top-0 left-0 flex flex-col items-center sm:relative h-14 w-14 sm:h-20 sm:w-20 overflow-hidden">
+            <div
+              className={`absolute top-0 ${
+                i18n.language === "ar" ? "left-0" : "right-0"
+              } flex flex-col items-center lg:relative h-16 w-16 lg:h-20 lg:w-20 overflow-hidden`}
+            >
               {company.logo ? (
                 <div
-                  className="cursor-pointer group "
+                  className="cursor-pointer group h-full w-full"
                   onClick={() => setIsLogoModalOpen(true)}
                 >
                   <img
@@ -404,7 +409,9 @@ function Home() {
             </div>
             <div className="self-end">
               <p className="text-xs sm:text-base text-gray-600 text-end">
-                {format(new Date(), "PPP")}
+                {format(new Date(), "PPP", {
+                  locale: i18n.language === "ar" ? ar : undefined,
+                })}
               </p>
               <p className="text-sm sm:text-base text-gray-600 text-end">
                 {invoiceNumber}

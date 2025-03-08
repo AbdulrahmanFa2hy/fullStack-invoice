@@ -235,6 +235,7 @@ i18n
           addPrivacyTerms: "Add privacy and terms",
           addNotes: "Add notes",
           created: "Invoice Created!",
+          createdِAt: "Created at",
           updated: "Invoice Updated!",
           currency: "$",
           shareMessage: "Invoice {number} from {company}",
