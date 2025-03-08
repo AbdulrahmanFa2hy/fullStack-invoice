@@ -276,8 +276,8 @@ const InvoiceDetailModal = ({ invoice, onClose, onUpdate, onDelete }) => {
                 </div>
               )}
 
-              <div>
-                <h3 className="font-semibold mb-3">{t("itemDetails")}</h3>
+              <div className="mt-4">
+                {/* <h3 className="font-semibold mb-3">{t("itemDetails")}</h3> */}
                 <div className="overflow-x-auto">
                   <table className="w-full">
                     <thead className="bg-gray-50">
@@ -567,8 +567,8 @@ const InvoiceDetailModal = ({ invoice, onClose, onUpdate, onDelete }) => {
                 </div>
               </div>
 
-              <div>
-                <h3 className="font-semibold mb-3">{t("items")}</h3>
+              <div className="pt-2">
+                {/* <h3 className="font-semibold mb-3">{t("items")}</h3> */}
                 <div className="overflow-x-auto">
                   <table className="w-full">
                     <thead className="bg-gray-50">
