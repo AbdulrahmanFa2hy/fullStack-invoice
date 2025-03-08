@@ -91,7 +91,10 @@ function Home() {
         errors[item.id] = { ...errors[item.id], price: t("priceRequired") };
       }
       if (!item.quantity || item.quantity <= 0) {
-        errors[item.id] = { ...errors[item.id], quantity: t("quantityRequired") };
+        errors[item.id] = {
+          ...errors[item.id],
+          quantity: t("quantityRequired"),
+        };
       }
     });
     setItemErrors(errors);
@@ -102,9 +105,9 @@ function Home() {
     dispatch(updateItem({ id, field, value }));
     // Clear error when user starts typing
     if (itemErrors[id]?.[field]) {
-      setItemErrors(prev => ({
+      setItemErrors((prev) => ({
         ...prev,
-        [id]: { ...prev[id], [field]: undefined }
+        [id]: { ...prev[id], [field]: undefined },
       }));
     }
   };
@@ -205,31 +208,33 @@ function Home() {
   };
 
   const handleEmailChange = (type, value) => {
-    if (type === 'from') {
+    if (type === "from") {
       dispatch(updateCompany({ field: "email", value }));
-      setEmailErrors(prev => ({
+      setEmailErrors((prev) => ({
         ...prev,
-        from: validateEmail(value) ? "" : t("invalidEmail")
+        from: validateEmail(value) ? "" : t("invalidEmail"),
       }));
     } else {
       handleCustomerChange("email", value);
-      setEmailErrors(prev => ({
+      setEmailErrors((prev) => ({
         ...prev,
-        to: validateEmail(value) ? "" : t("invalidEmail")
+        to: validateEmail(value) ? "" : t("invalidEmail"),
       }));
     }
   };
 
   const validateCompleteInvoice = () => {
-    if (invoiceType === 'complete') {
+    if (invoiceType === "complete") {
       // Check company (from) fields
-      const requiredCompanyFields = ['name', 'phone', 'email', 'address'];
-      const missingCompanyFields = requiredCompanyFields.filter(field => !company[field]);
-      
+      const requiredCompanyFields = ["name", "phone", "email", "address"];
+      const missingCompanyFields = requiredCompanyFields.filter(
+        (field) => !company[field]
+      );
+
       if (missingCompanyFields.length > 0) {
         Swal.fire({
           icon: "error",
-          title: t("required"),
+          // title: t("required"),
           text: t("pleaseFillCompanyDetails"),
           toast: true,
           position: "bottom-end",
@@ -243,7 +248,7 @@ function Home() {
       if (!validateEmail(company.email)) {
         Swal.fire({
           icon: "error",
-          title: t("invalidEmail"),
+          // title: t("invalidEmail"),
           text: t("pleaseEnterValidCompanyEmail"),
           toast: true,
           position: "bottom-end",
@@ -254,13 +259,15 @@ function Home() {
       }
 
       // Check customer (to) fields
-      const requiredCustomerFields = ['name', 'phone', 'email', 'address'];
-      const missingCustomerFields = requiredCustomerFields.filter(field => !selectedCustomer[field]);
-      
+      const requiredCustomerFields = ["name", "phone", "email", "address"];
+      const missingCustomerFields = requiredCustomerFields.filter(
+        (field) => !selectedCustomer[field]
+      );
+
       if (missingCustomerFields.length > 0) {
         Swal.fire({
           icon: "error",
-          title: t("required"),
+          // title: t("required"),
           text: t("pleaseFillCustomerDetails"),
           toast: true,
           position: "bottom-end",
@@ -274,7 +281,7 @@ function Home() {
       if (!validateEmail(selectedCustomer.email)) {
         Swal.fire({
           icon: "error",
-          title: t("invalidEmail"),
+          // title: t("invalidEmail"),
           text: t("pleaseEnterValidCustomerEmail"),
           toast: true,
           position: "bottom-end",
@@ -289,7 +296,7 @@ function Home() {
     if (!validateItems()) {
       Swal.fire({
         icon: "error",
-        title: t("required"),
+        // title: t("required"),
         text: t("pleaseFillRequiredItemFields"),
         toast: true,
         position: "bottom-end",
@@ -327,20 +334,20 @@ function Home() {
           ref={invoiceRef}
           className="bg-white rounded-2xl shadow-lg md:shadow-2xl p-2 sm:p-5 md:p-8"
         >
-          <div className="flex flex-col lg:flex-row justify-between items-center gap-4 mb-4 lg:mb-8">
+          <div className="relative flex flex-col lg:flex-row justify-between items-center gap-4 mb-4 lg:mb-8">
             <h1 className="self-start text-2xl sm:text-3xl  font-bold bg-gradient-to-r from-primary-500 to-accent-500 bg-clip-text text-transparent py-2">
               {t("invoiceGenerator")}
             </h1>
-            <div className="flex flex-col items-center relative">
+            <div className="absolute top-0 left-0 flex flex-col items-center sm:relative h-14 w-14 sm:h-20 sm:w-20 overflow-hidden">
               {company.logo ? (
                 <div
-                  className="cursor-pointer group"
+                  className="cursor-pointer group "
                   onClick={() => setIsLogoModalOpen(true)}
                 >
                   <img
                     src={company.logo}
                     alt="Company logo"
-                    className="h-12 w-12 object-contain rounded-full border border-gray-200 "
+                    className="h-full w-full object-contain rounded-xl border border-gray-200 "
                   />
                 </div>
               ) : (
@@ -395,7 +402,7 @@ function Home() {
                           })
                         )
                       }
-                      required={invoiceType === 'complete'}
+                      required={invoiceType === "complete"}
                     />
                     <input
                       type="tel"
@@ -405,7 +412,7 @@ function Home() {
                       value={company.phone}
                       onChange={(e) => {
                         // Only allow numbers
-                        const value = e.target.value.replace(/[^0-9]/g, '');
+                        const value = e.target.value.replace(/[^0-9]/g, "");
                         dispatch(
                           updateCompany({
                             field: "phone",
@@ -413,17 +420,21 @@ function Home() {
                           })
                         );
                       }}
-                      required={invoiceType === 'complete'}
+                      required={invoiceType === "complete"}
                       pattern="[0-9]*"
                       inputMode="numeric"
                     />
                     <input
                       type="email"
                       placeholder={t("email")}
-                      className={`${getInputClassName("input")} ${emailErrors.from ? "border-red-500" : ""}`}
+                      className={`${getInputClassName("input")} ${
+                        emailErrors.from ? "border-red-500" : ""
+                      }`}
                       value={company.email}
-                      onChange={(e) => handleEmailChange('from', e.target.value)}
-                      required={invoiceType === 'complete'}
+                      onChange={(e) =>
+                        handleEmailChange("from", e.target.value)
+                      }
+                      required={invoiceType === "complete"}
                     />
                     <textarea
                       placeholder={t("address")}
@@ -437,7 +448,7 @@ function Home() {
                           })
                         )
                       }
-                      required={invoiceType === 'complete'}
+                      required={invoiceType === "complete"}
                     ></textarea>
                   </div>
                 </div>
@@ -452,7 +463,7 @@ function Home() {
                       )}
                       onChange={(e) => handleCustomerSelect(e.target.value)}
                       value={selectedCustomerId || ""}
-                      required={invoiceType === 'complete'}
+                      required={invoiceType === "complete"}
                     >
                       <option value="">{t("selectCustomer")}</option>
                       {customers.map((customer) => (
@@ -471,7 +482,7 @@ function Home() {
                       onChange={(e) =>
                         handleCustomerChange("name", e.target.value)
                       }
-                      required={invoiceType === 'complete'}
+                      required={invoiceType === "complete"}
                     />
                     <input
                       type="tel"
@@ -481,20 +492,22 @@ function Home() {
                       value={selectedCustomer.phone}
                       onChange={(e) => {
                         // Only allow numbers
-                        const value = e.target.value.replace(/[^0-9]/g, '');
+                        const value = e.target.value.replace(/[^0-9]/g, "");
                         handleCustomerChange("phone", value);
                       }}
-                      required={invoiceType === 'complete'}
+                      required={invoiceType === "complete"}
                       pattern="[0-9]*"
                       inputMode="numeric"
                     />
                     <input
                       type="email"
                       placeholder={t("email")}
-                      className={`${getInputClassName("input")} ${emailErrors.to ? "border-red-500" : ""}`}
+                      className={`${getInputClassName("input")} ${
+                        emailErrors.to ? "border-red-500" : ""
+                      }`}
                       value={selectedCustomer.email}
-                      onChange={(e) => handleEmailChange('to', e.target.value)}
-                      required={invoiceType === 'complete'}
+                      onChange={(e) => handleEmailChange("to", e.target.value)}
+                      required={invoiceType === "complete"}
                     />
                     <textarea
                       placeholder={t("address")}
@@ -503,7 +516,7 @@ function Home() {
                       onChange={(e) =>
                         handleCustomerChange("address", e.target.value)
                       }
-                      required={invoiceType === 'complete'}
+                      required={invoiceType === "complete"}
                     ></textarea>
                   </div>
                 </div>
@@ -539,7 +552,9 @@ function Home() {
                   <div className="col-span-12 sm:col-span-6 lg:col-span-4">
                     <input
                       type="text"
-                      className={`${getInputClassName("input bg-gray-50")} ${itemErrors[item.id]?.name ? "border-red-500" : ""}`}
+                      className={`${getInputClassName("input bg-gray-50")} ${
+                        itemErrors[item.id]?.name ? "border-red-500" : ""
+                      }`}
                       value={item.name}
                       onChange={(e) =>
                         handleUpdateItem(item.id, "name", e.target.value)
@@ -576,7 +591,9 @@ function Home() {
                   <div className="col-span-3 lg:col-span-1">
                     <input
                       type="number"
-                      className={`${getInputClassName("input bg-gray-50")} ${itemErrors[item.id]?.quantity ? "border-red-500" : ""}`}
+                      className={`${getInputClassName("input bg-gray-50")} ${
+                        itemErrors[item.id]?.quantity ? "border-red-500" : ""
+                      }`}
                       value={item.quantity || ""}
                       onChange={(e) => {
                         const value = Math.max(0, e.target.value);
@@ -595,7 +612,9 @@ function Home() {
                   <div className="col-span-3 lg:col-span-1">
                     <input
                       type="number"
-                      className={`${getInputClassName("input bg-gray-50")} ${itemErrors[item.id]?.price ? "border-red-500" : ""}`}
+                      className={`${getInputClassName("input bg-gray-50")} ${
+                        itemErrors[item.id]?.price ? "border-red-500" : ""
+                      }`}
                       value={item.price || ""}
                       placeholder="0.00"
                       onChange={(e) => {
@@ -714,10 +733,14 @@ function Home() {
                         onKeyDown={(e) => {
                           if (e.key === "ArrowUp") {
                             e.preventDefault();
-                            dispatch(updateDiscount(Math.min(100, (discount || 0) + 1)));
+                            dispatch(
+                              updateDiscount(Math.min(100, (discount || 0) + 1))
+                            );
                           } else if (e.key === "ArrowDown") {
                             e.preventDefault();
-                            dispatch(updateDiscount(Math.max(0, (discount || 0) - 1)));
+                            dispatch(
+                              updateDiscount(Math.max(0, (discount || 0) - 1))
+                            );
                           }
                         }}
                         min="0"
