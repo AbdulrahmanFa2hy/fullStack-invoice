@@ -109,7 +109,7 @@ i18n
           totalLabel: "المجموع النهائي",
           editInvoice: "تعديل الفاتورة",
           deleteInvoice: "حذف الفاتورة",
-          invoiceDetails: "تفاصيل الفاتورة",
+          invoiceDetails: "الفاتورة",
           senderDetails: "من",
           customerDetails: "إلى",
           itemDetails: "تفاصيل العناصر",
@@ -141,7 +141,7 @@ i18n
           companyAddress: "عنوان الشركة",
           saveAndContinue: "حفظ والمتابعة",
           // Customers page translations
-          searchCustomers: "البحث عن العملاء...",
+          searchCustomers: "أبحث عن عميل",
           noCustomersFound: "لم يتم العثور على عملاء",
           editCustomer: "تعديل العميل",
           // Login page translations
@@ -312,7 +312,7 @@ i18n
           companyAddress: "Company Address",
           saveAndContinue: "Save and Continue",
           // Customers page translations
-          searchCustomers: "Search customers...",
+          searchCustomers: "Search customers",
           noCustomersFound: "No customers found",
           editCustomer: "Edit Customer",
           // Login page translations
