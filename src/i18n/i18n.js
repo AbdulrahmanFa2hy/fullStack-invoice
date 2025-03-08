@@ -156,13 +156,14 @@ i18n
           // Signup page translations
           createAccount: "إنشاء حساب",
           joinUs: "انضم إلينا وابدأ رحلتك",
-          fullName: "الاسم الكامل",
+          fullName: "الاسم",
           confirmPassword: "تأكيد كلمة المرور",
           acceptTerms: "أوافق على",
           termsAndConditions: "الشروط والأحكام",
           privacyPolicy: "سياسة الخصوصية",
           alreadyHaveAccount: "لديك حساب بالفعل؟ سجل دخول",
           createAccountButton: "إنشاء حساب",
+          and: "و",
           // Profile page translations
           editProfile: "تعديل الملف الشخصي",
           logout: "تسجيل الخروج",
@@ -332,6 +333,7 @@ i18n
           privacyPolicy: "Privacy Policy",
           alreadyHaveAccount: "Already have an account? Sign In",
           createAccountButton: "Create Account",
+          and: "and",
           // Profile page translations
           editProfile: "Edit Profile",
           logout: "Logout",

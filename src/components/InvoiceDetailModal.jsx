@@ -35,7 +35,7 @@ const InvoiceDetailModal = ({ invoice, onClose, onUpdate, onDelete }) => {
   // Add these selectors to get customers and check invoice type
   const customers = useSelector((state) => state.customers.customers);
   // Get the invoice type from the invoice data or default to "complete"
-  const invoiceType = invoice?.type || "complete";
+  const invoiceType = invoice?.type;
 
   // Find customer based on customerId
   const customer = customers.find((c) => c.id === invoice?.customerId) || {
