@@ -21,6 +21,7 @@ import {
   updateDiscount,
   updatePrivacy,
   updateNotes,
+  resetInvoice,
 } from "../store/invoiceSlice";
 import {
   addCustomer,
@@ -312,6 +313,37 @@ function Home() {
   const handleSaveInvoice = () => {
     if (validateCompleteInvoice()) {
       saveInvoiceData();
+      Swal.fire({
+        title: isExistingInvoice() ? t("updated") : t("created"),
+        text: t("createNewInvoiceQuestion"),
+        icon: "success",
+        showCancelButton: true,
+        confirmButtonColor: "#3085d6",
+        cancelButtonColor: "#d33",
+        confirmButtonText: t("yes"),
+        cancelButtonText: t("no"),
+        customClass: {
+          popup: "rounded-2xl shadow-lg",
+          title: "text-2xl font-bold text-gray-800",
+          htmlContainer: "text-gray-600",
+          confirmButton:
+            "btn btn-primary px-6 py-2 rounded-lg text-white font-medium hover:bg-blue-700 transition-colors",
+          cancelButton:
+            "btn bg-gray-100 px-6 py-2 rounded-lg text-gray-700 font-medium hover:bg-gray-200 transition-colors",
+          actions: "gap-3",
+        },
+        buttonsStyling: false,
+      }).then((result) => {
+        if (result.isConfirmed) {
+          dispatch(resetInvoice());
+          dispatch(generateInvoiceNumber());
+          dispatch(setSelectedCustomerId(null));
+          // Add initial item if items array is empty
+          if (items.length === 0) {
+            dispatch(addItem());
+          }
+        }
+      });
     }
   };
 

@@ -4,16 +4,16 @@ import LanguageDetector from "i18next-browser-languagedetector";
 
 // Function to set document direction
 const setDocumentDirection = (language) => {
-  const dir = language === 'ar' ? 'rtl' : 'ltr';
+  const dir = language === "ar" ? "rtl" : "ltr";
   document.documentElement.dir = dir;
   document.documentElement.lang = language;
   // Add appropriate class for RTL/LTR styling
-  if (dir === 'rtl') {
-    document.documentElement.classList.add('rtl');
-    document.documentElement.classList.remove('ltr');
+  if (dir === "rtl") {
+    document.documentElement.classList.add("rtl");
+    document.documentElement.classList.remove("ltr");
   } else {
-    document.documentElement.classList.add('ltr');
-    document.documentElement.classList.remove('rtl');
+    document.documentElement.classList.add("ltr");
+    document.documentElement.classList.remove("rtl");
   }
 };
 
@@ -63,9 +63,9 @@ i18n
           actions: "حذف",
           addPrivacyTerms: "أضف الخصوصية والشروط",
           addNotes: "أضف ملاحظات",
-          created: "تم إنشاء الفاتورة!",
+          created: "تم إنشاء الفاتورة",
           createdِAt: "تم الإنشاء في",
-          updated: "تم تحديث الفاتورة!",
+          updated: "تم تحديث الفاتورة",
           currency: "$",
           shareMessage: "فاتورة رقم {number} من {company}",
           deleteItem: "حذف العنصر",
@@ -168,11 +168,14 @@ i18n
           logout: "تسجيل الخروج",
           // Invoice Types page translations
           selectInvoiceType: "اختر نوع الفاتورة",
-          chooseInvoiceType: "رجاءا قم بأختيار نوع الفاتورة الذي يناسب احتياجات عملك",
+          chooseInvoiceType:
+            "رجاءا قم بأختيار نوع الفاتورة الذي يناسب احتياجات عملك",
           completeInvoice: "فاتورة كاملة",
           quickInvoice: "فاتورة سريعة",
-          completeInvoiceDesc: "فاتورة قياسية مع جميع التفاصيل بما في ذلك معلومات المرسل والمستلم. مثالية للمعاملات التجارية الرسمية.",
-          quickInvoiceDesc: "فاتورة مبسطة بدون تفاصيل المرسل والمستلم. مثالية للمعاملات السريعة والإيصالات غير الرسمية.",
+          completeInvoiceDesc:
+            "فاتورة قياسية مع جميع التفاصيل بما في ذلك معلومات المرسل والمستلم. مثالية للمعاملات التجارية الرسمية.",
+          quickInvoiceDesc:
+            "فاتورة مبسطة بدون تفاصيل المرسل والمستلم. مثالية للمعاملات السريعة والإيصالات غير الرسمية.",
           features: "المميزات",
           createInvoice: "إنشاء",
           // Invoice Type Features translations
@@ -183,6 +186,10 @@ i18n
           expandedFormat: "صيغة موسعة",
           fasterCreation: "إنشاء أسرع",
           simplifiedFormat: "صيغة مبسطة",
+          // Confirmation Dialog translations
+          createNewInvoiceQuestion: "هل تريد إنشاء فاتورة جديدة؟",
+          yes: "نعم",
+          no: "لا",
         },
       },
       en: {
@@ -333,8 +340,10 @@ i18n
           chooseInvoiceType: "Choose the invoice type that suits your needs",
           completeInvoice: "Complete Invoice",
           quickInvoice: "Quick Invoice",
-          completeInvoiceDesc: "A complete invoice with all details including sender and recipient information. Ideal for formal business transactions.",
-          quickInvoiceDesc: "A simplified invoice without sender and recipient details. Ideal for quick and informal transactions.",
+          completeInvoiceDesc:
+            "A complete invoice with all details including sender and recipient information. Ideal for formal business transactions.",
+          quickInvoiceDesc:
+            "A simplified invoice without sender and recipient details. Ideal for quick and informal transactions.",
           features: "Features",
           createInvoice: "Create Invoice",
           // Invoice Type Features translations
@@ -345,6 +354,10 @@ i18n
           expandedFormat: "Expanded Format",
           fasterCreation: "Faster Creation",
           simplifiedFormat: "Simplified Format",
+          // Confirmation Dialog translations
+          createNewInvoiceQuestion: "Would you like to create a new invoice?",
+          yes: "Yes",
+          no: "No",
         },
       },
     },
@@ -364,7 +377,7 @@ i18n
 setDocumentDirection(i18n.language);
 
 // Listen for language changes
-i18n.on('languageChanged', (lng) => {
+i18n.on("languageChanged", (lng) => {
   setDocumentDirection(lng);
 });
 
