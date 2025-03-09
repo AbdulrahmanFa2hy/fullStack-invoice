@@ -1,24 +1,36 @@
-# Logs
-logs
-*.log
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-pnpm-debug.log*
-lerna-debug.log*
+# BackEnd Ignore
+/BackEnd/.env
+/BackEnd/node_modules
+/BackEnd/.wwebjs_auth/
+/BackEnd/.gitignore
 
-node_modules
-dist
-dist-ssr
-*.local
+# FrontEnd Ignore
+# Logs
+/FrontEnd/logs
+/FrontEnd/*.log
+/FrontEnd/npm-debug.log*
+/FrontEnd/yarn-debug.log*
+/FrontEnd/yarn-error.log*
+/FrontEnd/pnpm-debug.log*
+/FrontEnd/lerna-debug.log*
+
+/FrontEnd/node_modules
+/FrontEnd/dist
+/FrontEnd/dist-ssr
+/FrontEnd/*.local
 
 # Editor directories and files
-.vscode/*
-!.vscode/extensions.json
-.idea
+/FrontEnd/.vscode/*
+/FrontEnd/.vscode/extensions.json
+/FrontEnd/.idea
+/FrontEnd/.DS_Store
+/FrontEnd/*.suo
+/FrontEnd/*.ntvs*
+/FrontEnd/*.njsproj
+/FrontEnd/*.sln
+/FrontEnd/*.sw?
+/FrontEnd/.gitignore
+
+# OS files
 .DS_Store
-*.suo
-*.ntvs*
-*.njsproj
-*.sln
-*.sw?
+Thumbs.db

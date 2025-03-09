@@ -6,7 +6,7 @@ import {
   Navigate,
 } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
-import { setAuthenticated } from "./store/profileSlice";
+import { setAuthenticated, checkAuth } from "./store/profileSlice";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
 import Navbar from "./components/Navbar";
@@ -16,10 +16,18 @@ import InvoiceTypes from "./pages/InvoiceTypes"; // Renamed from SubscriptionPla
 import Customers from "./pages/Customers";
 import Profile from "./pages/Profile";
 import CompanyForm from "./pages/CompanyForm";
+import { useEffect } from "react";
 
 function App() {
   const dispatch = useDispatch();
   const { isAuthenticated } = useSelector((state) => state.profile.userData);
+
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (token) {
+      dispatch(checkAuth());
+    }
+  }, [dispatch]);
 
   const handleAuth = () => {
     dispatch(setAuthenticated(true));

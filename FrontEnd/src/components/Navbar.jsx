@@ -81,17 +81,9 @@ const Navbar = () => {
             to="/profile"
             className="text-white hover:bg-blue-700 p-2 rounded-full transition-colors"
           >
-            {userData?.image ? (
-              <img
-                src={userData.image}
-                alt={userData.name || "Profile"}
-                className="w-8 h-8 rounded-full object-cover"
-              />
-            ) : (
-              <div className="w-8 h-8 rounded-full bg-white text-blue-600 flex items-center justify-center font-semibold">
-                {getInitials(userData?.name)}
-              </div>
-            )}
+            <div className="w-8 h-8 rounded-full bg-white text-blue-600 flex items-center justify-center font-semibold">
+              {getInitials(userData?.name)}
+            </div>
           </NavLink>
 
           {/* Desktop Navigation */}
@@ -288,17 +280,9 @@ const Navbar = () => {
               className="flex items-center gap-3 text-white hover:bg-blue-700 p-2 rounded-md transition-colors"
               onClick={() => setIsMenuOpen(false)}
             >
-              {userData?.image ? (
-                <img
-                  src={userData.image}
-                  alt={userData.name || "Profile"}
-                  className="w-8 h-8 rounded-full object-cover"
-                />
-              ) : (
-                <div className="w-8 h-8 rounded-full bg-white text-blue-600 flex items-center justify-center font-semibold">
-                  {getInitials(userData?.name)}
-                </div>
-              )}
+              <div className="w-8 h-8 rounded-full bg-white text-blue-600 flex items-center justify-center font-semibold">
+                {getInitials(userData?.name)}
+              </div>
               <span>{t("profile")}</span>
             </NavLink>
           </div>

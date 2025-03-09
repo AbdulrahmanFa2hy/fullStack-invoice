@@ -1,26 +1,33 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { useSelector } from "react-redux";
+import { useSelector, useDispatch } from "react-redux";
 import { useTranslation } from "react-i18next";
+import { signinUser } from "../store/profileSlice";
 
-function Login({ onLogin }) {
+function Login() {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const dispatch = useDispatch();
+  const { loading, error } = useSelector((state) => state.profile);
   const selectedInvoiceType = useSelector((state) => state.main.invoice.type);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [rememberMe, setRememberMe] = useState(false);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // TODO: Add actual login logic
-    onLogin();
 
-    // Navigate based on invoice type selection
-    if (selectedInvoiceType && selectedInvoiceType !== "") {
-      navigate("/");
-    } else {
-      navigate("/invoice-types");
+    try {
+      await dispatch(signinUser({ email, password, rememberMe })).unwrap();
+      // Navigate based on invoice type selection
+      if (selectedInvoiceType && selectedInvoiceType !== "") {
+        navigate("/");
+      } else {
+        navigate("/invoice-types");
+      }
+    } catch (err) {
+      // Error is handled by the reducer and shown in the UI
+      console.error("Login failed:", err);
     }
   };
 
@@ -29,12 +36,22 @@ function Login({ onLogin }) {
       <div className="max-w-md w-full space-y-8 bg-white p-8 rounded-xl shadow-lg">
         <div>
           <h2 className="mt-2 text-center text-3xl font-extrabold text-gray-900">
-            {t('welcomeBack')}
+            {t("welcomeBack")}
           </h2>
           <p className="mt-2 text-center text-sm text-gray-600">
-            {t('signInToAccount')}
+            {t("signInToAccount")}
           </p>
         </div>
+        {error && (
+          <div
+            className="bg-red-50 border border-red-400 text-red-700 px-4 py-3 rounded relative"
+            role="alert"
+          >
+            <span className="block sm:inline">
+              {error.message || "An error occurred during login"}
+            </span>
+          </div>
+        )}
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
           <div className="space-y-4">
             <div>
@@ -42,7 +59,7 @@ function Login({ onLogin }) {
                 htmlFor="email-address"
                 className="text-sm font-medium text-gray-700"
               >
-                {t('emailAddress')}
+                {t("emailAddress")}
               </label>
               <input
                 id="email-address"
@@ -61,7 +78,7 @@ function Login({ onLogin }) {
                 htmlFor="password"
                 className="text-sm font-medium text-gray-700"
               >
-                {t('password')}
+                {t("password")}
               </label>
               <input
                 id="password"
@@ -90,7 +107,7 @@ function Login({ onLogin }) {
                   htmlFor="remember-me"
                   className="ml-2 block text-sm text-gray-900"
                 >
-                  {t('rememberMe')}
+                  {t("rememberMe")}
                 </label>
               </div>
 
@@ -99,7 +116,7 @@ function Login({ onLogin }) {
                   to="/forgot-password"
                   className="font-medium text-primary-600 hover:text-primary-500"
                 >
-                  {t('forgotPassword')}
+                  {t("forgotPassword")}
                 </Link>
               </div>
             </div>
@@ -108,9 +125,12 @@ function Login({ onLogin }) {
           <div>
             <button
               type="submit"
-              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors duration-200"
+              disabled={loading}
+              className={`group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors duration-200 ${
+                loading ? "opacity-50 cursor-not-allowed" : ""
+              }`}
             >
-              {t('signIn')}
+              {loading ? t("signingIn") : t("signIn")}
             </button>
           </div>
 
@@ -119,7 +139,7 @@ function Login({ onLogin }) {
               to="/signup"
               className="font-medium text-primary-600 hover:text-primary-500 transition-colors duration-200"
             >
-              {t('dontHaveAccount')}
+              {t("dontHaveAccount")}
             </Link>
           </div>
         </form>
