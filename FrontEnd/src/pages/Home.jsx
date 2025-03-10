@@ -7,6 +7,7 @@ import {
   FiDownload,
   FiShare2,
   FiEye,
+  FiUserPlus,
 } from "react-icons/fi";
 import { format } from "date-fns";
 import { ar } from "date-fns/locale";
@@ -24,11 +25,7 @@ import {
   updateNotes,
   resetInvoice,
 } from "../store/invoiceSlice";
-import {
-  addCustomer,
-  updateCustomer,
-  setSelectedCustomerId,
-} from "../store/customersSlice";
+import { setSelectedCustomerId } from "../store/customersSlice";
 import { updateCompany, fetchCompanyByUserId } from "../store/companySlice";
 import LogoModal from "../components/LogoModal";
 import { useTranslation } from "react-i18next";
@@ -166,42 +163,19 @@ function Home() {
     type: invoiceType, // Include the invoice type when saving
   });
 
-  const handleCustomerChange = (field, value) => {
+  const handleCustomerChange = () => {
     if (!selectedCustomerId) {
-      // Create new customer when typing for the first time
-      const newCustomer = {
-        id: Date.now().toString(),
-        name: field === "name" ? value : "",
-        phone: field === "phone" ? value : "",
-        email: field === "email" ? value : "",
-        address: field === "address" ? value : "",
-      };
-      dispatch(addCustomer(newCustomer));
-      dispatch(setSelectedCustomerId(newCustomer.id));
+      // Navigate to customers page to add new customer
+      window.location.href = "/customers?action=add";
     } else {
-      // Update existing customer
-      dispatch(
-        updateCustomer({
-          id: selectedCustomerId,
-          ...selectedCustomer,
-          [field]: value,
-        })
-      );
+      // Navigate to customers page to edit customer
+      window.location.href = `/customers?action=edit&id=${selectedCustomerId}`;
     }
   };
 
   const handleCustomerSelect = (customerId) => {
     if (customerId === "") {
       dispatch(setSelectedCustomerId(null));
-      // Clear all customer fields when selecting empty option
-      const emptyCustomer = {
-        id: "",
-        name: "",
-        phone: "",
-        email: "",
-        address: "",
-      };
-      dispatch(addCustomer(emptyCustomer));
     } else {
       dispatch(setSelectedCustomerId(customerId));
     }
@@ -233,7 +207,7 @@ function Home() {
         from: validateEmail(value) ? "" : t("invalidEmail"),
       }));
     } else {
-      handleCustomerChange("email", value);
+      handleCustomerChange();
       setEmailErrors((prev) => ({
         ...prev,
         to: validateEmail(value) ? "" : t("invalidEmail"),
@@ -370,6 +344,11 @@ function Home() {
       return `${baseClass} text-start rtl:text-right ltr:text-left [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none`;
     }
     return `${baseClass} text-start`;
+  };
+
+  const handleAddCustomerClick = () => {
+    // Navigate to customers page with add modal open
+    window.location.href = "/customers?action=add";
   };
 
   return (
@@ -512,21 +491,30 @@ function Home() {
                     <h2 className="text-base sm:text-lg font-semibold text-gray-700">
                       {t("to")}:
                     </h2>
-                    <select
-                      className={getInputClassName(
-                        "input w-48 sm:w-72 text-sm p-1 mb-4 inline-block"
-                      )}
-                      onChange={(e) => handleCustomerSelect(e.target.value)}
-                      value={selectedCustomerId || ""}
-                      required={invoiceType === "complete"}
-                    >
-                      <option value="">{t("selectCustomer")}</option>
-                      {customers.map((customer) => (
-                        <option key={customer.id} value={customer.id}>
-                          {customer.name} ({customer.email})
-                        </option>
-                      ))}
-                    </select>
+                    <div className="flex items-center gap-2">
+                      <select
+                        className={getInputClassName(
+                          "input w-48 sm:w-72 text-sm p-1 mb-4 inline-block"
+                        )}
+                        onChange={(e) => handleCustomerSelect(e.target.value)}
+                        value={selectedCustomerId || ""}
+                        required={invoiceType === "complete"}
+                      >
+                        <option value="">{t("selectCustomer")}</option>
+                        {customers.map((customer) => (
+                          <option key={customer.id} value={customer.id}>
+                            {customer.name} ({customer.email})
+                          </option>
+                        ))}
+                      </select>
+                      <button
+                        onClick={handleAddCustomerClick}
+                        className="btn btn-accent btn-sm flex items-center gap-1 mb-4"
+                        title={t("addNewCustomer")}
+                      >
+                        <FiUserPlus size={18} />
+                      </button>
+                    </div>
                   </div>
                   <div className="space-y-3">
                     <input
