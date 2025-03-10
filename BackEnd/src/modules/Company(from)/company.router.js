@@ -1,16 +1,22 @@
 import express from "express";
-import { addCompany, deleteCompany, getAllCompanies, getCompanyById, updateCompany } from "./company.controller.js";
-import { allowedTo, protectedRoutes } from "../auth/auth.controller.js";
+import {
+  saveCompany,
+  getCompany,
+  deleteCompany,
+} from "./company.controller.js";
 import { fileUpload } from "../../middleware/fileUploads.js";
-
-
-
-
+import { protectedRoutes, allowedTo } from "../auth/auth.controller.js";
 
 export const companyRouter = express.Router();
 
-companyRouter.post('/',fileUpload('logo','company'),addCompany)
-companyRouter.get('/',protectedRoutes,allowedTo("user"),getAllCompanies) 
-companyRouter.get('/:id',getCompanyById)
-companyRouter.put('/:id',updateCompany)
-companyRouter.delete('/:id',protectedRoutes,allowedTo("user"),deleteCompany)
+// All routes require authentication
+companyRouter.use(protectedRoutes);
+companyRouter.use(allowedTo("user"));
+
+// Company routes without userId parameter
+companyRouter
+  .route("/")
+  .get(getCompany)
+  .post(fileUpload("logo", "company"), saveCompany)
+  .put(fileUpload("logo", "company"), saveCompany)
+  .delete(deleteCompany);

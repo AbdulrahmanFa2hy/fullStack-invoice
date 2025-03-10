@@ -192,6 +192,8 @@ i18n
           createNewInvoiceQuestion: "هل تريد إنشاء فاتورة جديدة؟",
           yes: "نعم",
           no: "لا",
+          companyNameRequired: "اسم الشركة مطلوب",
+          errorSavingCompany: "خطأ في حفظ بيانات الشركة",
         },
       },
       en: {
@@ -363,6 +365,8 @@ i18n
           createNewInvoiceQuestion: "Would you like to create a new invoice?",
           yes: "Yes",
           no: "No",
+          companyNameRequired: "Company name is required",
+          errorSavingCompany: "Error saving company data",
         },
       },
     },
