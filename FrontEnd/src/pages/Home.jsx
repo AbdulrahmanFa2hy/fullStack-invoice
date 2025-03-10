@@ -29,7 +29,7 @@ import {
   updateCustomer,
   setSelectedCustomerId,
 } from "../store/customersSlice";
-import { updateCompany } from "../store/companySlice";
+import { updateCompany, fetchCompanyByUserId } from "../store/companySlice";
 import LogoModal from "../components/LogoModal";
 import { useTranslation } from "react-i18next";
 
@@ -49,6 +49,7 @@ function Home() {
   const { customers, selectedCustomerId } = useSelector(
     (state) => state.customers
   );
+  const userId = useSelector((state) => state.profile.userData?.id);
   const selectedCustomer = customers.find(
     (customer) => customer.id === selectedCustomerId
   ) || {
@@ -81,6 +82,21 @@ function Home() {
     document.documentElement.dir = i18n.language === "ar" ? "rtl" : "ltr";
     document.documentElement.lang = i18n.language;
   }, [i18n.language]);
+
+  // Fetch company data when component mounts
+  useEffect(() => {
+    const fetchCompanyData = async () => {
+      if (userId) {
+        try {
+          await dispatch(fetchCompanyByUserId()).unwrap();
+        } catch (err) {
+          console.error("Failed to fetch company:", err);
+        }
+      }
+    };
+
+    fetchCompanyData();
+  }, [dispatch, userId]);
 
   // Add validation for items
   const validateItems = () => {

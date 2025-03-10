@@ -24,6 +24,26 @@ i18n
     resources: {
       ar: {
         translation: {
+          // Common translations
+          loading: "جاري التحميل...",
+          error: "خطأ",
+          invalidEmail: "البريد الإلكتروني غير صالح",
+          deleteItem: "حذف العنصر",
+
+          // Company Form translations
+          companyInformation: "معلومات الشركة",
+          setupCompanyProfile: "دعنا نقوم بإعداد ملف شركتك",
+          uploadLogo: "تحميل الشعار",
+          companyName: "اسم الشركة",
+          companyEmail: "البريد الإلكتروني للشركة",
+          contactNumber: "رقم الاتصال",
+          companyAddress: "عنوان الشركة",
+          updateCompany: "تحديث بيانات الشركة",
+          createCompany: "أضف بيانات الشركة",
+          companyNameRequired: "اسم الشركة مطلوب",
+          errorSavingCompany: "خطأ في حفظ بيانات الشركة",
+
+          // ... rest of the existing translations ...
           invoiceGenerator: "منشئ الفواتير",
           from: "من",
           to: "إلى",
@@ -69,20 +89,6 @@ i18n
           updated: "تم تحديث الفاتورة",
           currency: "$",
           shareMessage: "فاتورة رقم {number} من {company}",
-          deleteItem: "حذف العنصر",
-          placeholders: {
-            enterName: "أدخل الاسم",
-            enterPhone: "أدخل رقم الهاتف",
-            enterEmail: "أدخل البريد الإلكتروني",
-            enterAddress: "أدخل العنوان",
-            enterProduct: "أدخل اسم المنتج",
-            enterDesc: "أدخل الوصف",
-            enterQuantity: "أدخل الكمية",
-            enterPrice: "أدخل السعر",
-            enterTax: "أدخل نسبة الضريبة",
-            enterDiscount: "أدخل نسبة الخصم",
-          },
-          // New translations for Invoices page
           searchInvoices: "أبحث عن فاتورة",
           noMatchingInvoices: "لا توجد فواتير مطابقة",
           noInvoices: "لا توجد فواتير",
@@ -128,19 +134,9 @@ i18n
           // Validation messages
           required: "هذا الحقل مطلوب",
           invalidNumber: "يرجى إدخال رقم صحيح",
-          invalidEmail: "يرجى إدخال بريد إلكتروني صحيح",
           pleaseFillCompanyDetails: "يرجى ملء جميع تفاصيل الشركة",
           pleaseFillCustomerDetails: "يرجى ملء جميع تفاصيل العميل",
           pleaseFillRequiredItemFields: "أكمل بيانات المنتج",
-          // Company Form translations
-          companyInformation: "معلومات الشركة",
-          setupCompanyProfile: "دعنا نقوم بإعداد ملف شركتك",
-          uploadLogo: "تحميل الشعار",
-          companyName: "اسم الشركة",
-          companyEmail: "البريد الإلكتروني للشركة",
-          contactNumber: "رقم الاتصال",
-          companyAddress: "عنوان الشركة",
-          saveAndContinue: "حفظ والمتابعة",
           // Customers page translations
           searchCustomers: "أبحث عن عميل",
           noCustomersFound: "لم يتم العثور على عملاء",
@@ -192,12 +188,30 @@ i18n
           createNewInvoiceQuestion: "هل تريد إنشاء فاتورة جديدة؟",
           yes: "نعم",
           no: "لا",
-          companyNameRequired: "اسم الشركة مطلوب",
-          errorSavingCompany: "خطأ في حفظ بيانات الشركة",
         },
       },
       en: {
         translation: {
+          // Common translations
+          loading: "Loading...",
+          error: "Error",
+          invalidEmail: "Please enter a valid email",
+          deleteItem: "Delete Item",
+
+          // Company Form translations
+          companyInformation: "Company Information",
+          setupCompanyProfile: "Let's set up your company profile",
+          uploadLogo: "Upload Logo",
+          companyName: "Company Name",
+          companyEmail: "Company Email",
+          contactNumber: "Contact Number",
+          companyAddress: "Company Address",
+          updateCompany: "Update Company",
+          createCompany: "Add Company Information",
+          companyNameRequired: "Company name is required",
+          errorSavingCompany: "Error saving company data",
+
+          // ... rest of the existing translations ...
           invoiceGenerator: "Invoice Generator",
           from: "From",
           to: "To",
@@ -243,20 +257,6 @@ i18n
           updated: "Invoice Updated!",
           currency: "$",
           shareMessage: "Invoice {number} from {company}",
-          deleteItem: "Delete Item",
-          placeholders: {
-            enterName: "Enter name",
-            enterPhone: "Enter phone number",
-            enterEmail: "Enter email address",
-            enterAddress: "Enter address",
-            enterProduct: "Enter product name",
-            enterDesc: "Enter description",
-            enterQuantity: "Enter quantity",
-            enterPrice: "Enter price",
-            enterTax: "Enter tax rate",
-            enterDiscount: "Enter discount",
-          },
-          // New translations for Invoices page
           searchInvoices: "Search invoices",
           noMatchingInvoices: "No matching invoices found",
           noInvoices: "No invoices found",
@@ -302,19 +302,9 @@ i18n
           // Validation messages
           required: "This field is required",
           invalidNumber: "Please enter a valid number",
-          invalidEmail: "Please enter a valid email",
           pleaseFillCompanyDetails: "Please fill in all company details",
           pleaseFillCustomerDetails: "Please fill in all customer details",
           pleaseFillRequiredItemFields: "Complete all product fields",
-          // Company Form translations
-          companyInformation: "Company Information",
-          setupCompanyProfile: "Let's set up your company profile",
-          uploadLogo: "Upload Logo",
-          companyName: "Company Name",
-          companyEmail: "Company Email",
-          contactNumber: "Contact Number",
-          companyAddress: "Company Address",
-          saveAndContinue: "Save and Continue",
           // Customers page translations
           searchCustomers: "Search customers",
           noCustomersFound: "No customers found",
@@ -365,8 +355,6 @@ i18n
           createNewInvoiceQuestion: "Would you like to create a new invoice?",
           yes: "Yes",
           no: "No",
-          companyNameRequired: "Company name is required",
-          errorSavingCompany: "Error saving company data",
         },
       },
     },
