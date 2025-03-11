@@ -77,29 +77,25 @@ const invoiceSlice = createSlice({
     },
     saveToHistory: (state, action) => {
       const currentDate = new Date().toISOString();
-      const existingIndex = state.invoice.invoiceHistory.findIndex(
-        (inv) => inv.invoiceNumber === action.payload.invoiceNumber
+      const existingInvoiceIndex = state.invoice.invoiceHistory.findIndex(
+        (inv) => inv.id === action.payload.id
       );
 
-      const invoiceData = {
-        ...action.payload,
-        date: currentDate,
-        customer: action.payload.customer || {},
-      };
-
-      if (existingIndex >= 0) {
-        state.invoice.invoiceHistory[existingIndex] = {
-          ...invoiceData,
-          id: state.invoice.invoiceHistory[existingIndex].id,
-          createdAt: state.invoice.invoiceHistory[existingIndex].createdAt,
+      if (existingInvoiceIndex !== -1) {
+        // Update existing invoice
+        state.invoice.invoiceHistory[existingInvoiceIndex] = {
+          ...action.payload,
           updatedAt: currentDate,
+          // Ensure customer data is preserved
+          customer: action.payload.customer || {},
         };
       } else {
+        // Add new invoice
         state.invoice.invoiceHistory.push({
-          ...invoiceData,
-          id: generateUniqueId(),
-          createdAt: currentDate,
-          updatedAt: currentDate,
+          ...action.payload,
+          date: currentDate,
+          // Ensure customer data is preserved
+          customer: action.payload.customer || {},
         });
       }
     },

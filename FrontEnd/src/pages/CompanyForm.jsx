@@ -10,6 +10,7 @@ import {
 import { motion, AnimatePresence } from "framer-motion";
 import { FaTrash } from "react-icons/fa";
 import { useTranslation } from "react-i18next";
+import LoadingSpinner from "../components/LoadingSpinner";
 
 function CompanyForm() {
   const { t } = useTranslation();
@@ -148,12 +149,7 @@ function CompanyForm() {
 
   if (status === "loading") {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-8 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500 mx-auto"></div>
-          <p className="mt-4 text-gray-600">{t("loading")}</p>
-        </div>
-      </div>
+     <LoadingSpinner />
     );
   }
 

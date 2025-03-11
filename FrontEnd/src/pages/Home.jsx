@@ -7,6 +7,7 @@ import {
   FiDownload,
   FiShare2,
   FiEye,
+  FiLoader,
 } from "react-icons/fi";
 import { format } from "date-fns";
 import { ar } from "date-fns/locale";
@@ -24,11 +25,14 @@ import {
   updateNotes,
   resetInvoice,
 } from "../store/invoiceSlice";
-import { setSelectedCustomerId } from "../store/customersSlice";
+import { setSelectedCustomerId, fetchCustomers } from "../store/customersSlice";
 import { updateCompany, fetchCompanyByUserId } from "../store/companySlice";
 import LogoModal from "../components/LogoModal";
 import { useTranslation } from "react-i18next";
 import CustomerSelector from "../components/CustomerSelector";
+import InvoiceFrom from "../components/InvoiceFrom";
+import InvoiceTo from "../components/InvoiceTo";
+import LoadingSpinner from "../components/LoadingSpinner";
 
 function Home() {
   const dispatch = useDispatch();
@@ -72,6 +76,9 @@ function Home() {
     address: ""
   });
 
+  // Add a loading state to the component
+  const [isLoading, setIsLoading] = useState(true);
+
   // Update useEffect to initialize localCustomer when selectedCustomer changes
   useEffect(() => {
     // Only update localCustomer when selectedCustomerId changes
@@ -112,19 +119,27 @@ function Home() {
     document.documentElement.lang = i18n.language;
   }, [i18n.language]);
 
-  // Fetch company data when component mounts
+  // Update the useEffect to fetch customers when the component mounts
   useEffect(() => {
-    const fetchCompanyData = async () => {
+    const fetchData = async () => {
+      setIsLoading(true);
+      try {
+        // Fetch company data
       if (userId) {
-        try {
           await dispatch(fetchCompanyByUserId()).unwrap();
-        } catch (err) {
-          console.error("Failed to fetch company:", err);
         }
+        
+        // Fetch customers
+        await dispatch(fetchCustomers()).unwrap();
+        
+        setIsLoading(false);
+      } catch (err) {
+        console.error("Failed to fetch data:", err);
+        setIsLoading(false);
       }
     };
 
-    fetchCompanyData();
+    fetchData();
   }, [dispatch, userId]);
 
   // Add validation for items
@@ -178,23 +193,68 @@ function Home() {
     return invoiceHistory.some((inv) => inv.invoiceNumber === invoiceNumber);
   };
 
-  const prepareInvoiceData = () => ({
+  const saveInvoiceData = () => {
+    // Calculate totals
+    const subtotal = items.reduce(
+      (sum, item) => sum + item.quantity * item.price,
+      0
+    );
+    const discountAmount = (subtotal * discount) / 100;
+    const subtotalAfterDiscount = subtotal - discountAmount;
+    const taxAmount = (subtotalAfterDiscount * tax) / 100;
+    const total = subtotalAfterDiscount + taxAmount;
+
+    // Get the selected customer data - either from the selected customer or from local state
+    const customerData = selectedCustomerId 
+      ? { 
+          ...localCustomer,
+          id: selectedCustomerId 
+        } 
+      : localCustomer;
+
+    // Create the invoice object with embedded customer data
+    const invoiceData = {
+      id: isExistingInvoice()
+        ? invoiceHistory.find((inv) => inv.invoiceNumber === invoiceNumber).id
+        : `inv_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
     invoiceNumber,
-    sender: company,
-    customerId: selectedCustomerId,
-    customer: localCustomer,
-    items,
+      sender: {
+        name: company.name,
+        email: company.email,
+        phone: company.phone,
+        address: company.address,
+        logo: company.logo,
+      },
+      customerId: selectedCustomerId || null,
+      // Embed the full customer data in the invoice
+      customer: customerData,
+      items: items.filter((item) => item.name.trim() !== ""),
     subtotal,
+      discount,
+      discountAmount,
     tax,
     taxAmount,
-    discount,
-    discountAmount,
     total,
+      createdAt: isExistingInvoice()
+        ? invoiceHistory.find((inv) => inv.invoiceNumber === invoiceNumber)
+            .createdAt
+        : new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
     privacy,
     notes,
-    date: new Date().toISOString(),
-    type: invoiceType,
-  });
+      type: invoiceType,
+    };
+
+    dispatch(saveToHistory(invoiceData));
+    Swal.fire({
+      icon: "success",
+      title: isExistingInvoice() ? t("updated") : t("created"),
+      toast: true,
+      position: "bottom-end",
+      showConfirmButton: false,
+      timer: 1500,
+    });
+  };
 
   const handleCustomerChange = (field, value) => {
     setLocalCustomer(prev => ({
@@ -214,19 +274,6 @@ function Home() {
       
       // No need to update the form fields as they will be updated via the selectedCustomer variable
     }
-  };
-
-  const saveInvoiceData = () => {
-    const invoiceData = prepareInvoiceData();
-    dispatch(saveToHistory(invoiceData));
-    Swal.fire({
-      icon: "success",
-      title: isExistingInvoice() ? t("updated") : t("created"),
-      toast: true,
-      position: "bottom-end",
-      showConfirmButton: false,
-      timer: 1500,
-    });
   };
 
   const validateEmail = (email) => {
@@ -385,478 +432,378 @@ function Home() {
     return `${baseClass} text-start`;
   };
 
-
-
   return (
-    <div
-      className="min-h-screen py-4 px-0 md:py-8 md:px-2 bg-gray-100 flex flex-col md:flex-row gap-1 sm:gap-8 md:gap-0"
-      dir={i18n.language === "ar" ? "rtl" : "ltr"}
-    >
-      {/* Main invoice content */}
-      <div className="flex-grow max-w-6xl">
-        <div
-          ref={invoiceRef}
-          className="bg-white rounded-2xl shadow-lg md:shadow-2xl p-2 sm:p-5 md:p-8"
-        >
-          <div className="relative flex flex-col lg:flex-row justify-between items-center gap-4 mb-4 lg:mb-8">
-            <h1 className="self-start text-2xl sm:text-3xl  font-bold bg-gradient-to-r from-primary-500 to-accent-500 bg-clip-text text-transparent py-3">
-              {t("invoiceGenerator")}
-            </h1>
-            <div
-              className={`absolute top-0 ${
-                i18n.language === "ar" ? "left-0" : "right-0"
-              } flex flex-col items-center lg:relative h-16 w-16 lg:h-20 lg:w-20 overflow-hidden`}
-            >
-              {company.logo ? (
-                <div
-                  className="cursor-pointer group h-full w-full"
-                  onClick={() => setIsLogoModalOpen(true)}
-                >
-                  <img
-                    src={company.logo}
-                    alt="Company logo"
-                    className="h-full w-full object-contain rounded-xl border border-gray-200 "
-                  />
-                </div>
-              ) : (
-                <button
-                  onClick={() => setIsLogoModalOpen(true)}
-                  className="text-sm text-primary-600 hover:text-primary-700"
-                >
-                  {t("addLogo")}
-                </button>
-              )}
-              <LogoModal
-                isOpen={isLogoModalOpen}
-                onClose={() => setIsLogoModalOpen(false)}
-                logo={company.logo}
-                onUpdate={(logoData) =>
-                  dispatch(updateCompany({ field: "logo", value: logoData }))
-                }
-                onRemove={() =>
-                  dispatch(updateCompany({ field: "logo", value: null }))
-                }
-              />
-            </div>
-            <div className="self-end">
-              <p className="text-xs sm:text-base text-gray-600 text-end">
-                {format(new Date(), "PPP", {
-                  locale: i18n.language === "ar" ? ar : undefined,
-                })}
-              </p>
-              <p className="text-sm sm:text-base text-gray-600 text-end">
-                {invoiceNumber}
-              </p>
-            </div>
-          </div>
+    <>
+      {isLoading && <LoadingSpinner />}
 
-          {/* Conditionally render the 'to' and 'from' sections based on invoice type */}
-          {invoiceType !== "quick" && (
-            <div className="mb-4 md:mb-8">
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <div>
-                  <h2 className="text-base sm:text-lg font-semibold mb-4 text-gray-700">
-                    {t("from")}:
-                  </h2>
-                  <div className="space-y-3">
-                    <input
-                      type="text"
-                      placeholder={t("name")}
-                      className={getInputClassName("input")}
-                      value={company.name}
-                      onChange={(e) =>
-                        dispatch(
-                          updateCompany({
-                            field: "name",
-                            value: e.target.value,
-                          })
-                        )
-                      }
-                      required={invoiceType === "complete"}
-                    />
-                    <input
-                      type="tel"
-                      dir="auto"
-                      placeholder={t("phone")}
-                      className={getInputClassName("input", "tel")}
-                      value={company.phone}
-                      onChange={(e) => {
-                        // Only allow numbers
-                        const value = e.target.value.replace(/[^0-9]/g, "");
-                        dispatch(
-                          updateCompany({
-                            field: "phone",
-                            value: value,
-                          })
-                        );
-                      }}
-                      required={invoiceType === "complete"}
-                      pattern="[0-9]*"
-                      inputMode="numeric"
-                    />
-                    <input
-                      type="email"
-                      placeholder={t("email")}
-                      className={`${getInputClassName("input")} ${
-                        emailErrors.from ? "border-red-500" : ""
-                      }`}
-                      value={company.email}
-                      onChange={(e) =>
-                        handleEmailChange("from", e.target.value)
-                      }
-                      required={invoiceType === "complete"}
-                    />
-                    <textarea
-                      placeholder={t("address")}
-                      className={getInputClassName("input h-24")}
-                      value={company.address}
-                      onChange={(e) =>
-                        dispatch(
-                          updateCompany({
-                            field: "address",
-                            value: e.target.value,
-                          })
-                        )
-                      }
-                      required={invoiceType === "complete"}
-                    ></textarea>
-                  </div>
-                </div>
-                <div>
-                  <div className="flex justify-between items-center mb-4">
-                    <h2 className="text-base sm:text-lg font-semibold text-gray-700">
-                      {t("to")}:
-                    </h2>
-                    <CustomerSelector 
-                      selectedCustomerId={selectedCustomerId}
-                      selectClassName="w-48 sm:w-72 text-sm p-1 inline-block"
-                      className=""
+      <div
+        className="min-h-screen py-4 px-0 md:py-8 md:px-2 bg-gray-100 flex flex-col md:flex-row gap-1 sm:gap-8 md:gap-0"
+        dir={i18n.language === "ar" ? "rtl" : "ltr"}
+      >
+        <div className="flex-grow max-w-6xl">
+          <div
+            ref={invoiceRef}
+            className="bg-white rounded-2xl shadow-lg md:shadow-2xl p-2 sm:p-5 md:p-8"
+          >
+            <div className="relative flex flex-col lg:flex-row justify-between items-center gap-4 mb-4 lg:mb-8">
+              <h1 className="self-start text-2xl sm:text-3xl  font-bold bg-gradient-to-r from-primary-500 to-accent-500 bg-clip-text text-transparent py-3">
+                {t("invoiceGenerator")}
+              </h1>
+              <div
+                className={`absolute top-0 ${
+                  i18n.language === "ar" ? "left-0" : "right-0"
+                } flex flex-col items-center lg:relative h-16 w-16 lg:h-20 lg:w-20 overflow-hidden`}
+              >
+                {company.logo ? (
+                  <div
+                    className="cursor-pointer group h-full w-full"
+                    onClick={() => setIsLogoModalOpen(true)}
+                  >
+                    <img
+                      src={company.logo}
+                      alt="Company logo"
+                      className="h-full w-full object-contain rounded-xl border border-gray-200 "
                     />
                   </div>
-                  <div className="space-y-3">
-                    <input
-                      type="text"
-                      placeholder={t("name")}
-                      className={getInputClassName("input")}
-                      value={localCustomer.name}
-                      onChange={(e) => handleCustomerChange("name", e.target.value)}
-                      required={invoiceType === "complete"}
-                    />
-                    <input
-                      type="tel"
-                      dir="auto"
-                      placeholder={t("phone")}
-                      className={getInputClassName("input", "tel")}
-                      value={localCustomer.phone}
-                      onChange={(e) => handleCustomerChange("phone", e.target.value)}
-                      required={invoiceType === "complete"}
-                      pattern="[0-9]*"
-                      inputMode="numeric"
-                    />
-                    <input
-                      type="email"
-                      placeholder={t("email")}
-                      className={`${getInputClassName("input")} ${
-                        emailErrors.to ? "border-red-500" : ""
-                      }`}
-                      value={localCustomer.email}
-                      onChange={(e) => handleEmailChange("to", e.target.value)}
-                      required={invoiceType === "complete"}
-                    />
-                    <textarea
-                      placeholder={t("address")}
-                      className={getInputClassName("input h-24")}
-                      value={localCustomer.address}
-                      onChange={(e) => handleCustomerChange("address", e.target.value)}
-                      required={invoiceType === "complete"}
-                    ></textarea>
-                  </div>
-                </div>
+                ) : (
+                  <button
+                    onClick={() => setIsLogoModalOpen(true)}
+                    className="text-sm text-primary-600 hover:text-primary-700"
+                  >
+                    {t("addLogo")}
+                  </button>
+                )}
+                <LogoModal
+                  isOpen={isLogoModalOpen}
+                  onClose={() => setIsLogoModalOpen(false)}
+                  logo={company.logo}
+                  onUpdate={(logoData) =>
+                    dispatch(updateCompany({ field: "logo", value: logoData }))
+                  }
+                  onRemove={() =>
+                    dispatch(updateCompany({ field: "logo", value: null }))
+                  }
+                />
               </div>
-            </div>
-          )}
-
-          <div className="mb-4">
-            <div className="hidden lg:grid  bg-gray-50 p-4 rounded-lg mb-4">
-              <div className="hidden lg:grid grid-cols-12 gap-4 mb-2 font-semibold text-gray-600">
-                <div className="col-span-4 text-sm sm:text-base">
-                  {t("productName")}
-                </div>
-                <div className="col-span-4 text-sm sm:text-base">
-                  {t("desc")}
-                </div>
-                <div className="col-span-1 text-sm sm:text-base text-center">
-                  {t("qty")}
-                </div>
-                <div className="col-span-1 text-sm sm:text-base text-center">
-                  {t("price")}
-                </div>
-                <div className="col-span-1 text-sm sm:text-base text-center">
-                  {t("total")}
-                </div>
-                <div className="col-span-1">{t("actions")}</div>
+              <div className="self-end">
+                <p className="text-xs sm:text-base text-gray-600 text-end">
+                  {format(new Date(), "PPP", {
+                    locale: i18n.language === "ar" ? ar : undefined,
+                  })}
+                </p>
+                <p className="text-sm sm:text-base text-gray-600 text-end">
+                  {invoiceNumber}
+                </p>
               </div>
             </div>
 
-            {items.map((item) => (
-              <div key={item.id} className="mb-5">
-                <div className="grid grid-cols-12 gap-1 md:gap-4 items-center">
-                  <div className="col-span-12 sm:col-span-6 lg:col-span-4">
-                    <input
-                      type="text"
-                      className={`${getInputClassName("input bg-gray-50")} ${
-                        itemErrors[item.id]?.name ? "border-red-500" : ""
-                      }`}
-                      value={item.name}
-                      onChange={(e) =>
-                        handleUpdateItem(item.id, "name", e.target.value)
-                      }
-                      placeholder={t("productName")}
-                      required
-                    />
+            {/* Conditionally render the 'to' and 'from' sections based on invoice type */}
+            {invoiceType !== "quick" && (
+                  <div className="mb-8">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                      <InvoiceFrom 
+                        getInputClassName={getInputClassName}
+                        emailErrors={emailErrors}
+                        onEmailChange={handleEmailChange}
+                        invoiceType={invoiceType}
+                      />
+                      <InvoiceTo 
+                        customer={localCustomer}
+                        selectedCustomerId={selectedCustomerId}
+                        onCustomerSelect={handleCustomerSelect}
+                        onCustomerChange={handleCustomerChange}
+                        emailErrors={emailErrors}
+                        onEmailChange={handleEmailChange}
+                        getInputClassName={getInputClassName}
+                        invoiceType={invoiceType}
+                      />
+                </div>
+              </div>
+            )}
+
+            <div className="mb-4">
+              <div className="hidden lg:grid  bg-gray-50 p-4 rounded-lg mb-4">
+                <div className="hidden lg:grid grid-cols-12 gap-4 mb-2 font-semibold text-gray-600">
+                  <div className="col-span-4 text-sm sm:text-base">
+                    {t("productName")}
                   </div>
-                  <div className="col-span-12 sm:col-span-6 lg:col-span-4">
-                    <div className="flex justify-center items-center">
-                      <textarea
-                        className={getInputClassName(
-                          "input h-full resize-none overflow-hidden bg-gray-50"
-                        )}
-                        value={item.description}
+                  <div className="col-span-4 text-sm sm:text-base">
+                    {t("desc")}
+                  </div>
+                  <div className="col-span-1 text-sm sm:text-base text-center">
+                    {t("qty")}
+                  </div>
+                  <div className="col-span-1 text-sm sm:text-base text-center">
+                    {t("price")}
+                  </div>
+                  <div className="col-span-1 text-sm sm:text-base text-center">
+                    {t("total")}
+                  </div>
+                  <div className="col-span-1">{t("actions")}</div>
+                </div>
+              </div>
+
+              {items.map((item) => (
+                <div key={item.id} className="mb-5">
+                  <div className="grid grid-cols-12 gap-1 md:gap-4 items-center">
+                    <div className="col-span-12 sm:col-span-6 lg:col-span-4">
+                      <input
+                        type="text"
+                        className={`${getInputClassName("input bg-gray-50")} ${
+                          itemErrors[item.id]?.name ? "border-red-500" : ""
+                        }`}
+                        value={item.name}
+                        onChange={(e) =>
+                          handleUpdateItem(item.id, "name", e.target.value)
+                        }
+                        placeholder={t("productName")}
+                        required
+                      />
+                    </div>
+                    <div className="col-span-12 sm:col-span-6 lg:col-span-4">
+                      <div className="flex justify-center items-center">
+                        <textarea
+                          className={getInputClassName(
+                            "input h-full resize-none overflow-hidden bg-gray-50"
+                          )}
+                          value={item.description}
+                          onChange={(e) => {
+                            handleUpdateItem(
+                              item.id,
+                              "description",
+                              e.target.value
+                            );
+                            handleTextareaResize(e);
+                          }}
+                          onInput={handleTextareaResize}
+                          placeholder={t("desc")}
+                          rows={1}
+                          style={{
+                            resize: "none",
+                            transition: "height 0.1s ease-out",
+                          }}
+                        />
+                      </div>
+                    </div>
+                    <div className="col-span-3 lg:col-span-1">
+                      <input
+                        type="number"
+                        className={`${getInputClassName("input bg-gray-50")} ${
+                          itemErrors[item.id]?.quantity ? "border-red-500" : ""
+                        }`}
+                        value={item.quantity || ""}
                         onChange={(e) => {
+                          const value = Math.max(0, e.target.value);
                           handleUpdateItem(
                             item.id,
-                            "description",
-                            e.target.value
+                            "quantity",
+                            parseFloat(value) || 0
                           );
-                          handleTextareaResize(e);
                         }}
-                        onInput={handleTextareaResize}
-                        placeholder={t("desc")}
-                        rows={1}
-                        style={{
-                          resize: "none",
-                          transition: "height 0.1s ease-out",
-                        }}
+                        onFocus={(e) => e.target.select()}
+                        min="0"
+                        step="1"
+                        required
                       />
                     </div>
-                  </div>
-                  <div className="col-span-3 lg:col-span-1">
-                    <input
-                      type="number"
-                      className={`${getInputClassName("input bg-gray-50")} ${
-                        itemErrors[item.id]?.quantity ? "border-red-500" : ""
-                      }`}
-                      value={item.quantity || ""}
-                      onChange={(e) => {
-                        const value = Math.max(0, e.target.value);
-                        handleUpdateItem(
-                          item.id,
-                          "quantity",
-                          parseFloat(value) || 0
-                        );
-                      }}
-                      onFocus={(e) => e.target.select()}
-                      min="0"
-                      step="1"
-                      required
-                    />
-                  </div>
-                  <div className="col-span-3 lg:col-span-1">
-                    <input
-                      type="number"
-                      className={`${getInputClassName("input bg-gray-50")} ${
-                        itemErrors[item.id]?.price ? "border-red-500" : ""
-                      }`}
-                      value={item.price || ""}
-                      placeholder="0.00"
-                      onChange={(e) => {
-                        const value = Math.max(0, e.target.value);
-                        handleUpdateItem(
-                          item.id,
-                          "price",
-                          parseFloat(value) || 0
-                        );
-                      }}
-                      onFocus={(e) => e.target.select()}
-                      min="0"
-                      step="1"
-                      required
-                    />
-                  </div>
-                  <div className="col-span-3 lg:col-span-1 text-center font-medium text-sm sm:text-base">
-                    {t("currency")}
-                    {(item.quantity * item.price).toFixed(2)}
-                  </div>
-                  <div className="col-span-3 lg:col-span-1 flex justify-center">
-                    <button
-                      onClick={() => dispatch(removeItem(item.id))}
-                      className="text-red-500 hover:text-red-700"
-                      title={t("deleteItem")}
-                    >
-                      <FiTrash2 size={20} />
-                    </button>
+                    <div className="col-span-3 lg:col-span-1">
+                      <input
+                        type="number"
+                        className={`${getInputClassName("input bg-gray-50")} ${
+                          itemErrors[item.id]?.price ? "border-red-500" : ""
+                        }`}
+                        value={item.price || ""}
+                        placeholder="0.00"
+                        onChange={(e) => {
+                          const value = Math.max(0, e.target.value);
+                          handleUpdateItem(
+                            item.id,
+                            "price",
+                            parseFloat(value) || 0
+                          );
+                        }}
+                        onFocus={(e) => e.target.select()}
+                        min="0"
+                        step="1"
+                        required
+                      />
+                    </div>
+                    <div className="col-span-3 lg:col-span-1 text-center font-medium text-sm sm:text-base">
+                      {t("currency")}
+                      {(item.quantity * item.price).toFixed(2)}
+                    </div>
+                    <div className="col-span-3 lg:col-span-1 flex justify-center">
+                      <button
+                        onClick={() => dispatch(removeItem(item.id))}
+                        className="text-red-500 hover:text-red-700"
+                        title={t("deleteItem")}
+                      >
+                        <FiTrash2 size={20} />
+                      </button>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
-          </div>
-
-          <button
-            onClick={() => dispatch(addItem())}
-            className="btn btn-accent flex items-center space-s-2 text-sm md:text-base mb-2"
-          >
-            <FiPlus size={20} /> {t("addItem")}
-          </button>
-        </div>
-      </div>
-      {/* Action buttons container */}
-      <div className="md:min-w-72 md:ms-2">
-        <div className="bg-white p-2 md:p-6 rounded-xl drop-shadow-2xl md:drop-shadow-none md:shadow-lg sticky top-8">
-          <div className="flex flex-col-reverse md:flex-col gap-4">
-            <div className="flex flex-col-reverse md:flex-col gap-3">
-              <button className="btn btn-accent flex items-center gap-2 w-full justify-center text-sm md:text-base">
-                <FiDownload /> {t("downloadPDF")}
-              </button>
-              <button className="btn btn-accent flex items-center gap-2 w-full justify-center text-sm md:text-base">
-                <FiEye /> {t("previewPDF")}
-              </button>
-              <button className="btn btn-accent flex items-center gap-2 w-full justify-center text-sm md:text-base">
-                <FiShare2 /> {t("shareWhatsApp")}
-              </button>
-              <button
-                onClick={handleSaveInvoice}
-                className="btn btn-primary flex items-center gap-2 w-full justify-center text-sm md:text-base"
-              >
-                <FiSave /> {t("saveInvoice")}
-              </button>
+              ))}
             </div>
 
-            <div className="md:border-t pt-4">
-              <div className="space-y-3">
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-600 mb-1 text-center">
-                      {t("taxRate")}
-                    </label>
-                    <div className="relative">
-                      <input
-                        type="number"
-                        className={getInputClassName(
-                          "input w-full ps-4 py-1.5 text-sm"
-                        )}
-                        value={tax || ""}
-                        onChange={(e) => {
-                          const value = Math.max(0, e.target.value);
-                          dispatch(updateTax(parseFloat(value) || 0));
-                        }}
-                        onFocus={(e) => e.target.select()}
-                        onKeyDown={(e) => {
-                          if (e.key === "ArrowUp") {
-                            e.preventDefault();
-                            dispatch(updateTax(Math.min(100, (tax || 0) + 1)));
-                          } else if (e.key === "ArrowDown") {
-                            e.preventDefault();
-                            dispatch(updateTax(Math.max(0, (tax || 0) - 1)));
-                          }
-                        }}
-                        min="0"
-                        max="100"
-                        step="0.1"
-                        placeholder="0.0"
-                      />
-                    </div>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-600 mb-1 text-center">
-                      {t("discount")}
-                    </label>
-                    <div className="relative">
-                      <input
-                        type="number"
-                        className={getInputClassName(
-                          "input w-full ps-4 py-1.5 text-sm"
-                        )}
-                        value={discount || ""}
-                        onChange={(e) => {
-                          const value = Math.max(0, e.target.value);
-                          dispatch(updateDiscount(parseFloat(value) || 0));
-                        }}
-                        onFocus={(e) => e.target.select()}
-                        onKeyDown={(e) => {
-                          if (e.key === "ArrowUp") {
-                            e.preventDefault();
-                            dispatch(
-                              updateDiscount(Math.min(100, (discount || 0) + 1))
-                            );
-                          } else if (e.key === "ArrowDown") {
-                            e.preventDefault();
-                            dispatch(
-                              updateDiscount(Math.max(0, (discount || 0) - 1))
-                            );
-                          }
-                        }}
-                        min="0"
-                        max="100"
-                        step="0.1"
-                        placeholder="0.0"
-                      />
-                    </div>
-                  </div>
-                </div>
+            <button
+              onClick={() => dispatch(addItem())}
+              className="btn btn-accent flex items-center space-s-2 text-sm md:text-base mb-2"
+            >
+              <FiPlus size={20} /> {t("addItem")}
+            </button>
+          </div>
+        </div>
+          
+        {/* Action buttons container */}
+        <div className="md:min-w-72 md:ms-2">
+          <div className="bg-white p-2 md:p-6 rounded-xl drop-shadow-2xl md:drop-shadow-none md:shadow-lg sticky top-8">
+            <div className="flex flex-col-reverse md:flex-col gap-4">
+              <div className="flex flex-col-reverse md:flex-col gap-3">
+                <button className="btn btn-accent flex items-center gap-2 w-full justify-center text-sm md:text-base">
+                  <FiDownload /> {t("downloadPDF")}
+                </button>
+                <button className="btn btn-accent flex items-center gap-2 w-full justify-center text-sm md:text-base">
+                  <FiEye /> {t("previewPDF")}
+                </button>
+                <button className="btn btn-accent flex items-center gap-2 w-full justify-center text-sm md:text-base">
+                  <FiShare2 /> {t("shareWhatsApp")}
+                </button>
+                <button
+                  onClick={handleSaveInvoice}
+                  className="btn btn-primary flex items-center gap-2 w-full justify-center text-sm md:text-base"
+                >
+                  <FiSave /> {t("saveInvoice")}
+                </button>
+              </div>
 
-                {/* Compact Summary */}
-                <div className="bg-gray-50 rounded-lg p-3 space-y-1">
-                  <div className="flex justify-between text-sm text-gray-600">
-                    <span className="ms-0">{t("subtotal")}:</span>
-                    <span className="me-0">${subtotal.toFixed(2)}</span>
-                  </div>
-                  {discount > 0 && (
-                    <div className="flex justify-between text-sm text-gray-500">
-                      <span>
-                        {t("discount")} ({discount}%):
-                      </span>
-                      <span>-${discountAmount.toFixed(2)}</span>
+              <div className="md:border-t pt-4">
+                <div className="space-y-3">
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-600 mb-1 text-center">
+                        {t("taxRate")}
+                      </label>
+                      <div className="relative">
+                        <input
+                          type="number"
+                          className={getInputClassName(
+                            "input w-full ps-4 py-1.5 text-sm"
+                          )}
+                          value={tax || ""}
+                          onChange={(e) => {
+                            const value = Math.max(0, e.target.value);
+                            dispatch(updateTax(parseFloat(value) || 0));
+                          }}
+                          onFocus={(e) => e.target.select()}
+                          onKeyDown={(e) => {
+                            if (e.key === "ArrowUp") {
+                              e.preventDefault();
+                              dispatch(updateTax(Math.min(100, (tax || 0) + 1)));
+                            } else if (e.key === "ArrowDown") {
+                              e.preventDefault();
+                              dispatch(updateTax(Math.max(0, (tax || 0) - 1)));
+                            }
+                          }}
+                          min="0"
+                          max="100"
+                          step="0.1"
+                          placeholder="0.0"
+                        />
+                      </div>
                     </div>
-                  )}
-                  {tax > 0 && (
-                    <div className="flex justify-between text-sm text-gray-500">
-                      <span>
-                        {t("taxRate")} ({tax}%):
-                      </span>
-                      <span>+${taxAmount.toFixed(2)}</span>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-600 mb-1 text-center">
+                        {t("discount")}
+                      </label>
+                      <div className="relative">
+                        <input
+                          type="number"
+                          className={getInputClassName(
+                            "input w-full ps-4 py-1.5 text-sm"
+                          )}
+                          value={discount || ""}
+                          onChange={(e) => {
+                            const value = Math.max(0, e.target.value);
+                            dispatch(updateDiscount(parseFloat(value) || 0));
+                          }}
+                          onFocus={(e) => e.target.select()}
+                          onKeyDown={(e) => {
+                            if (e.key === "ArrowUp") {
+                              e.preventDefault();
+                              dispatch(
+                                updateDiscount(Math.min(100, (discount || 0) + 1))
+                              );
+                            } else if (e.key === "ArrowDown") {
+                              e.preventDefault();
+                              dispatch(
+                                updateDiscount(Math.max(0, (discount || 0) - 1))
+                              );
+                            }
+                          }}
+                          min="0"
+                          max="100"
+                          step="0.1"
+                          placeholder="0.0"
+                        />
+                      </div>
                     </div>
-                  )}
-                  <div className="flex justify-between font-medium pt-1 border-t text-sm sm:text-base">
-                    <span>{t("total")}:</span>
-                    <span>${total.toFixed(2)}</span>
                   </div>
-                </div>
 
-                {/* Privacy and Notes Sections */}
-                <div className="space-y-3 mt-4 md:border-t pt-4">
-                  <textarea
-                    className={getInputClassName(
-                      "input w-full text-sm min-h-[60px] resize-none bg-gray-50"
+                  {/* Compact Summary */}
+                  <div className="bg-gray-50 rounded-lg p-3 space-y-1">
+                    <div className="flex justify-between text-sm text-gray-600">
+                      <span className="ms-0">{t("subtotal")}:</span>
+                      <span className="me-0">${subtotal.toFixed(2)}</span>
+                    </div>
+                    {discount > 0 && (
+                      <div className="flex justify-between text-sm text-gray-500">
+                        <span>
+                          {t("discount")} ({discount}%):
+                        </span>
+                        <span>-${discountAmount.toFixed(2)}</span>
+                      </div>
                     )}
-                    placeholder={t("addPrivacyTerms")}
-                    value={privacy}
-                    onChange={(e) => dispatch(updatePrivacy(e.target.value))}
-                  ></textarea>
-                  <textarea
-                    className={getInputClassName(
-                      "input w-full text-sm min-h-[60px] resize-none bg-gray-50"
+                    {tax > 0 && (
+                      <div className="flex justify-between text-sm text-gray-500">
+                        <span>
+                          {t("taxRate")} ({tax}%):
+                        </span>
+                        <span>+${taxAmount.toFixed(2)}</span>
+                      </div>
                     )}
-                    placeholder={t("addNotes")}
-                    value={notes}
-                    onChange={(e) => dispatch(updateNotes(e.target.value))}
-                  ></textarea>
+                    <div className="flex justify-between font-medium pt-1 border-t text-sm sm:text-base">
+                      <span>{t("total")}:</span>
+                      <span>${total.toFixed(2)}</span>
+                    </div>
+                  </div>
+
+                  {/* Privacy and Notes Sections */}
+                  <div className="space-y-3 mt-4 md:border-t pt-4">
+                    <textarea
+                      className={getInputClassName(
+                        "input w-full text-sm min-h-[60px] resize-none bg-gray-50"
+                      )}
+                      placeholder={t("addPrivacyTerms")}
+                      value={privacy}
+                      onChange={(e) => dispatch(updatePrivacy(e.target.value))}
+                    ></textarea>
+                    <textarea
+                      className={getInputClassName(
+                        "input w-full text-sm min-h-[60px] resize-none bg-gray-50"
+                      )}
+                      placeholder={t("addNotes")}
+                      value={notes}
+                      onChange={(e) => dispatch(updateNotes(e.target.value))}
+                    ></textarea>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
         </div>
       </div>
-    </div>
+    </>
   );
 }
 

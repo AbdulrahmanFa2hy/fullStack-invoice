@@ -80,6 +80,8 @@ const Invoices = () => {
       customers.find((customer) => customer._id === customerId || customer.id === customerId) || {
         name: t("notAvailable", "N/A"),
         email: t("notAvailable", "N/A"),
+        phone: t("notAvailable", "N/A"),
+        address: t("notAvailable", "N/A"),
       }
     );
   };

@@ -5,6 +5,8 @@ import { motion } from "framer-motion";
 import { useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
 import CustomerSelector from "./CustomerSelector";
+import InvoiceFrom from "./InvoiceFrom";
+import InvoiceTo from "./InvoiceTo";
 
 const InvoiceDetailModal = ({ invoice, onClose, onUpdate, onDelete }) => {
   const { t, i18n } = useTranslation();
@@ -123,6 +125,7 @@ const InvoiceDetailModal = ({ invoice, onClose, onUpdate, onDelete }) => {
     const taxAmount = (subtotalAfterDiscount * editForm.tax) / 100;
     const total = subtotalAfterDiscount + taxAmount;
 
+    // Make sure to include the customer data in the updated invoice
     const updatedInvoice = {
       ...editForm,
       subtotal,
@@ -130,6 +133,8 @@ const InvoiceDetailModal = ({ invoice, onClose, onUpdate, onDelete }) => {
       discountAmount,
       total,
       updatedAt: new Date().toISOString(),
+      // Ensure customer data is preserved
+      customer: customer || {},
     };
 
     onUpdate(updatedInvoice);
@@ -219,84 +224,54 @@ const InvoiceDetailModal = ({ invoice, onClose, onUpdate, onDelete }) => {
             <div className="space-y-4 sm:space-y-6">
               {/* Conditionally render the 'from' and 'to' sections based on invoice type */}
               {invoiceType !== "quick" && (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
-                  {/* From Section */}
-                  <div className="space-y-4">
-                    <h3 className="text-base sm:text-lg font-semibold">
-                      {t("senderDetails")}
-                    </h3>
-                    <div className="space-y-4">
-                      {["name", "email", "phone", "address"].map((field) => (
-                        <div key={field}>
-                          <label className="block text-sm text-gray-600 mb-1">
-                            {t(field)}
-                          </label>
-                          {field === "address" ? (
-                            <textarea
-                              value={editForm.sender[field] || ""}
-                              onChange={(e) =>
-                                setEditForm({
-                                  ...editForm,
-                                  sender: {
-                                    ...editForm.sender,
-                                    [field]: e.target.value,
-                                  },
-                                })
-                              }
-                              placeholder={t(
-                                `placeholders.enter${
-                                  field.charAt(0).toUpperCase() + field.slice(1)
-                                }`
-                              )}
-                              className="w-full p-2 border rounded min-h-[80px]"
-                              dir="auto"
-                            />
-                          ) : (
-                            <input
-                              type={field === "email" ? "email" : "text"}
-                              value={editForm.sender[field] || ""}
-                              onChange={(e) =>
-                                setEditForm({
-                                  ...editForm,
-                                  sender: {
-                                    ...editForm.sender,
-                                    [field]: e.target.value,
-                                  },
-                                })
-                              }
-                              placeholder={t(
-                                `placeholders.enter${
-                                  field.charAt(0).toUpperCase() + field.slice(1)
-                                }`
-                              )}
-                              className="w-full p-2 border rounded h-10"
-                              dir="auto"
-                            />
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* To Section */}
-                  <div className="">
-                    <div className="flex justify-between items-center mb-1">
-                      <h3 className="text-base sm:text-lg font-semibold">
-                        {t("to")}
-                      </h3>
-                      <CustomerSelector 
-                        selectedCustomerId={editForm.customerId}
-                        onCustomerSelect={(customerId) => 
-                          setEditForm({
-                            ...editForm,
-                            customerId: customerId,
-                          })
-                        }
-                        selectClassName="w-4/5 p-2"
-                        showAddButton={true}
-                      />
-                    </div>
-                  </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                  <InvoiceFrom 
+                    readOnly={!isEditing}
+                    company={editForm.sender}
+                    getInputClassName={() => "w-full p-2 border rounded"}
+                    invoiceType={invoiceType}
+                  />
+                  <InvoiceTo 
+                    readOnly={!isEditing}
+                    customer={customer}
+                    selectedCustomerId={editForm.customerId}
+                    onCustomerSelect={(customerId) => {
+                      // Find the selected customer from the customers array
+                      const selectedCustomer = customers.find(c => c._id === customerId || c.id === customerId);
+                      
+                      // Update both the customerId in editForm and the customer state
+                      setEditForm({
+                        ...editForm,
+                        customerId: customerId,
+                      });
+                      
+                      // If a customer was found, update the customer state with their data
+                      if (selectedCustomer) {
+                        setCustomer({
+                          name: selectedCustomer.name || "",
+                          email: selectedCustomer.email || "",
+                          phone: selectedCustomer.phone || "",
+                          address: selectedCustomer.address || ""
+                        });
+                      } else if (customerId === "") {
+                        // If no customer was selected (empty string), reset the customer state
+                        setCustomer({
+                          name: "",
+                          email: "",
+                          phone: "",
+                          address: ""
+                        });
+                      }
+                    }}
+                    onCustomerChange={(field, value) => {
+                      setCustomer(prev => ({
+                        ...prev,
+                        [field]: value
+                      }));
+                    }}
+                    getInputClassName={() => "w-full p-2 border rounded"}
+                    invoiceType={invoiceType}
+                  />
                 </div>
               )}
 
@@ -624,12 +599,8 @@ const InvoiceDetailModal = ({ invoice, onClose, onUpdate, onDelete }) => {
                           </td>
                           <td className="px-4 py-2 text-end">
                             {isRTL
-                              ? `${(item.quantity * item.price).toFixed(2)}${t(
-                                  "currency"
-                                )}`
-                              : `${t("currency")}${(
-                                  item.quantity * item.price
-                                ).toFixed(2)}`}
+                              ? `${(item.quantity * item.price).toFixed(2)}${t("currency")}`
+                              : `${t("currency")}${(item.quantity * item.price).toFixed(2)}`}
                           </td>
                         </tr>
                       ))}
@@ -637,97 +608,11 @@ const InvoiceDetailModal = ({ invoice, onClose, onUpdate, onDelete }) => {
                   </table>
                 </div>
               </div>
-
-              <div className="flex justify-end">
-                <div className="text-right space-y-2 min-w-[200px] sm:min-w-[250px] md:min-w-[300px]">
-                  <div className="text-xs sm:text-sm text-gray-600">
-                    <div className="flex justify-between">
-                      <span>{t("subtotalAmount")}:</span>
-                      <span>
-                        {isRTL
-                          ? `${currentInvoice.subtotal.toFixed(2)}${t(
-                              "currency"
-                            )}`
-                          : `${t("currency")}${currentInvoice.subtotal.toFixed(
-                              2
-                            )}`}
-                      </span>
-                    </div>
-                    {currentInvoice.discount > 0 && (
-                      <div className="flex justify-between">
-                        <span>
-                          {t("discountLabel")} ({currentInvoice.discount}%)
-                        </span>
-                        <span>
-                          -
-                          {isRTL
-                            ? `${currentInvoice.discountAmount.toFixed(2)}${t(
-                                "currency"
-                              )}`
-                            : `${t(
-                                "currency"
-                              )}${currentInvoice.discountAmount.toFixed(2)}`}
-                        </span>
-                      </div>
-                    )}
-                    {currentInvoice.tax > 0 && (
-                      <div className="flex justify-between">
-                        <span>
-                          {t("taxLabel")} ({currentInvoice.tax}%)
-                        </span>
-                        <span>
-                          +
-                          {isRTL
-                            ? `${currentInvoice.taxAmount.toFixed(2)}${t(
-                                "currency"
-                              )}`
-                            : `${t(
-                                "currency"
-                              )}${currentInvoice.taxAmount.toFixed(2)}`}
-                        </span>
-                      </div>
-                    )}
-                  </div>
-                  <div className="text-base sm:text-lg md:text-xl font-bold border-t pt-2">
-                    <div className="flex justify-between">
-                      <span>{t("totalLabel")}:</span>
-                      <span>
-                        {isRTL
-                          ? `${currentInvoice.total.toFixed(2)}${t("currency")}`
-                          : `${t("currency")}${currentInvoice.total.toFixed(
-                              2
-                            )}`}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              {(currentInvoice.privacy || currentInvoice.notes) && (
-                <div className="space-y-4">
-                  {currentInvoice.privacy && (
-                    <div>
-                      <h3 className="font-semibold mb-2">
-                        {t("termsAndPrivacy")}
-                      </h3>
-                      <p className="text-sm text-gray-600">
-                        {currentInvoice.privacy}
-                      </p>
-                    </div>
-                  )}
-                  {currentInvoice.notes && (
-                    <div>
-                      <h3 className="font-semibold mb-2">{t("notes")}</h3>
-                      <p className="text-sm text-gray-600">
-                        {currentInvoice.notes}
-                      </p>
-                    </div>
-                  )}
-                </div>
-              )}
             </div>
           )}
         </div>
 
+        {/* Add the missing buttons at the bottom of the component */}
         {!isEditing && (
           <motion.div
             initial={{ y: 20, opacity: 0 }}
