@@ -4,11 +4,11 @@ import { AppError } from "../../utils/AppError.js";
 
 // Add a new customer
 const addCustomer = catchAsyncError(async (req, res, next) => {
-  let foundCustomer = await customerModel.findOne({ email: req.body.email });
+  // let foundCustomer = await customerModel.findOne({ email: req.body.email });
 
-  if (foundCustomer) {
-    return next(new AppError("Customer already exists", 409));
-  }
+  // if (foundCustomer) {
+  //   return next(new AppError("Customer already exists", 409));
+  // }
 
   let customer = new customerModel(req.body);
   await customer.save();

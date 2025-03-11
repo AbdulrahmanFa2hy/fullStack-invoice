@@ -10,7 +10,6 @@ const customerSchema = new mongoose.Schema(
     },
     phone: {
       type: String,
-      unique: [true, "User phone number must be unique"],
       required: true,
     },
     address: {
@@ -23,7 +22,6 @@ const customerSchema = new mongoose.Schema(
       type: String,
       required: true,
       trim: true,
-      unique: [true, "User email must be unique"],
       lowercase: true,
     },
     user_id: {
