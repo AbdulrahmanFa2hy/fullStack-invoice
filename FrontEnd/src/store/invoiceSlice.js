@@ -84,6 +84,7 @@ const invoiceSlice = createSlice({
       const invoiceData = {
         ...action.payload,
         date: currentDate,
+        customer: action.payload.customer || {},
       };
 
       if (existingIndex >= 0) {

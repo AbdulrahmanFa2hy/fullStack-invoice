@@ -7,7 +7,6 @@ import {
   FiDownload,
   FiShare2,
   FiEye,
-  FiUserPlus,
 } from "react-icons/fi";
 import { format } from "date-fns";
 import { ar } from "date-fns/locale";
@@ -29,6 +28,7 @@ import { setSelectedCustomerId } from "../store/customersSlice";
 import { updateCompany, fetchCompanyByUserId } from "../store/companySlice";
 import LogoModal from "../components/LogoModal";
 import { useTranslation } from "react-i18next";
+import CustomerSelector from "../components/CustomerSelector";
 
 function Home() {
   const dispatch = useDispatch();
@@ -48,7 +48,7 @@ function Home() {
   );
   const userId = useSelector((state) => state.profile.userData?.id);
   const selectedCustomer = customers.find(
-    (customer) => customer.id === selectedCustomerId
+    (customer) => customer._id === selectedCustomerId || customer.id === selectedCustomerId
   ) || {
     id: "",
     name: "",
@@ -63,6 +63,38 @@ function Home() {
   const [emailErrors, setEmailErrors] = useState({ from: "", to: "" });
   const [itemErrors, setItemErrors] = useState({});
   const { t, i18n } = useTranslation();
+
+  // Add a new state to track the local customer data
+  const [localCustomer, setLocalCustomer] = useState({
+    name: "",
+    email: "",
+    phone: "",
+    address: ""
+  });
+
+  // Update useEffect to initialize localCustomer when selectedCustomer changes
+  useEffect(() => {
+    // Only update localCustomer when selectedCustomerId changes
+    if (selectedCustomerId) {
+      const customer = customers.find(c => c._id === selectedCustomerId || c.id === selectedCustomerId);
+      if (customer) {
+        setLocalCustomer({
+          name: customer.name || "",
+          email: customer.email || "",
+          phone: customer.phone || "",
+          address: customer.address || ""
+        });
+      }
+    } else {
+      // Reset local customer when no customer is selected
+      setLocalCustomer({
+        name: "",
+        email: "",
+        phone: "",
+        address: ""
+      });
+    }
+  }, [selectedCustomerId, customers]); // Only depend on selectedCustomerId and customers array
 
   useEffect(() => {
     if (!invoiceNumber) {
@@ -148,8 +180,9 @@ function Home() {
 
   const prepareInvoiceData = () => ({
     invoiceNumber,
-    sender: company, // Update to use company data
-    customerId: selectedCustomerId, // Change this line to save only the ID
+    sender: company,
+    customerId: selectedCustomerId,
+    customer: localCustomer,
     items,
     subtotal,
     tax,
@@ -160,17 +193,14 @@ function Home() {
     privacy,
     notes,
     date: new Date().toISOString(),
-    type: invoiceType, // Include the invoice type when saving
+    type: invoiceType,
   });
 
-  const handleCustomerChange = () => {
-    if (!selectedCustomerId) {
-      // Navigate to customers page to add new customer
-      window.location.href = "/customers?action=add";
-    } else {
-      // Navigate to customers page to edit customer
-      window.location.href = `/customers?action=edit&id=${selectedCustomerId}`;
-    }
+  const handleCustomerChange = (field, value) => {
+    setLocalCustomer(prev => ({
+      ...prev,
+      [field]: value
+    }));
   };
 
   const handleCustomerSelect = (customerId) => {
@@ -178,6 +208,11 @@ function Home() {
       dispatch(setSelectedCustomerId(null));
     } else {
       dispatch(setSelectedCustomerId(customerId));
+      
+      // Find the selected customer from the customers array
+      const customer = customers.find(c => c._id === customerId || c.id === customerId);
+      
+      // No need to update the form fields as they will be updated via the selectedCustomer variable
     }
   };
 
@@ -207,7 +242,11 @@ function Home() {
         from: validateEmail(value) ? "" : t("invalidEmail"),
       }));
     } else {
-      handleCustomerChange();
+      // Update local customer email
+      setLocalCustomer(prev => ({
+        ...prev,
+        email: value
+      }));
       setEmailErrors((prev) => ({
         ...prev,
         to: validateEmail(value) ? "" : t("invalidEmail"),
@@ -253,7 +292,7 @@ function Home() {
       // Check customer (to) fields
       const requiredCustomerFields = ["name", "phone", "email", "address"];
       const missingCustomerFields = requiredCustomerFields.filter(
-        (field) => !selectedCustomer[field]
+        (field) => !localCustomer[field]
       );
 
       if (missingCustomerFields.length > 0) {
@@ -270,7 +309,7 @@ function Home() {
       }
 
       // Validate customer email
-      if (!validateEmail(selectedCustomer.email)) {
+      if (!validateEmail(localCustomer.email)) {
         Swal.fire({
           icon: "error",
           // title: t("invalidEmail"),
@@ -346,10 +385,7 @@ function Home() {
     return `${baseClass} text-start`;
   };
 
-  const handleAddCustomerClick = () => {
-    // Navigate to customers page with add modal open
-    window.location.href = "/customers?action=add";
-  };
+
 
   return (
     <div
@@ -487,44 +523,23 @@ function Home() {
                   </div>
                 </div>
                 <div>
-                  <div className="flex justify-between items-start">
+                  <div className="flex justify-between items-center mb-4">
                     <h2 className="text-base sm:text-lg font-semibold text-gray-700">
                       {t("to")}:
                     </h2>
-                    <div className="flex items-center gap-2">
-                      <select
-                        className={getInputClassName(
-                          "input w-48 sm:w-72 text-sm p-1 mb-4 inline-block"
-                        )}
-                        onChange={(e) => handleCustomerSelect(e.target.value)}
-                        value={selectedCustomerId || ""}
-                        required={invoiceType === "complete"}
-                      >
-                        <option value="">{t("selectCustomer")}</option>
-                        {customers.map((customer) => (
-                          <option key={customer.id} value={customer.id}>
-                            {customer.name} ({customer.email})
-                          </option>
-                        ))}
-                      </select>
-                      <button
-                        onClick={handleAddCustomerClick}
-                        className="btn btn-accent btn-sm flex items-center gap-1 mb-4"
-                        title={t("addNewCustomer")}
-                      >
-                        <FiUserPlus size={18} />
-                      </button>
-                    </div>
+                    <CustomerSelector 
+                      selectedCustomerId={selectedCustomerId}
+                      selectClassName="w-48 sm:w-72 text-sm p-1 inline-block"
+                      className=""
+                    />
                   </div>
                   <div className="space-y-3">
                     <input
                       type="text"
                       placeholder={t("name")}
                       className={getInputClassName("input")}
-                      value={selectedCustomer.name}
-                      onChange={(e) =>
-                        handleCustomerChange("name", e.target.value)
-                      }
+                      value={localCustomer.name}
+                      onChange={(e) => handleCustomerChange("name", e.target.value)}
                       required={invoiceType === "complete"}
                     />
                     <input
@@ -532,12 +547,8 @@ function Home() {
                       dir="auto"
                       placeholder={t("phone")}
                       className={getInputClassName("input", "tel")}
-                      value={selectedCustomer.phone}
-                      onChange={(e) => {
-                        // Only allow numbers
-                        const value = e.target.value.replace(/[^0-9]/g, "");
-                        handleCustomerChange("phone", value);
-                      }}
+                      value={localCustomer.phone}
+                      onChange={(e) => handleCustomerChange("phone", e.target.value)}
                       required={invoiceType === "complete"}
                       pattern="[0-9]*"
                       inputMode="numeric"
@@ -548,17 +559,15 @@ function Home() {
                       className={`${getInputClassName("input")} ${
                         emailErrors.to ? "border-red-500" : ""
                       }`}
-                      value={selectedCustomer.email}
+                      value={localCustomer.email}
                       onChange={(e) => handleEmailChange("to", e.target.value)}
                       required={invoiceType === "complete"}
                     />
                     <textarea
                       placeholder={t("address")}
                       className={getInputClassName("input h-24")}
-                      value={selectedCustomer.address}
-                      onChange={(e) =>
-                        handleCustomerChange("address", e.target.value)
-                      }
+                      value={localCustomer.address}
+                      onChange={(e) => handleCustomerChange("address", e.target.value)}
                       required={invoiceType === "complete"}
                     ></textarea>
                   </div>

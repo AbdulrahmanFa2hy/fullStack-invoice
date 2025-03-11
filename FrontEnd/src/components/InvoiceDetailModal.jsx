@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from "react";
 import { motion } from "framer-motion";
 import { useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
+import CustomerSelector from "./CustomerSelector";
 
 const InvoiceDetailModal = ({ invoice, onClose, onUpdate, onDelete }) => {
   const { t, i18n } = useTranslation();
@@ -39,13 +40,13 @@ const InvoiceDetailModal = ({ invoice, onClose, onUpdate, onDelete }) => {
   // Get the invoice type from the invoice data or default to "complete"
   const invoiceType = invoice?.type;
 
-  // Find customer based on customerId
-  const customer = customers.find((c) => c.id === invoice?.customerId) || {
+  // Add the missing customer state
+  const [customer, setCustomer] = useState({
     name: "N/A",
     email: "N/A",
     phone: "N/A",
-    address: "N/A",
-  };
+    address: "N/A"
+  });
 
   // Reset editForm when invoice changes
   useEffect(() => {
@@ -66,8 +67,33 @@ const InvoiceDetailModal = ({ invoice, onClose, onUpdate, onDelete }) => {
         notes: invoice.notes || "",
         type: invoice.type || "complete",
       });
+
+      // Get customer data - first try from the invoice's embedded customer data
+      let customerData;
+      if (invoice.customer && invoice.customer.name) {
+        customerData = invoice.customer;
+      } else if (invoice.customerId) {
+        // Fall back to looking up by ID
+        customerData = customers.find(c => c._id === invoice.customerId || c.id === invoice.customerId) || {
+          name: t("notAvailable"),
+          email: t("notAvailable"),
+          phone: t("notAvailable"),
+          address: t("notAvailable")
+        };
+      } else {
+        // Default empty customer
+        customerData = {
+          name: t("notAvailable"),
+          email: t("notAvailable"),
+          phone: t("notAvailable"),
+          address: t("notAvailable")
+        };
+      }
+      
+      setCurrentInvoice(invoice);
+      setCustomer(customerData);
     }
-  }, [invoice]);
+  }, [invoice, customers, t]);
 
   if (!invoice) return null;
 
@@ -256,26 +282,19 @@ const InvoiceDetailModal = ({ invoice, onClose, onUpdate, onDelete }) => {
                   <div className="">
                     <div className="flex justify-between items-center mb-1">
                       <h3 className="text-base sm:text-lg font-semibold">
-                        {t("customerDetails")}
+                        {t("to")}
                       </h3>
-                      <select
-                        className="w-4/5 p-2 border rounded h-10"
-                        value={editForm.customerId || ""}
-                        onChange={(e) =>
+                      <CustomerSelector 
+                        selectedCustomerId={editForm.customerId}
+                        onCustomerSelect={(customerId) => 
                           setEditForm({
                             ...editForm,
-                            customerId: e.target.value,
+                            customerId: customerId,
                           })
                         }
-                        dir="auto"
-                      >
-                        <option value="">{t("selectCustomer")}</option>
-                        {customers.map((c) => (
-                          <option key={c.id} value={c.id}>
-                            {c.name} ({c.email})
-                          </option>
-                        ))}
-                      </select>
+                        selectClassName="w-4/5 p-2"
+                        showAddButton={true}
+                      />
                     </div>
                   </div>
                 </div>
@@ -385,9 +404,7 @@ const InvoiceDetailModal = ({ invoice, onClose, onUpdate, onDelete }) => {
                               ? `${(item.quantity * item.price).toFixed(2)}${t(
                                   "currency"
                                 )}`
-                              : `${t("currency")}${
-                                  item.quantity * item.price.toFixed(2)
-                                }`}
+                              : `${t("currency")}${item.quantity * item.price.toFixed(2)}`}
                           </td>
                           <td className="px-4 py-2">
                             <button

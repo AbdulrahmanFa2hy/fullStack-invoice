@@ -69,9 +69,15 @@ const Invoices = () => {
       return searchInObject(invoice, searchQuery);
     });
 
-  const getCustomerById = (customerId) => {
+  const getCustomerById = (customerId, customerData) => {
+    // First try to use the embedded customer data if available
+    if (customerData && customerData.name) {
+      return customerData;
+    }
+    
+    // Fall back to looking up by ID if embedded data isn't available
     return (
-      customers.find((customer) => customer.id === customerId) || {
+      customers.find((customer) => customer._id === customerId || customer.id === customerId) || {
         name: t("notAvailable", "N/A"),
         email: t("notAvailable", "N/A"),
       }
@@ -164,15 +170,15 @@ const Invoices = () => {
                       <div className="flex items-center gap-2">
                         <div className="w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-gray-100 flex items-center justify-center">
                           <span className="text-xs sm:text-sm font-medium text-gray-600">
-                            {getCustomerById(invoice.customerId).name.charAt(0)}
+                            {getCustomerById(invoice.customerId, invoice.customer).name.charAt(0)}
                           </span>
                         </div>
                         <div>
                           <p className="text-sm sm:text-base font-medium text-gray-800">
-                            {getCustomerById(invoice.customerId).name}
+                            {getCustomerById(invoice.customerId, invoice.customer).name}
                           </p>
                           <p className="text-xs sm:text-sm text-gray-600">
-                            {getCustomerById(invoice.customerId).email}
+                            {getCustomerById(invoice.customerId, invoice.customer).email}
                           </p>
                         </div>
                       </div>
