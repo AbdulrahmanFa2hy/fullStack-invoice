@@ -7,6 +7,9 @@ import { useTranslation } from "react-i18next";
 import CustomerSelector from "./CustomerSelector";
 import InvoiceFrom from "./InvoiceFrom";
 import InvoiceTo from "./InvoiceTo";
+import ProductItem from './ProductItem';
+import Swal from "sweetalert2";
+import { FiPlus } from "react-icons/fi";
 
 const InvoiceDetailModal = ({ invoice, onClose, onUpdate, onDelete }) => {
   const { t, i18n } = useTranslation();
@@ -49,6 +52,9 @@ const InvoiceDetailModal = ({ invoice, onClose, onUpdate, onDelete }) => {
     phone: "N/A",
     address: "N/A"
   });
+
+  // Add state for item errors
+  const [itemErrors, setItemErrors] = useState({});
 
   // Reset editForm when invoice changes
   useEffect(() => {
@@ -109,9 +115,100 @@ const InvoiceDetailModal = ({ invoice, onClose, onUpdate, onDelete }) => {
     }
   };
 
+  // Add validation for items
+  const validateItem = (itemId, field) => {
+    const item = editForm.items.find(item => item.id === itemId);
+    if (!item) return;
+
+    const newErrors = { ...itemErrors };
+    
+    if (field === 'name' || field === 'all') {
+      if (!item.name.trim()) {
+        newErrors[itemId] = { ...newErrors[itemId], name: t("nameRequired") };
+      } else {
+        const { name, ...rest } = newErrors[itemId] || {};
+        newErrors[itemId] = rest;
+      }
+    }
+    
+    if (field === 'price' || field === 'all') {
+      if (!item.price || item.price <= 0) {
+        newErrors[itemId] = { ...newErrors[itemId], price: t("priceRequired") };
+      } else {
+        const { price, ...rest } = newErrors[itemId] || {};
+        newErrors[itemId] = rest;
+      }
+    }
+    
+    if (field === 'quantity' || field === 'all') {
+      if (!item.quantity || item.quantity <= 0) {
+        newErrors[itemId] = { ...newErrors[itemId], quantity: t("quantityRequired") };
+      } else {
+        const { quantity, ...rest } = newErrors[itemId] || {};
+        newErrors[itemId] = rest;
+      }
+    }
+    
+    setItemErrors(newErrors);
+    return Object.keys(newErrors[itemId] || {}).length === 0;
+  };
+
+  // Validate all items
+  const validateAllItems = () => {
+    let isValid = true;
+    const newErrors = {};
+    
+    editForm.items.forEach(item => {
+      newErrors[item.id] = {};
+      
+      if (!item.name.trim()) {
+        newErrors[item.id].name = t("nameRequired");
+        isValid = false;
+      }
+      
+      if (!item.price || item.price <= 0) {
+        newErrors[item.id].price = t("priceRequired");
+        isValid = false;
+      }
+      
+      if (!item.quantity || item.quantity <= 0) {
+        newErrors[item.id].quantity = t("quantityRequired");
+        isValid = false;
+      }
+    });
+    
+    setItemErrors(newErrors);
+    
+    if (!isValid) {
+      Swal.fire({
+        icon: "error",
+        text: t("pleaseFillRequiredItemFields"),
+        toast: true,
+        position: "bottom-end",
+        showConfirmButton: false,
+        timer: 3000,
+      });
+    }
+    
+    return isValid;
+  };
+
+  // Update handleUpdate to use SweetAlert
   const handleUpdate = () => {
+    // Validate all items first
+    if (!validateAllItems()) {
+      return;
+    }
+
     if (editForm.total <= 0) {
-      alert(t("totalMustBePositive"));
+      Swal.fire({
+        icon: "error",
+        text: t("totalMustBePositive"),
+        toast: true,
+        position: "bottom-end",
+        showConfirmButton: false,
+        timer: 3000,
+      });
       return;
     }
 
@@ -191,6 +288,17 @@ const InvoiceDetailModal = ({ invoice, onClose, onUpdate, onDelete }) => {
     ) {
       onClose();
     }
+  };
+
+  // Add this function to handle textarea resize
+  const handleTextareaResize = (e) => {
+    e.target.style.height = "auto";
+    e.target.style.height = e.target.scrollHeight + "px";
+  };
+
+  // Add a function to get input class names
+  const getInputClassName = (baseClass) => {
+    return `${baseClass} text-start`;
   };
 
   return (
@@ -276,153 +384,52 @@ const InvoiceDetailModal = ({ invoice, onClose, onUpdate, onDelete }) => {
               )}
 
               <div className="mt-4">
-                {/* <h3 className="font-semibold mb-3">{t("itemDetails")}</h3> */}
-                <div className="overflow-x-auto">
-                  <table className="w-full">
-                    <thead className="bg-gray-50">
-                      <tr>
-                        <th className="px-4 py-2 text-start">{t("product")}</th>
-                        <th className="px-4 py-2 text-start">
-                          {t("description")}
-                        </th>
-                        <th className="px-4 py-2 text-start">
-                          {t("quantity")}
-                        </th>
-                        <th className="px-4 py-2 text-start">{t("price")}</th>
-                        <th className="px-4 py-2 text-start">{t("total")}</th>
-                        <th className="px-4 py-2"></th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {editForm.items.map((item, index) => (
-                        <tr
-                          key={item.id}
-                          className={`border-b ${
-                            index % 2 === 1 ? "bg-gray-50" : ""
-                          }`}
-                        >
-                          <td className="px-4 py-2">
-                            <input
-                              type="text"
-                              value={item.name}
-                              onChange={(e) =>
-                                handleItemUpdate(
-                                  item.id,
-                                  "name",
-                                  e.target.value
-                                )
-                              }
-                              placeholder={t("enterItemName")}
-                              className="border p-1 rounded w-full min-w-[150px]"
-                              dir="auto"
-                            />
-                          </td>
-                          <td className="px-4 py-2">
-                            <input
-                              type="text"
-                              value={item.description}
-                              onChange={(e) =>
-                                handleItemUpdate(
-                                  item.id,
-                                  "description",
-                                  e.target.value
-                                )
-                              }
-                              placeholder={t("enterItemDescription")}
-                              className="border p-1 rounded w-full min-w-[200px]"
-                              dir="auto"
-                            />
-                          </td>
-                          <td className="px-4 py-2">
-                            <input
-                              type="number"
-                              value={item.quantity}
-                              onChange={(e) => {
-                                const value = Math.max(0, e.target.value);
-                                handleItemUpdate(
-                                  item.id,
-                                  "quantity",
-                                  parseFloat(value) || 0
-                                );
-                              }}
-                              className="border p-1 rounded w-full min-w-[80px] text-end"
-                              min="0"
-                              step="1"
-                              dir="ltr"
-                            />
-                          </td>
-                          <td className="px-4 py-2">
-                            <div className="relative">
-                              <span className="absolute inset-y-0 start-2 flex items-center text-gray-500">
-                                {t("currency")}
-                              </span>
-                              <input
-                                type="number"
-                                value={item.price}
-                                onChange={(e) => {
-                                  const value = Math.max(0, e.target.value);
-                                  handleItemUpdate(
-                                    item.id,
-                                    "price",
-                                    parseFloat(value) || 0
-                                  );
-                                }}
-                                className="border p-1 ps-6 rounded w-full min-w-[100px] text-end"
-                                min="0"
-                                step="0.01"
-                                dir="ltr"
-                              />
-                            </div>
-                          </td>
-                          <td className="px-4 py-2 text-end">
-                            {isRTL
-                              ? `${(item.quantity * item.price).toFixed(2)}${t(
-                                  "currency"
-                                )}`
-                              : `${t("currency")}${item.quantity * item.price.toFixed(2)}`}
-                          </td>
-                          <td className="px-4 py-2">
-                            <button
-                              onClick={() => handleRemoveItem(item.id)}
-                              className="text-red-500 hover:text-red-700"
-                              aria-label={t("removeItem")}
-                            >
-                              ✕
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                {/* Replace the table with ProductItem components */}
+                <div className="hidden lg:grid bg-gray-50 p-4 rounded-lg mb-4">
+                  <div className="hidden lg:grid grid-cols-12 gap-4 mb-2 font-semibold text-gray-600">
+                    <div className="col-span-4 text-sm sm:text-base">
+                      {t("productName")}
+                    </div>
+                    <div className="col-span-4 text-sm sm:text-base">
+                      {t("desc")}
+                    </div>
+                    <div className="col-span-1 text-sm sm:text-base text-center">
+                      {t("qty")}
+                    </div>
+                    <div className="col-span-1 text-sm sm:text-base text-center">
+                      {t("price")}
+                    </div>
+                    <div className="col-span-1 text-sm sm:text-base text-center">
+                      {t("total")}
+                    </div>
+                    <div className="col-span-1">{t("actions")}</div>
+                  </div>
                 </div>
+
+                {editForm.items.map((item) => (
+                  <ProductItem
+                    key={item.id}
+                    item={item}
+                    itemErrors={itemErrors}
+                    handleUpdateItem={handleItemUpdate}
+                    handleTextareaResize={handleTextareaResize}
+                    getInputClassName={getInputClassName}
+                    validateItem={validateItem}
+                  />
+                ))}
               </div>
 
-              {/* Add Item button */}
-              <div className="flex justify-end">
-                <button
-                  onClick={handleAddItem}
-                  className="w-full sm:w-auto px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600 transition-colors duration-200 flex items-center justify-center gap-2 text-sm sm:text-base"
-                >
-                  <svg
-                    className="w-5 h-5"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M12 6v6m0 0v6m0-6h6m-6 0H6"
-                    />
-                  </svg>
-                  {t("addNewItem")}
-                </button>
-              </div>
+              {/* Add Item button - updated to match Home page style */}
+              <button
+                onClick={handleAddItem}
+                className="btn btn-accent flex w-full text-center gap-2 sm:w-fit justify-center items-center space-s-2 text-sm md:text-base mb-2"
+              >
+                {t("addItem")} <FiPlus size={20} /> 
+              </button>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-[400px] ms-auto">
+              <div className="grid grid-cols-2 text-center gap-4 max-w-[400px] ms-auto">
                 <div className="space-y-1">
-                  <label className="text-sm text-gray-600 block">
+                  <label className="text-xs sm:text-sm text-gray-600 block">
                     {t("discount")} (%)
                   </label>
                   <input
@@ -445,7 +452,7 @@ const InvoiceDetailModal = ({ invoice, onClose, onUpdate, onDelete }) => {
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-sm text-gray-600 block">
+                  <label className="text-xs sm:text-sm text-gray-600 block">
                     {t("taxRate")} (%)
                   </label>
                   <input

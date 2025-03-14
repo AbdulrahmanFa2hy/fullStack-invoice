@@ -33,6 +33,7 @@ import CustomerSelector from "../components/CustomerSelector";
 import InvoiceFrom from "../components/InvoiceFrom";
 import InvoiceTo from "../components/InvoiceTo";
 import LoadingSpinner from "../components/LoadingSpinner";
+import ProductItem from '../components/ProductItem';
 
 function Home() {
   const dispatch = useDispatch();
@@ -432,6 +433,44 @@ function Home() {
     return `${baseClass} text-start`;
   };
 
+  // Add this function to validate a specific item field
+  const validateItem = (itemId, field) => {
+    const item = items.find(item => item.id === itemId);
+    if (!item) return;
+
+    const newErrors = { ...itemErrors };
+    
+    if (field === 'name' || field === 'all') {
+      if (!item.name.trim()) {
+        newErrors[itemId] = { ...newErrors[itemId], name: t("nameRequired") };
+      } else {
+        const { name, ...rest } = newErrors[itemId] || {};
+        newErrors[itemId] = rest;
+      }
+    }
+    
+    if (field === 'price' || field === 'all') {
+      if (!item.price || item.price <= 0) {
+        newErrors[itemId] = { ...newErrors[itemId], price: t("priceRequired") };
+      } else {
+        const { price, ...rest } = newErrors[itemId] || {};
+        newErrors[itemId] = rest;
+      }
+    }
+    
+    if (field === 'quantity' || field === 'all') {
+      if (!item.quantity || item.quantity <= 0) {
+        newErrors[itemId] = { ...newErrors[itemId], quantity: t("quantityRequired") };
+      } else {
+        const { quantity, ...rest } = newErrors[itemId] || {};
+        newErrors[itemId] = rest;
+      }
+    }
+    
+    setItemErrors(newErrors);
+    return Object.keys(newErrors[itemId] || {}).length === 0;
+  };
+
   return (
     <>
       {isLoading && <LoadingSpinner />}
@@ -544,105 +583,15 @@ function Home() {
               </div>
 
               {items.map((item) => (
-                <div key={item.id} className="mb-5">
-                  <div className="grid grid-cols-12 gap-1 md:gap-4 items-center">
-                    <div className="col-span-12 sm:col-span-6 lg:col-span-4">
-                      <input
-                        type="text"
-                        className={`${getInputClassName("input bg-gray-50")} ${
-                          itemErrors[item.id]?.name ? "border-red-500" : ""
-                        }`}
-                        value={item.name}
-                        onChange={(e) =>
-                          handleUpdateItem(item.id, "name", e.target.value)
-                        }
-                        placeholder={t("productName")}
-                        required
-                      />
-                    </div>
-                    <div className="col-span-12 sm:col-span-6 lg:col-span-4">
-                      <div className="flex justify-center items-center">
-                        <textarea
-                          className={getInputClassName(
-                            "input h-full resize-none overflow-hidden bg-gray-50"
-                          )}
-                          value={item.description}
-                          onChange={(e) => {
-                            handleUpdateItem(
-                              item.id,
-                              "description",
-                              e.target.value
-                            );
-                            handleTextareaResize(e);
-                          }}
-                          onInput={handleTextareaResize}
-                          placeholder={t("desc")}
-                          rows={1}
-                          style={{
-                            resize: "none",
-                            transition: "height 0.1s ease-out",
-                          }}
-                        />
-                      </div>
-                    </div>
-                    <div className="col-span-3 lg:col-span-1">
-                      <input
-                        type="number"
-                        className={`${getInputClassName("input bg-gray-50")} ${
-                          itemErrors[item.id]?.quantity ? "border-red-500" : ""
-                        }`}
-                        value={item.quantity || ""}
-                        onChange={(e) => {
-                          const value = Math.max(0, e.target.value);
-                          handleUpdateItem(
-                            item.id,
-                            "quantity",
-                            parseFloat(value) || 0
-                          );
-                        }}
-                        onFocus={(e) => e.target.select()}
-                        min="0"
-                        step="1"
-                        required
-                      />
-                    </div>
-                    <div className="col-span-3 lg:col-span-1">
-                      <input
-                        type="number"
-                        className={`${getInputClassName("input bg-gray-50")} ${
-                          itemErrors[item.id]?.price ? "border-red-500" : ""
-                        }`}
-                        value={item.price || ""}
-                        placeholder="0.00"
-                        onChange={(e) => {
-                          const value = Math.max(0, e.target.value);
-                          handleUpdateItem(
-                            item.id,
-                            "price",
-                            parseFloat(value) || 0
-                          );
-                        }}
-                        onFocus={(e) => e.target.select()}
-                        min="0"
-                        step="1"
-                        required
-                      />
-                    </div>
-                    <div className="col-span-3 lg:col-span-1 text-center font-medium text-sm sm:text-base">
-                      {t("currency")}
-                      {(item.quantity * item.price).toFixed(2)}
-                    </div>
-                    <div className="col-span-3 lg:col-span-1 flex justify-center">
-                      <button
-                        onClick={() => dispatch(removeItem(item.id))}
-                        className="text-red-500 hover:text-red-700"
-                        title={t("deleteItem")}
-                      >
-                        <FiTrash2 size={20} />
-                      </button>
-                    </div>
-                  </div>
-                </div>
+                <ProductItem
+                  key={item.id}
+                  item={item}
+                  itemErrors={itemErrors}
+                  handleUpdateItem={handleUpdateItem}
+                  handleTextareaResize={handleTextareaResize}
+                  getInputClassName={getInputClassName}
+                  validateItem={validateItem}
+                />
               ))}
             </div>
 
