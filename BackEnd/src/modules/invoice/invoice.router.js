@@ -14,11 +14,11 @@ import {
 const invoiceRouter = express.Router(); 
 
 invoiceRouter.get('/:userId',protectedRoutes,allowedTo('user'),getAllInvoices)
-invoiceRouter.get('/:id',getInvoiceById)
+invoiceRouter.get('/getInvoice/:id',getInvoiceById)
 invoiceRouter.post('/',createInvoice)
 invoiceRouter.put('/:id',protectedRoutes,allowedTo('admin','user'),updateInvoice)
 invoiceRouter.delete('/:id',protectedRoutes,allowedTo('admin','user'),deleteInvoice)
 invoiceRouter.get('/pdf/:id',generateInvoicePdf)
 invoiceRouter.post('/:id/:phone',sendInvoiceByWhatsApp)
 
-export default invoiceRouter;
+export default invoiceRouter; 

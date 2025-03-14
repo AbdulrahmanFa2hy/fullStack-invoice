@@ -57,8 +57,8 @@ const getInvoiceById = catchAsyncError(async (req, res, next) => {
 }); 
 
 const createInvoice = catchAsyncError(async (req, res, next) => {
-    const { user_id, invoice_id, items, tax, discount , notes , privacy } = req.body;
-    if (!items || !invoice_id || !user_id || !Array.isArray(items)) {
+    const { user_id, invoice_number, items, tax, discount , notes , privacy , description } = req.body;
+    if (!items || !invoice_number || !user_id || !Array.isArray(items)) {
         return next(new AppError("Missing required fields", 400));
     }
 
@@ -66,8 +66,8 @@ const createInvoice = catchAsyncError(async (req, res, next) => {
     let total_amount = 0;
 
     for (const item of items) {
-        const { product_id, quantity, price, name } = item;
-        if (!product_id || !quantity || !price || !name) {
+        const { quantity, price, name } = item;
+        if (!quantity || !price || !name) {
             return next(new AppError('Missing product details', 400));
         }
         total_amount += quantity * price;
@@ -84,7 +84,7 @@ const createInvoice = catchAsyncError(async (req, res, next) => {
       // إذا كانت هناك فاتورة سابقة، نضيف الفاتورة الجديدة إلى invoiceHistory
       if (existingInvoice) {
           existingInvoice.invoiceHistory.push({
-              invoice_id: existingInvoice.invoice_id,
+              invoice_number: existingInvoice.invoice_number,
               total_amount: existingInvoice.total_amount,
               invoice_date: existingInvoice.createdAt
           });
@@ -93,26 +93,28 @@ const createInvoice = catchAsyncError(async (req, res, next) => {
           // إذا لم يكن هناك فاتورة سابقة، يمكن إنشاء فاتورة جديدة مع invoiceHistory فارغ
           await invoiceModel.create({
               user_id,
-              invoice_id,
+              invoice_number,
               total_amount,
               items,
               tax,
               discount,
               notes,
               privacy,
+              description,
               invoiceHistory: [] // بدءًا من مصفوفة فارغة
           });
       }
   
     const newInvoice = await invoiceModel.create({
         user_id,
-        invoice_id,
+        invoice_number,
         total_amount,
         items,
         discount,
         tax,
         notes,
-        privacy
+        privacy,
+        description
     });
 
     if (!newInvoice) {
@@ -152,7 +154,7 @@ const generateInvoicePDF = (invoiceData, filePath) => {
 
     // Invoice information
     doc.fontSize(14).text(`Date: ${invoiceData.lastInvoiceDate}`);
-    doc.text(`Invoice #: ${invoiceData.invoice_id}`);
+    doc.text(`Invoice #: ${invoiceData.invoice_number}`);
     doc.moveDown(1);
 
     doc.text('From:', { underline: true });

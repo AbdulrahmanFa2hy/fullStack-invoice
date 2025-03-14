@@ -2,7 +2,7 @@ import mongoose from "mongoose";
 
 const invoiceSchema = new mongoose.Schema({
 
-    invoice_id : {
+    invoice_number : {
         type:String,
         required: true,
         unique: true
@@ -11,6 +11,10 @@ const invoiceSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref : 'user',
         required: true
+    },
+    company_id: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref : 'company',
     },
     customer_id: {
         type: mongoose.Schema.Types.ObjectId,
@@ -22,7 +26,11 @@ const invoiceSchema = new mongoose.Schema({
     total_amount: {
         type: Number,
     },
-    
+    description: {
+        type: String,
+        minLength: [3,"Description must be at least 3 characters long"],
+        maxLength: [1000,"Description must be at most 30 characters long"]
+    },
     invoiceHistory: [{
         invoice_id: {
             type: String,
@@ -49,7 +57,6 @@ const invoiceSchema = new mongoose.Schema({
        product_id : {
            type: mongoose.Schema.Types.ObjectId,
            ref : 'product',
-           required: true
        },
        quantity : {
            type: Number,
@@ -63,7 +70,8 @@ const invoiceSchema = new mongoose.Schema({
        name : {
            type: String,
            minLength: [3,"Product name must be at least 3 characters long"],
-           maxLength: [30,"Product name must be at most 30 characters long'"]
+           maxLength: [30,"Product name must be at most 30 characters long'"],
+           required: true
        }
    }],
    tax: {

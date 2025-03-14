@@ -1,7 +1,6 @@
 import { useDispatch, useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
 import { updateCompany } from "../store/companySlice";
-import { FiEdit } from "react-icons/fi";
 import LogoModal from "./LogoModal";
 import { useState } from "react";
 
