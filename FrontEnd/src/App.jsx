@@ -19,6 +19,7 @@ import AuthPersist from "./components/AuthPersist";
 import { I18nextProvider } from "react-i18next";
 import i18n from "./i18n/i18n";
 import Navbar from "./components/Navbar";
+import Products from "./pages/Products";
 
 // Wrapper component to conditionally render Navbar
 const AppContent = () => {
@@ -41,6 +42,7 @@ const AppContent = () => {
           <Route path="/profile" element={<Profile />} />
           <Route path="/invoice-types" element={<InvoiceTypes />} />
           <Route path="/customers" element={<Customers />} />
+          <Route path="/products" element={<Products />} />
         </Route>
       </Routes>
     </>

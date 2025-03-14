@@ -10,6 +10,7 @@ import { normalizeArabicText } from "../utils/arabicNormalization";
 import { useTranslation } from "react-i18next";
 import { FiUserPlus } from "react-icons/fi";
 import Swal from "sweetalert2";
+import LoadingSpinner from "../components/LoadingSpinner";
 
 const CustomerModal = ({ customer, onClose, onEdit, onDelete }) => {
   const { t, i18n } = useTranslation();
@@ -536,12 +537,7 @@ const Customers = () => {
     }
   };
 
-  // Update the loading spinner to use primary color
-  const loadingSpinner = (
-    <div className="flex justify-center items-center py-8">
-      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-    </div>
-  );
+
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -588,8 +584,6 @@ const Customers = () => {
         </div>
       </div>
 
-      {/* Loading state */}
-      {status === "loading" && loadingSpinner}
 
       {/* Error state */}
       {status === "failed" && (

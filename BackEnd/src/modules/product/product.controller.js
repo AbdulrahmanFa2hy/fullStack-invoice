@@ -53,5 +53,26 @@ const deleteProduct = catchAsyncError(async(req,res,next) => {
     res.status(200).json({message : 'Product deleted successfully',product})
 })
 
+const getProductsByUserId = catchAsyncError(async(req,res,next) => {
+    const { userId } = req.params;
+    
+    try {
+        // Check if the user is authorized to access these products
+        if (req.user._id.toString() !== userId) {
+            return next(new AppError('Unauthorized access to products', 403));
+        }
+        
+        // Find products for this user
+        let products = await productModel.find({ user_id: userId });
+        
+        // Return the products
+        res.status(200).json({ 
+            message: 'Products fetched successfully', 
+            products: products || [] 
+        });
+    } catch (error) {
+        return next(new AppError(`Error fetching products: ${error.message}`, 500));
+    }
+});
 
-export {addProduct,getAllProducts,getProductById,updateProduct,deleteProduct}
+export {addProduct,getAllProducts,getProductById,updateProduct,deleteProduct,getProductsByUserId}
