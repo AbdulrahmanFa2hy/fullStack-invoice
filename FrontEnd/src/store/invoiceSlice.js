@@ -300,11 +300,19 @@ const getSavedInvoiceType = () => {
   }
 };
 
-// Update the initialState to use the saved invoice type
+// Update the initialState to have only one item in the items array
 const initialState = {
   invoice: {
     invoiceNumber: "",
-    items: [],
+    items: [
+      {
+        id: Date.now(),
+        name: "",
+        description: "",
+        quantity: 1,
+        price: 0,
+      }
+    ], // Initialize with just one empty item
     tax: 0,
     discount: 0,
     privacy: "",

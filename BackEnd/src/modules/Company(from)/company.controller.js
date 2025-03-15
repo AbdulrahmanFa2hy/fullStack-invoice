@@ -19,6 +19,11 @@ const saveCompany = catchAsyncError(async (req, res, next) => {
   if (req.file) {
     companyData.logo = req.file.filename;
   }
+  
+  // Check if logo should be deleted
+  if (req.body.deleteLogo === "true") {
+    companyData.logo = null; // Set logo to null to remove it
+  }
 
   try {
     // Try to find and update existing company
@@ -41,7 +46,14 @@ const saveCompany = catchAsyncError(async (req, res, next) => {
     });
   } catch (error) {
     // Handle specific MongoDB errors
-    if (error.code === 11000) {
+    if (error.code === 11000 && error.keyPattern && error.keyPattern.user_id) {
+      // This is a duplicate user_id error, but we're using upsert so this shouldn't happen
+      // If it does, it means there's a race condition or other issue
+      return next(
+        new AppError("Error updating company. Please try again.", 500)
+      );
+    } else if (error.code === 11000) {
+      // Some other duplicate key error
       return next(
         new AppError("A company with this information already exists", 409)
       );

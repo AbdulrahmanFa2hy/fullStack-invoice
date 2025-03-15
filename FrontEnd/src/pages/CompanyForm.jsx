@@ -11,17 +11,28 @@ import { motion, AnimatePresence } from "framer-motion";
 import { FaTrash } from "react-icons/fa";
 import { useTranslation } from "react-i18next";
 import LoadingSpinner from "../components/LoadingSpinner";
+import Swal from 'sweetalert2';
 
 function CompanyForm() {
   const { t } = useTranslation();
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const [previewLogo, setPreviewLogo] = useState(null);
-  const [submitError, setSubmitError] = useState(null);
   const { status, error, exists, ...companyData } = useSelector(
     (state) => state.company
   );
   const userId = useSelector((state) => state.profile.userData?.id);
+  const selectedInvoiceType = useSelector((state) => state.main.invoice.type);
+  
+  // Add state to track validation errors for each field
+  const [validationErrors, setValidationErrors] = useState({
+    name: false,
+    email: false,
+    phone: false
+  });
+
+  // Add a state to track if logo should be deleted
+  const [shouldDeleteLogo, setShouldDeleteLogo] = useState(false);
 
   // Fetch company data when component mounts or userId changes
   useEffect(() => {
@@ -91,6 +102,7 @@ function CompanyForm() {
     e.stopPropagation(); // Prevent triggering the parent's onClick
     setPreviewLogo(null);
     dispatch(updateCompany({ field: "logo", value: null }));
+    setShouldDeleteLogo(true); // Mark logo for deletion
   };
 
   const handleInputChange = (field, value) => {
@@ -104,36 +116,124 @@ function CompanyForm() {
   };
 
   const validateForm = () => {
+    // Reset all validation errors
+    const errors = {
+      name: false,
+      email: false,
+      phone: false
+    };
+    
+    let isValid = true;
+
+    // Name validation (required, 3-30 characters)
     if (!companyData.name?.trim()) {
-      setSubmitError(t("companyNameRequired"));
-      return false;
+      errors.name = true;
+      showErrorAlert(t("companyNameRequired"));
+      isValid = false;
+    } else if (companyData.name.trim().length < 3 || companyData.name.trim().length > 30) {
+      errors.name = true;
+      showErrorAlert(t("companyNameLength"));
+      isValid = false;
     }
-    if (
-      companyData.email &&
-      !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(companyData.email)
-    ) {
-      setSubmitError(t("invalidEmail"));
-      return false;
+
+    // Email validation (required, valid format)
+    if (!companyData.email?.trim()) {
+      errors.email = true;
+      showErrorAlert(t("emailRequired"));
+      isValid = false;
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(companyData.email)) {
+      errors.email = true;
+      showErrorAlert(t("invalidEmail"));
+      isValid = false;
     }
-    return true;
+
+    // Phone validation (required)
+    if (!companyData.phone?.trim()) {
+      errors.phone = true;
+      showErrorAlert(t("phoneRequired"));
+      isValid = false;
+    }
+
+    // Address is now completely optional with no validation
+
+    // Update validation errors state
+    setValidationErrors(errors);
+    
+    return isValid;
   };
 
-  const handleSubmit = async (e) => {
+  // Function to show SweetAlert error messages as toast
+  const showErrorAlert = (message) => {
+    Swal.fire({
+      icon: "error",
+      text: message,
+      toast: true,
+      position: "bottom-end",
+      showConfirmButton: false,
+      timer: 3000,
+      customClass: {
+        popup: document.documentElement.dir === 'rtl' ? 'swal2-rtl' : ''
+      }
+    });
+  };
+
+  // Function to show success messages as toast
+  const showSuccessAlert = (message) => {
+    Swal.fire({
+      icon: "success",
+      text: message,
+      toast: true,
+      position: "bottom-end",
+      showConfirmButton: false,
+      timer: 3000,
+      customClass: {
+        popup: document.documentElement.dir === 'rtl' ? 'swal2-rtl' : ''
+      }
+    });
+  };
+
+  // Prevent default HTML5 validation
+  const handleFormSubmit = (e) => {
     e.preventDefault();
-    setSubmitError(null);
-
-    if (!validateForm()) {
-      return;
+    
+    // Run our custom validation instead
+    if (validateForm()) {
+      submitForm();
     }
-
+  };
+  
+  const submitForm = async () => {
     try {
-      const result = await dispatch(saveCompany(companyData)).unwrap();
+      // Create a copy of company data to modify
+      const dataToSubmit = { ...companyData };
+      
+      // If logo should be deleted, explicitly set a flag for the API
+      if (shouldDeleteLogo) {
+        dataToSubmit.deleteLogo = true;
+      }
+      
+      const result = await dispatch(saveCompany(dataToSubmit)).unwrap();
 
       if (result) {
-        navigate("/");
+        // Show success message as toast
+        showSuccessAlert(exists ? t("companyUpdatedSuccess") : t("companyCreatedSuccess"));
+        
+        // Reset the delete logo flag after successful save
+        setShouldDeleteLogo(false);
+        
+        // After saving company data, check if invoice type exists
+        if (selectedInvoiceType && selectedInvoiceType !== "") {
+          // If invoice type already selected, go to home
+          navigate("/");
+        } else {
+          // If no invoice type, go to invoice types selection
+          navigate("/invoice-types");
+        }
       }
     } catch (err) {
       console.error("Failed to save company:", err);
+      
+      // Handle authentication errors
       if (err === "User not authenticated") {
         navigate("/login", {
           state: { from: location.pathname },
@@ -141,10 +241,34 @@ function CompanyForm() {
         });
         return;
       }
-      setSubmitError(
-        err.response?.data?.message || err.message || t("errorSavingCompany")
-      );
+      
+      // Handle conflict error (company already exists)
+      if (typeof err === 'string' && err.includes("already exists")) {
+        showErrorAlert(t("companyAlreadyExists"));
+        return;
+      }
+      
+      // Show generic error message with SweetAlert toast
+      showErrorAlert(err.response?.data?.message || err.message || t("errorSavingCompany"));
     }
+  };
+
+  // Helper function to determine input class based on validation state
+  const getInputClass = (field, className = "") => {
+    const baseClass = `appearance-none block w-full pl-8 sm:pl-10 md:pl-12 pr-3 sm:pr-4 
+      py-2.5 sm:py-3 md:py-3.5 lg:py-4 border-2
+      rounded-lg sm:rounded-xl placeholder-gray-400
+      text-sm sm:text-base
+      transition-all duration-200 ease-in-out
+      focus:outline-none
+      [&::-webkit-inner-spin-button]:appearance-none
+      [&::-webkit-outer-spin-button]:appearance-none ${className}`;
+    
+    if (validationErrors[field]) {
+      return `${baseClass} border-red-300 bg-red-50 focus:border-red-500 focus:bg-white text-red-700 placeholder-red-300`;
+    }
+    
+    return `${baseClass} border-gray-100 bg-gray-50 hover:border-gray-200 hover:bg-gray-50/80 focus:border-primary-500 focus:bg-white text-gray-700`;
   };
 
   if (status === "loading") {
@@ -172,39 +296,9 @@ function CompanyForm() {
         animate={{ opacity: 1, y: 0 }}
         className="max-w-4xl mx-auto"
       >
-        {/* Error Message */}
-        <AnimatePresence>
-          {submitError && (
-            <motion.div
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              className="bg-red-50 border-l-4 border-red-500 p-4 mb-4 rounded-lg"
-            >
-              <div className="flex">
-                <div className="flex-shrink-0">
-                  <svg
-                    className="h-5 w-5 text-red-400"
-                    viewBox="0 0 20 20"
-                    fill="currentColor"
-                  >
-                    <path
-                      fillRule="evenodd"
-                      d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
-                      clipRule="evenodd"
-                    />
-                  </svg>
-                </div>
-                <div className="ml-3">
-                  <p className="text-sm text-red-700">{submitError}</p>
-                </div>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-
         <motion.form
-          onSubmit={handleSubmit}
+          onSubmit={handleFormSubmit}
+          noValidate // Disable browser's native validation
           className="bg-white rounded-xl sm:rounded-2xl shadow-md md:shadow-lg lg:shadow-2xl p-3 sm:p-4 md:p-6 lg:p-8"
         >
           {/* Header layout */}
@@ -361,22 +455,19 @@ function CompanyForm() {
                           } else {
                             handleInputChange(field, e.target.value);
                           }
+                          
+                          // Clear validation error when user types
+                          if (validationErrors[field]) {
+                            setValidationErrors({
+                              ...validationErrors,
+                              [field]: false
+                            });
+                          }
                         }}
                         onKeyDown={handleKeyDown}
                         placeholder={placeholder}
                         dir={dir}
-                        className={`appearance-none block w-full pl-8 sm:pl-10 md:pl-12 pr-3 sm:pr-4 
-                          py-2.5 sm:py-3 md:py-3.5 lg:py-4 border-2
-                          border-gray-100 rounded-lg sm:rounded-xl placeholder-gray-400
-                          text-sm sm:text-base
-                          bg-gray-50 text-gray-700
-                          transition-all duration-200 ease-in-out
-                          hover:border-gray-200 hover:bg-gray-50/80
-                          focus:outline-none focus:border-primary-500 focus:bg-white
-                          [&::-webkit-inner-spin-button]:appearance-none
-                          [&::-webkit-outer-spin-button]:appearance-none ${
-                            className || ""
-                          }`}
+                        className={getInputClass(field, className)}
                       />
                     )}
                   </motion.div>

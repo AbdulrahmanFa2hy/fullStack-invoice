@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
 import { useTranslation } from "react-i18next";
 import { signinUser } from "../store/profileSlice";
+import { fetchCompanyByUserId } from "../store/companySlice";
 
 function Login() {
   const { t } = useTranslation();
@@ -53,12 +54,37 @@ function Login() {
     e.preventDefault();
 
     try {
+      // First authenticate the user
       await dispatch(signinUser({ email, password, rememberMe })).unwrap();
-      // Navigate based on invoice type selection
-      if (selectedInvoiceType && selectedInvoiceType !== "") {
-        navigate("/");
-      } else {
-        navigate("/invoice-types");
+      
+      // After successful login, check if company data exists
+      try {
+        const companyResult = await dispatch(fetchCompanyByUserId()).unwrap();
+        const hasCompanyData = companyResult && Object.keys(companyResult).length > 0;
+        
+        // Check if invoice type is already selected
+        if (selectedInvoiceType && selectedInvoiceType !== "") {
+          // If both company data and invoice type exist, go to home
+          if (hasCompanyData) {
+            navigate("/");
+          } else {
+            // If only invoice type exists, go to company form
+            navigate("/company");
+          }
+        } else {
+          // If no invoice type, check if company data exists
+          if (hasCompanyData) {
+            // If only company data exists, go to invoice types
+            navigate("/invoice-types");
+          } else {
+            // If neither exists, start with company form
+            navigate("/company");
+          }
+        }
+      } catch (err) {
+        // If there's an error fetching company data, assume it doesn't exist
+        console.error("Error checking company data:", err);
+        navigate("/company");
       }
     } catch (err) {
       // Error is handled by the reducer and shown in the UI

@@ -112,11 +112,7 @@ function Home() {
     if (!invoiceNumber) {
       dispatch(getNextInvoiceNumber());
     }
-    // Add initial item if items array is empty
-    if (items.length === 0) {
-      dispatch(addItem());
-    }
-  }, [dispatch, invoiceNumber, items.length]);
+  }, [dispatch, invoiceNumber]);
 
   useEffect(() => {
     // Add this effect to handle RTL/LTR

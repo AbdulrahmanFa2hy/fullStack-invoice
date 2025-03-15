@@ -279,7 +279,7 @@ const CustomerSelector = ({
           
           {isDropdownOpen && (
             <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg">
-              <div className="max-h-60 overflow-y-auto py-1">
+              <div className="max-h-60 overflow-y-auto py-1 thin-scrollbar">
                 <div 
                   className="px-3 py-2 hover:bg-gray-100 cursor-pointer"
                   onClick={() => handleCustomerSelect("")}

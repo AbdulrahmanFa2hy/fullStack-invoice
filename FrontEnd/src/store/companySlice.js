@@ -31,9 +31,15 @@ const formatCompanyData = async (data) => {
   formData.append("email", data.email || "");
   formData.append("phone", data.phone || "");
   formData.append("address", data.address || "");
+  
+  // Add explicit flag for logo deletion
+  if (data.deleteLogo) {
+    formData.append("deleteLogo", "true");
+  }
 
   // Handle logo
-  if (data.logo) {
+  if (data.logo && !data.deleteLogo) {
+    // Only process logo if it's not being deleted
     const logoFile = await base64ToFile(data.logo);
     if (logoFile) {
       formData.append("logo", logoFile);
@@ -93,7 +99,14 @@ export const saveCompany = createAsyncThunk(
       }
       return response.data;
     } catch (error) {
-      return rejectWithValue(error.response?.data?.message || error.message);
+      console.error("Company save error:", error);
+      
+      // Specifically handle 409 Conflict error
+      if (error.response?.status === 409) {
+        return rejectWithValue("A company with this information already exists");
+      }
+      
+      return rejectWithValue(error.response?.data?.message || error.message || "Error saving company");
     }
   }
 );

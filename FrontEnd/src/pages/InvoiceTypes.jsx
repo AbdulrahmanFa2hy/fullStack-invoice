@@ -3,14 +3,16 @@ import { useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { setInvoiceType } from "../store/invoiceSlice";
 import { useTranslation } from "react-i18next";
+import { fetchCompanyByUserId } from "../store/companySlice";
 
 function InvoiceTypes() {
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const dispatch = useDispatch();
-  const companyData = useSelector((state) => state.company);
   const currentInvoiceType = useSelector((state) => state.main.invoice.type);
   const isRTL = i18n.dir() === 'rtl';
+  
+ 
 
   const invoiceTypes = [
     {
@@ -37,16 +39,9 @@ function InvoiceTypes() {
 
   const handleTypeSelection = (type) => {
     dispatch(setInvoiceType(type));
-    const isCompanyDataEmpty =
-      !companyData ||
-      Object.keys(companyData).length === 0 ||
-      Object.values(companyData).every((value) => !value);
-
-    if (isCompanyDataEmpty) {
-      navigate("/company");
-    } else {
-      navigate("/");
-    }
+    
+    // After setting invoice type, navigate to home
+    navigate("/");
   };
 
   return (

@@ -11,29 +11,24 @@ const companySchema = new mongoose.Schema(
     phone: {
       type: String,
       required: true,
-      index: false, // Explicitly disable indexing on phone
     },
     address: {
       type: String,
-      minLength: [3, "Address must be at least 3 characters long"],
-      maxLength: [300, "Address must be at most 300 characters long"],
     },
     email: {
       type: String,
       required: true,
       trim: true,
       lowercase: true,
-      index: false, // Explicitly disable indexing on email
     },
     logo: {
       type: String,
-      trim: true,
     },
     user_id: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "user",
       required: true,
-      unique: true, // Ensure one company per user
+      unique: true,
     },
   },
   { timestamps: true }
