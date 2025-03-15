@@ -274,6 +274,11 @@ i18n
           pleaseAcceptTerms: "يرجى قبول الشروط والأحكام للمتابعة.",
           signingIn: "جاري تسجيل الدخول...",
           creatingAccount: "جاري إنشاء الحساب...",
+          // Password visibility translations
+          showPassword: "إظهار كلمة المرور",
+          hidePassword: "إخفاء كلمة المرور",
+          passwordPlaceholder: "كلمة المرور",
+          confirmPasswordPlaceholder: "تأكيد كلمة المرور",
         },
       },
       en: {
@@ -527,6 +532,11 @@ i18n
           pleaseAcceptTerms: "Please accept the terms and conditions to continue.",
           signingIn: "Signing in...",
           creatingAccount: "Creating account...",
+          // Password visibility translations
+          showPassword: "Show password",
+          hidePassword: "Hide password",
+          passwordPlaceholder: "Enter your password",
+          confirmPasswordPlaceholder: "Confirm your password",
         },
       },
     },
