@@ -487,10 +487,11 @@ const Products = () => {
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-        <h1 className="text-2xl font-semibold mb-4">{t("products")}</h1>
+        <h1 className="text-2xl font-bold mb-4">{t("products")}</h1>
         <button
           onClick={handleAddProduct}
-          className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md transition-colors"
+          className="btn btn-primary flex items-center gap-2 whitespace-nowrap"
+          disabled={status === "loading"}
         >
           <FiPackage size={18} />
           {t("addNewProduct")}
@@ -700,7 +701,7 @@ const Products = () => {
               <p className="text-gray-400 mt-2">{t("addNewProduct")}</p>
               <button
                 onClick={handleAddProduct}
-                className="mt-4 flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md transition-colors"
+                className="mt-4 btn btn-primary flex items-center gap-2 whitespace-nowrap"
               >
                 <FiPackage size={18} />
                 {t("addNewProduct")}
