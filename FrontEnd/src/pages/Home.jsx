@@ -24,6 +24,7 @@ import {
   updatePrivacy,
   updateNotes,
   resetInvoice,
+  createInvoice,
 } from "../store/invoiceSlice";
 import { setSelectedCustomerId, fetchCustomers } from "../store/customersSlice";
 import { updateCompany, fetchCompanyByUserId } from "../store/companySlice";
@@ -45,6 +46,8 @@ function Home() {
     discount,
     privacy,
     notes,
+    dailyCounter,
+    lastInvoiceDate,
   } = useSelector((state) => state.main.invoice);
   const company = useSelector((state) => state.company);
   const invoiceNumber = useInvoiceNumber();
@@ -194,67 +197,131 @@ function Home() {
     return invoiceHistory.some((inv) => inv.invoiceNumber === invoiceNumber);
   };
 
-  const saveInvoiceData = () => {
-    // Calculate totals
-    const subtotal = items.reduce(
-      (sum, item) => sum + item.quantity * item.price,
-      0
-    );
-    const discountAmount = (subtotal * discount) / 100;
-    const subtotalAfterDiscount = subtotal - discountAmount;
-    const taxAmount = (subtotalAfterDiscount * tax) / 100;
-    const total = subtotalAfterDiscount + taxAmount;
+  const saveInvoiceData = async () => {
+    try {
+      // Make sure we're using the new invoice number format
+      if (!invoiceNumber || !invoiceNumber.startsWith('#')) {
+        dispatch(generateInvoiceNumber());
+      }
+      
+      // Calculate totals
+      const subtotal = items.reduce(
+        (sum, item) => sum + item.quantity * item.price,
+        0
+      );
+      const discountAmount = (subtotal * discount) / 100;
+      const subtotalAfterDiscount = subtotal - discountAmount;
+      const taxAmount = (subtotalAfterDiscount * tax) / 100;
+      const total = subtotalAfterDiscount + taxAmount;
 
-    // Get the selected customer data - either from the selected customer or from local state
-    const customerData = selectedCustomerId 
-      ? { 
-          ...localCustomer,
-          id: selectedCustomerId 
-        } 
-      : localCustomer;
+      // Create the invoice data object for the backend
+      const invoiceData = {
+        invoice_number: invoiceNumber,
+        user_id: userId,
+        company_id: company._id,
+        customer_id: selectedCustomerId,
+        items: items
+          .filter((item) => item.name.trim() !== "")
+          .map(item => ({
+            name: item.name,
+            description: item.description || "",
+            quantity: Number(item.quantity),
+            price: Number(item.price)
+          })),
+        subtotal: Number(subtotal),
+        discount: Number(discount),
+        discountAmount: Number(discountAmount),
+        tax: Number(tax),
+        taxAmount: Number(taxAmount),
+        total: Number(total),
+        type: invoiceType,
+        privacy: privacy || "",
+        notes: notes || "",
+        lastInvoiceDate: lastInvoiceDate || new Date().toISOString(),
+        dailyCounter: dailyCounter || 1
+      };
 
-    // Create the invoice object with embedded customer data
-    const invoiceData = {
-      id: isExistingInvoice()
-        ? invoiceHistory.find((inv) => inv.invoiceNumber === invoiceNumber).id
-        : `inv_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-    invoiceNumber,
-      sender: {
-        name: company.name,
-        email: company.email,
-        phone: company.phone,
-        address: company.address,
-        logo: company.logo,
-      },
-      customerId: selectedCustomerId || null,
-      // Embed the full customer data in the invoice
-      customer: customerData,
-      items: items.filter((item) => item.name.trim() !== ""),
-    subtotal,
-      discount,
-      discountAmount,
-    tax,
-    taxAmount,
-    total,
-      createdAt: isExistingInvoice()
-        ? invoiceHistory.find((inv) => inv.invoiceNumber === invoiceNumber)
-            .createdAt
-        : new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    privacy,
-    notes,
-      type: invoiceType,
-    };
+      console.log('Saving invoice data:', invoiceData); // Debug log
 
-    dispatch(saveToHistory(invoiceData));
-    Swal.fire({
-      icon: "success",
-      title: isExistingInvoice() ? t("updated") : t("created"),
-      toast: true,
-      position: "bottom-end",
-      showConfirmButton: false,
-      timer: 1500,
-    });
+      // Dispatch the createInvoice thunk
+      const result = await dispatch(createInvoice(invoiceData)).unwrap();
+      
+      if (!result) {
+        throw new Error('Failed to create invoice - no response data');
+      }
+
+      // Save to local history
+      dispatch(saveToHistory({
+        ...result,
+        id: result._id,
+        sender: {
+          name: company.name || "",
+          email: company.email || "",
+          phone: company.phone || "",
+          address: company.address || "",
+          logo: company.logo || "",
+        },
+        customer: {
+          name: localCustomer.name || "",
+          email: localCustomer.email || "",
+          phone: localCustomer.phone || "",
+          address: localCustomer.address || "",
+        },
+        createdAt: result.createdAt || new Date().toISOString(),
+        updatedAt: result.updatedAt || new Date().toISOString(),
+      }));
+
+      // Show success message
+      Swal.fire({
+        title: t("success"),
+        text: t("invoiceSaved"),
+        icon: "success",
+        showCancelButton: true,
+        confirmButtonColor: "#3085d6",
+        cancelButtonColor: "#d33",
+        confirmButtonText: t("createNew"),
+        cancelButtonText: t("close"),
+        customClass: {
+          popup: "rounded-2xl shadow-lg",
+          title: "text-2xl font-bold text-gray-800",
+          htmlContainer: "text-gray-600",
+          confirmButton:
+            "btn btn-primary px-6 py-2 rounded-lg text-white font-medium hover:bg-blue-700 transition-colors",
+          cancelButton:
+            "btn bg-gray-100 px-6 py-2 rounded-lg text-gray-700 font-medium hover:bg-gray-200 transition-colors",
+          actions: "gap-3",
+        },
+        buttonsStyling: false,
+      }).then((result) => {
+        if (result.isConfirmed) {
+          // Reset form for new invoice
+          dispatch(resetInvoice());
+          dispatch(generateInvoiceNumber());
+          dispatch(setSelectedCustomerId(null));
+          if (items.length === 0) {
+            dispatch(addItem());
+          }
+        }
+      });
+
+    } catch (error) {
+      console.error('Failed to save invoice:', error);
+      
+      let errorMessage = t("failedToSaveInvoice");
+      if (error.message?.includes('duplicate key error')) {
+        errorMessage = t("duplicateInvoiceNumber");
+        dispatch(generateInvoiceNumber());
+      }
+      
+      Swal.fire({
+        icon: "error",
+        text: errorMessage,
+        toast: true,
+        position: "bottom-end",
+        showConfirmButton: false,
+        timer: 3000,
+      });
+    }
   };
 
   const handleCustomerChange = (field, value) => {
@@ -391,37 +458,6 @@ function Home() {
   const handleSaveInvoice = () => {
     if (validateCompleteInvoice()) {
       saveInvoiceData();
-      Swal.fire({
-        title: isExistingInvoice() ? t("updated") : t("created"),
-        text: t("createNewInvoiceQuestion"),
-        icon: "success",
-        showCancelButton: true,
-        confirmButtonColor: "#3085d6",
-        cancelButtonColor: "#d33",
-        confirmButtonText: t("yes"),
-        cancelButtonText: t("no"),
-        customClass: {
-          popup: "rounded-2xl shadow-lg",
-          title: "text-2xl font-bold text-gray-800",
-          htmlContainer: "text-gray-600",
-          confirmButton:
-            "btn btn-primary px-6 py-2 rounded-lg text-white font-medium hover:bg-blue-700 transition-colors",
-          cancelButton:
-            "btn bg-gray-100 px-6 py-2 rounded-lg text-gray-700 font-medium hover:bg-gray-200 transition-colors",
-          actions: "gap-3",
-        },
-        buttonsStyling: false,
-      }).then((result) => {
-        if (result.isConfirmed) {
-          dispatch(resetInvoice());
-          dispatch(generateInvoiceNumber());
-          dispatch(setSelectedCustomerId(null));
-          // Add initial item if items array is empty
-          if (items.length === 0) {
-            dispatch(addItem());
-          }
-        }
-      });
     }
   };
 

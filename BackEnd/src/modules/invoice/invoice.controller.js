@@ -39,12 +39,33 @@ client.initialize();
 
 const getAllInvoices = catchAsyncError(async (req, res, next) => {
     const { userId } = req.params;
-    let invoices = await invoiceModel.find({ user_id: userId}).populate('customer_id');
-
-   if (!invoices || invoices.length === 0) {
-    return next(new AppError('No invoices found for this user', 404));
-}
-    res.status(200).json({ message: "Invoices fetched successfully", invoices });
+    
+    try {
+        // Populate both customer_id and company_id
+        let invoices = await invoiceModel.find({ user_id: userId })
+            .populate('customer_id')
+            .populate('company_id')
+            .sort({ createdAt: -1 });
+        
+        // Return empty array instead of error when no invoices found
+        if (!invoices || invoices.length === 0) {
+            return res.status(200).json({ 
+                message: "No invoices found for this user", 
+                invoices: [] 
+            });
+        }
+        
+        res.status(200).json({ 
+            message: "Invoices fetched successfully", 
+            invoices 
+        });
+    } catch (error) {
+        console.error("Error fetching invoices:", error);
+        return res.status(200).json({
+            message: "Error fetching invoices", 
+            invoices: []
+        });
+    }
 });
 
 const getInvoiceById = catchAsyncError(async (req, res, next) => {
@@ -57,71 +78,31 @@ const getInvoiceById = catchAsyncError(async (req, res, next) => {
 }); 
 
 const createInvoice = catchAsyncError(async (req, res, next) => {
-    const { user_id, invoice_number, items, tax, discount , notes , privacy , description } = req.body;
-    if (!items || !invoice_number || !user_id || !Array.isArray(items)) {
-        return next(new AppError("Missing required fields", 400));
-    }
-
-    // حساب المبلغ الإجمالي
-    let total_amount = 0;
-
-    for (const item of items) {
-        const { quantity, price, name } = item;
-        if (!quantity || !price || !name) {
-            return next(new AppError('Missing product details', 400));
+    try {
+        // Validate invoice number format
+        const { invoice_number } = req.body;
+        if (!/^(INV-\d{8}-\d{3}|#\d{3,})$/.test(invoice_number)) {
+            return next(new AppError('Invalid invoice number format', 400));
         }
-        total_amount += quantity * price;
-    }
-    if(tax) {
-        total_amount -= discount;
-    }
-    if(discount) {
-        total_amount -= discount;
-    }
-      // البحث عن الفاتورة السابقة الخاصة بالمستخدم
-      const existingInvoice = await invoiceModel.findOne({ user_id });
 
-      // إذا كانت هناك فاتورة سابقة، نضيف الفاتورة الجديدة إلى invoiceHistory
-      if (existingInvoice) {
-          existingInvoice.invoiceHistory.push({
-              invoice_number: existingInvoice.invoice_number,
-              total_amount: existingInvoice.total_amount,
-              invoice_date: existingInvoice.createdAt
-          });
-          await existingInvoice.save();
-      } else {
-          // إذا لم يكن هناك فاتورة سابقة، يمكن إنشاء فاتورة جديدة مع invoiceHistory فارغ
-          await invoiceModel.create({
-              user_id,
-              invoice_number,
-              total_amount,
-              items,
-              tax,
-              discount,
-              notes,
-              privacy,
-              description,
-              invoiceHistory: [] // بدءًا من مصفوفة فارغة
-          });
-      }
-  
-    const newInvoice = await invoiceModel.create({
-        user_id,
-        invoice_number,
-        total_amount,
-        items,
-        discount,
-        tax,
-        notes,
-        privacy,
-        description
-    });
-
-    if (!newInvoice) {
-        return next(new AppError('Invoice not added', 400));
+        // Create the invoice
+        const invoice = await invoiceModel.create(req.body);
+        
+        // Populate any necessary fields
+        await invoice.populate('customer_id company_id');
+        
+        // Send the response
+        res.status(201).json({
+            message: "Invoice created successfully",
+            invoice: invoice
+        });
+    } catch (error) {
+        console.error('Create invoice error:', error);
+        if (error.code === 11000) { // Duplicate key error
+            return next(new AppError('Invoice number already exists', 409));
+        }
+        next(new AppError(error.message || 'Failed to create invoice', 500));
     }
-
-    res.status(200).json({ message: "Invoice added successfully", newInvoice });
 });
 
 const updateInvoice = catchAsyncError(async (req, res, next) => {

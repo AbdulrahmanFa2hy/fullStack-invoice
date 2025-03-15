@@ -10,7 +10,6 @@ import { normalizeArabicText } from "../utils/arabicNormalization";
 import { useTranslation } from "react-i18next";
 import { FiUserPlus } from "react-icons/fi";
 import Swal from "sweetalert2";
-import LoadingSpinner from "../components/LoadingSpinner";
 
 const CustomerModal = ({ customer, onClose, onEdit, onDelete }) => {
   const { t, i18n } = useTranslation();

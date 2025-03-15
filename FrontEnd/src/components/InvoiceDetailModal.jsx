@@ -2,7 +2,7 @@ import { format, parseISO } from "date-fns";
 import { ar } from "date-fns/locale";
 import { useState, useRef, useEffect } from "react";
 import { motion } from "framer-motion";
-import { useSelector } from "react-redux";
+import { useSelector, useDispatch } from "react-redux";
 import { useTranslation } from "react-i18next";
 import CustomerSelector from "./CustomerSelector";
 import InvoiceFrom from "./InvoiceFrom";
@@ -10,24 +10,34 @@ import InvoiceTo from "./InvoiceTo";
 import ProductItem from './ProductItem';
 import Swal from "sweetalert2";
 import { FiPlus } from "react-icons/fi";
+import { updateInvoiceThunk, deleteInvoiceThunk } from "../store/invoiceSlice";
 
-const InvoiceDetailModal = ({ invoice, onClose, onUpdate, onDelete }) => {
+const InvoiceDetailModal = ({ 
+  invoice, 
+  onClose, 
+  onUpdate, 
+  onDelete,
+  customers,
+  products,
+  company
+}) => {
   const { t, i18n } = useTranslation();
   const modalContentRef = useRef();
   const isRTL = i18n.language === "ar";
+  const dispatch = useDispatch();
 
   const [isEditing, setIsEditing] = useState(false);
-  // Fix the initial state to include all required fields
+  // Initialize editForm with calculated total if needed
   const [editForm, setEditForm] = useState({
     id: invoice?.id,
     invoiceNumber: invoice?.invoiceNumber,
     sender: invoice?.sender || {},
     customerId: invoice?.customerId,
     items: invoice?.items || [],
-    tax: invoice?.tax || 0,
-    discount: invoice?.discount || 0,
-    subtotal: invoice?.subtotal || 0,
-    total: invoice?.total || 0,
+    tax: Number(invoice?.tax) || 0,
+    discount: Number(invoice?.discount) || 0,
+    subtotal: Number(invoice?.subtotal) || 0,
+    total: calculateInvoiceTotal(invoice), // Use the same helper function
     createdAt: invoice?.createdAt,
     updatedAt: invoice?.updatedAt,
     privacy: invoice?.privacy || "",
@@ -41,8 +51,6 @@ const InvoiceDetailModal = ({ invoice, onClose, onUpdate, onDelete }) => {
   });
 
   // Add these selectors to get customers and check invoice type
-  const customers = useSelector((state) => state.customers.customers);
-  // Get the invoice type from the invoice data or default to "complete"
   const invoiceType = invoice?.type;
 
   // Add the missing customer state
@@ -65,10 +73,10 @@ const InvoiceDetailModal = ({ invoice, onClose, onUpdate, onDelete }) => {
         sender: invoice.sender || {},
         customerId: invoice.customerId,
         items: invoice.items || [],
-        tax: invoice.tax || 0,
-        discount: invoice.discount || 0,
-        subtotal: invoice.subtotal || 0,
-        total: invoice.total || 0,
+        tax: Number(invoice.tax) || 0,
+        discount: Number(invoice.discount) || 0,
+        subtotal: Number(invoice.subtotal) || 0,
+        total: calculateInvoiceTotal(invoice), // Use the same helper function
         createdAt: invoice.createdAt,
         updatedAt: invoice.updatedAt,
         privacy: invoice.privacy || "",
@@ -194,7 +202,7 @@ const InvoiceDetailModal = ({ invoice, onClose, onUpdate, onDelete }) => {
   };
 
   // Update handleUpdate to use SweetAlert
-  const handleUpdate = () => {
+  const handleUpdate = async () => {
     // Validate all items first
     if (!validateAllItems()) {
       return;
@@ -222,21 +230,37 @@ const InvoiceDetailModal = ({ invoice, onClose, onUpdate, onDelete }) => {
     const taxAmount = (subtotalAfterDiscount * editForm.tax) / 100;
     const total = subtotalAfterDiscount + taxAmount;
 
-    // Make sure to include the customer data in the updated invoice
-    const updatedInvoice = {
-      ...editForm,
-      subtotal,
-      taxAmount,
-      discountAmount,
-      total,
-      updatedAt: new Date().toISOString(),
-      // Ensure customer data is preserved
-      customer: customer || {},
-    };
+    try {
+      const updatedInvoice = {
+        ...editForm,
+        subtotal,
+        taxAmount,
+        discountAmount,
+        total,
+        updatedAt: new Date().toISOString(),
+        customer: customer || {},
+        _id: invoice._id || invoice.id,
+      };
 
-    onUpdate(updatedInvoice);
-    setCurrentInvoice(updatedInvoice);
-    setIsEditing(false);
+      await dispatch(updateInvoiceThunk({ 
+        id: invoice._id || invoice.id,
+        invoiceData: updatedInvoice 
+      })).unwrap();
+
+      setCurrentInvoice(updatedInvoice);
+      setIsEditing(false);
+      onUpdate(updatedInvoice);
+    } catch (error) {
+      console.error('Failed to update invoice:', error);
+      Swal.fire({
+        icon: "error",
+        text: t("failedToUpdateInvoice"),
+        toast: true,
+        position: "bottom-end",
+        showConfirmButton: false,
+        timer: 3000,
+      });
+    }
   };
 
   const handleItemUpdate = (itemId, field, value) => {
@@ -299,6 +323,27 @@ const InvoiceDetailModal = ({ invoice, onClose, onUpdate, onDelete }) => {
   // Add a function to get input class names
   const getInputClassName = (baseClass) => {
     return `${baseClass} text-start`;
+  };
+
+  const handleDelete = async () => {
+    try {
+      if (window.confirm(t("confirmDelete"))) {
+        const idToDelete = invoice._id || invoice.id;
+        await dispatch(deleteInvoiceThunk(idToDelete)).unwrap();
+        onDelete(idToDelete);
+        onClose();
+      }
+    } catch (error) {
+      console.error('Failed to delete invoice:', error);
+      Swal.fire({
+        icon: "error",
+        text: t("failedToDeleteInvoice"),
+        toast: true,
+        position: "bottom-end",
+        showConfirmButton: false,
+        timer: 3000,
+      });
+    }
   };
 
   return (
@@ -652,11 +697,7 @@ const InvoiceDetailModal = ({ invoice, onClose, onUpdate, onDelete }) => {
             <motion.button
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
-              onClick={() => {
-                if (window.confirm(t("confirmDelete"))) {
-                  onDelete(invoice.id);
-                }
-              }}
+              onClick={handleDelete}
               className="w-full sm:w-auto flex-1 sm:flex-none px-3 sm:px-4 py-2 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-lg shadow-lg hover:shadow-xl transition-all duration-200 flex items-center justify-center gap-2 text-sm sm:text-base"
             >
               <span>{t("delete")}</span>

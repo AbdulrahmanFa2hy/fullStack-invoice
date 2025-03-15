@@ -1,4 +1,3 @@
-
 import express from "express";
 import { allowedTo, protectedRoutes } from "../auth/auth.controller.js";
 import { 
@@ -13,12 +12,12 @@ import {
 
 const invoiceRouter = express.Router(); 
 
-invoiceRouter.get('/:userId',protectedRoutes,allowedTo('user'),getAllInvoices)
-invoiceRouter.get('/getInvoice/:id',getInvoiceById)
-invoiceRouter.post('/',createInvoice)
-invoiceRouter.put('/:id',protectedRoutes,allowedTo('admin','user'),updateInvoice)
-invoiceRouter.delete('/:id',protectedRoutes,allowedTo('admin','user'),deleteInvoice)
-invoiceRouter.get('/pdf/:id',generateInvoicePdf)
-invoiceRouter.post('/:id/:phone',sendInvoiceByWhatsApp)
+invoiceRouter.get('/user/:userId', protectedRoutes, allowedTo('user'), getAllInvoices)
+invoiceRouter.get('/:id', getInvoiceById)
+invoiceRouter.post('/', createInvoice)
+invoiceRouter.put('/:id', protectedRoutes, allowedTo('admin', 'user'), updateInvoice)
+invoiceRouter.delete('/:id', protectedRoutes, allowedTo('admin', 'user'), deleteInvoice)
+invoiceRouter.get('/pdf/:id', generateInvoicePdf)
+invoiceRouter.get('/whatsapp/:id/:phone', sendInvoiceByWhatsApp)
 
 export default invoiceRouter; 
