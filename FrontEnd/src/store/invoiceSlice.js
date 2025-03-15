@@ -43,31 +43,130 @@ export const fetchInvoices = createAsyncThunk(
   }
 );
 
-// Async thunk for creating invoice
-export const createInvoice = createAsyncThunk(
-  "invoices/createInvoice",
-  async (invoiceData, { rejectWithValue }) => {
+// Add a new function to check if an invoice exists
+export const checkInvoiceExists = createAsyncThunk(
+  "invoices/checkInvoiceExists",
+  async (invoiceNumber, { rejectWithValue }) => {
     try {
       const token = localStorage.getItem("token");
       if (!token) {
         return rejectWithValue("Authentication required");
       }
 
-      const response = await axios.post(
-        `${API_BASE_URL}/invoices`,
-        invoiceData,
-        {
-          headers: {
-            token: token,
-            "Content-Type": "application/json",
-          },
-        }
+      const response = await axios.get(`${API_BASE_URL}/invoices/check/${invoiceNumber}`, {
+        headers: {
+          token: token,
+          "Content-Type": "application/json",
+        },
+      });
+      
+      return response.data;
+    } catch (error) {
+      // If it's a 404, it means the invoice doesn't exist
+      if (error.response?.status === 404) {
+        return { exists: false };
+      }
+      
+      return { 
+        exists: error.response?.status === 409, 
+        invoice: error.response?.data?.invoice 
+      };
+    }
+  }
+);
+
+// Add a function to check if an invoice exists on the server
+export const checkInvoiceExistsOnServer = createAsyncThunk(
+  "invoices/checkInvoiceExistsOnServer",
+  async (invoiceNumber, { rejectWithValue }) => {
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        return rejectWithValue("Authentication required");
+      }
+
+      const response = await axios.get(`${API_BASE_URL}/invoices/check/${invoiceNumber}`, {
+        headers: {
+          token: token,
+          "Content-Type": "application/json",
+        },
+      });
+      
+      return {
+        exists: true,
+        invoice: response.data.invoice
+      };
+    } catch (error) {
+      // If it's a 404, it means the invoice doesn't exist
+      if (error.response?.status === 404) {
+        return { exists: false };
+      }
+      
+      return rejectWithValue(
+        error.response?.data?.message || "Failed to check invoice"
       );
+    }
+  }
+);
+
+// Modify the createInvoice thunk to handle both create and update
+export const createInvoice = createAsyncThunk(
+  "invoices/createInvoice",
+  async (invoiceData, { rejectWithValue, dispatch, getState }) => {
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        return rejectWithValue("Authentication required");
+      }
+
+      // Check if invoice with this number already exists
+      const existingInvoices = getState().main.invoice.invoiceHistory;
+      const existingInvoice = existingInvoices.find(
+        inv => inv.invoice_number === invoiceData.invoice_number || 
+              inv.invoiceNumber === invoiceData.invoice_number
+      );
+
+      let response;
+      
+      if (existingInvoice) {
+        // If it exists, update it
+        const invoiceId = existingInvoice._id || existingInvoice.id;
+        response = await axios.put(
+          `${API_BASE_URL}/invoices/${invoiceId}`,
+          invoiceData,
+          {
+            headers: {
+              token: token,
+              "Content-Type": "application/json",
+            },
+          }
+        );
+      } else {
+        // If it doesn't exist, create a new one
+        response = await axios.post(
+          `${API_BASE_URL}/invoices`,
+          invoiceData,
+          {
+            headers: {
+              token: token,
+              "Content-Type": "application/json",
+            },
+          }
+        );
+      }
       
       // Make sure we're returning the correct data structure
-      return response.data.invoice || response.data; // Handle both possible response formats
+      return response.data.invoice || response.data;
     } catch (error) {
       console.error('Create invoice error:', error.response?.data || error);
+      
+      // If we get a 409 Conflict (duplicate invoice number), generate a new number and try again
+      if (error.response?.status === 409) {
+        // Generate a new invoice number
+        dispatch(generateInvoiceNumber());
+        return rejectWithValue("Invoice number already exists. A new number has been generated.");
+      }
+      
       return rejectWithValue(
         error.response?.data?.message || "Failed to create invoice"
       );
@@ -131,30 +230,91 @@ export const deleteInvoiceThunk = createAsyncThunk(
   }
 );
 
+// Update the getNextInvoiceNumber thunk to start from #001 if no invoices exist
+export const getNextInvoiceNumber = createAsyncThunk(
+  "invoices/getNextInvoiceNumber",
+  async (_, { rejectWithValue, getState }) => {
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        return rejectWithValue("Authentication required");
+      }
 
+      // Get the current invoice history from state
+      const invoiceHistory = getState().main.invoice.invoiceHistory;
+      
+      // If there are no invoices in history, start from #001
+      if (!invoiceHistory || invoiceHistory.length === 0) {
+        return "#001";
+      }
 
+      // Otherwise, get the next number from the backend
+      const response = await axios.get(`${API_BASE_URL}/invoices/next-number`, {
+        headers: {
+          token: token,
+          "Content-Type": "application/json",
+        },
+      });
+      
+      return response.data.nextInvoiceNumber;
+    } catch (error) {
+      console.error('Error getting next invoice number:', error);
+      
+      // If there's an error, generate a number locally based on existing invoices
+      const invoiceHistory = getState().main.invoice.invoiceHistory;
+      
+      if (!invoiceHistory || invoiceHistory.length === 0) {
+        return "#001"; // Start from #001 if no invoices exist
+      }
+      
+      // Find the highest invoice number
+      let highestNumber = 0;
+      
+      invoiceHistory.forEach(invoice => {
+        const invoiceNum = invoice.invoice_number || invoice.invoiceNumber;
+        if (invoiceNum) {
+          const match = invoiceNum.match(/\d+/);
+          if (match) {
+            const num = parseInt(match[0], 10);
+            if (num > highestNumber) {
+              highestNumber = num;
+            }
+          }
+        }
+      });
+      
+      // Return the next number
+      return `#${(highestNumber + 1).toString().padStart(3, '0')}`;
+    }
+  }
+);
+
+// Add this function to get the saved invoice type from localStorage
+const getSavedInvoiceType = () => {
+  try {
+    const savedType = localStorage.getItem('invoiceType');
+    return savedType || 'complete'; // Default to 'complete' if not found
+  } catch (error) {
+    console.error('Error reading invoice type from localStorage:', error);
+    return 'complete';
+  }
+};
+
+// Update the initialState to use the saved invoice type
 const initialState = {
   invoice: {
-    items: [
-      {
-        id: Date.now(),
-        name: "",
-        description: "",
-        quantity: 1,
-        price: 0,
-      },
-    ],
     invoiceNumber: "",
-    invoiceHistory: [],
+    items: [],
     tax: 0,
     discount: 0,
     privacy: "",
     notes: "",
-    type: "complete",
+    invoiceHistory: [],
     dailyCounter: 1,
     lastInvoiceDate: null,
+    type: getSavedInvoiceType(), // Use the saved type or default
   },
-  status: "idle", // 'idle' | 'loading' | 'succeeded' | 'failed'
+  status: "idle",
   error: null,
 };
 
@@ -162,9 +322,33 @@ const initialState = {
 // const generateUniqueId = () =>
 //   `inv_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
-const generateNewInvoiceNumber = (lastDate, counter) => {
+// Update the generateNewInvoiceNumber function to check existing invoices
+const generateNewInvoiceNumber = (lastDate, counter, invoiceHistory = []) => {
+  // If there are no invoices, start from #001
+  if (!invoiceHistory || invoiceHistory.length === 0) {
+    return {
+      invoiceNumber: "#001",
+      newCounter: 1,
+      newDate: new Date().toISOString()
+    };
+  }
+  
   // Get the highest invoice number from history and increment
-  const highestNumber = counter || 0;
+  let highestNumber = counter || 0;
+  
+  invoiceHistory.forEach(invoice => {
+    const invoiceNum = invoice.invoice_number || invoice.invoiceNumber;
+    if (invoiceNum) {
+      const match = invoiceNum.match(/\d+/);
+      if (match) {
+        const num = parseInt(match[0], 10);
+        if (num > highestNumber) {
+          highestNumber = num;
+        }
+      }
+    }
+  });
+  
   const nextNumber = highestNumber + 1;
   
   // Simple format: #001, #002, etc.
@@ -175,6 +359,7 @@ const generateNewInvoiceNumber = (lastDate, counter) => {
   };
 };
 
+// Update the generateInvoiceNumber reducer to use the invoice history
 const invoiceSlice = createSlice({
   name: "main",
   initialState,
@@ -243,7 +428,8 @@ const invoiceSlice = createSlice({
     generateInvoiceNumber: (state) => {
       const { invoiceNumber, newCounter, newDate } = generateNewInvoiceNumber(
         state.invoice.lastInvoiceDate,
-        state.invoice.dailyCounter || 1
+        state.invoice.dailyCounter || 1,
+        state.invoice.invoiceHistory
       );
       state.invoice.invoiceNumber = invoiceNumber;
       state.invoice.dailyCounter = newCounter;
@@ -266,6 +452,12 @@ const invoiceSlice = createSlice({
     },
     setInvoiceType: (state, action) => {
       state.invoice.type = action.payload;
+      // Save to localStorage
+      try {
+        localStorage.setItem('invoiceType', action.payload);
+      } catch (error) {
+        console.error('Error saving invoice type to localStorage:', error);
+      }
     },
     updateTax: (state, action) => {
       state.invoice.tax = action.payload;
@@ -349,6 +541,28 @@ const invoiceSlice = createSlice({
       .addCase(deleteInvoiceThunk.rejected, (state, action) => {
         state.status = "failed";
         state.error = action.payload;
+      })
+      // Get next invoice number cases
+      .addCase(getNextInvoiceNumber.fulfilled, (state, action) => {
+        if (action.payload) {
+          state.invoice.invoiceNumber = action.payload;
+          // Extract the number part for the counter
+          const numberMatch = action.payload.match(/\d+/);
+          if (numberMatch) {
+            state.invoice.dailyCounter = parseInt(numberMatch[0], 10);
+          }
+          state.invoice.lastInvoiceDate = new Date().toISOString();
+        } else {
+          // Fallback to local generation if API fails
+          const { invoiceNumber, newCounter, newDate } = generateNewInvoiceNumber(
+            state.invoice.lastInvoiceDate,
+            state.invoice.dailyCounter || 1,
+            state.invoice.invoiceHistory
+          );
+          state.invoice.invoiceNumber = invoiceNumber;
+          state.invoice.dailyCounter = newCounter;
+          state.invoice.lastInvoiceDate = newDate;
+        }
       });
   },
 });

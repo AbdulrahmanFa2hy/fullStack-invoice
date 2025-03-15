@@ -25,6 +25,7 @@ import {
   updateNotes,
   resetInvoice,
   createInvoice,
+  getNextInvoiceNumber,
 } from "../store/invoiceSlice";
 import { setSelectedCustomerId, fetchCustomers } from "../store/customersSlice";
 import { updateCompany, fetchCompanyByUserId } from "../store/companySlice";
@@ -109,7 +110,7 @@ function Home() {
 
   useEffect(() => {
     if (!invoiceNumber) {
-      dispatch(generateInvoiceNumber());
+      dispatch(getNextInvoiceNumber());
     }
     // Add initial item if items array is empty
     if (items.length === 0) {
@@ -201,7 +202,7 @@ function Home() {
     try {
       // Make sure we're using the new invoice number format
       if (!invoiceNumber || !invoiceNumber.startsWith('#')) {
-        dispatch(generateInvoiceNumber());
+        dispatch(getNextInvoiceNumber());
       }
       
       // Calculate totals
@@ -213,6 +214,11 @@ function Home() {
       const subtotalAfterDiscount = subtotal - discountAmount;
       const taxAmount = (subtotalAfterDiscount * tax) / 100;
       const total = subtotalAfterDiscount + taxAmount;
+
+      // Check if this invoice already exists in our history
+      const existingInvoice = invoiceHistory.find(
+        inv => inv.invoiceNumber === invoiceNumber || inv.invoice_number === invoiceNumber
+      );
 
       // Create the invoice data object for the backend
       const invoiceData = {
@@ -242,6 +248,11 @@ function Home() {
       };
 
       console.log('Saving invoice data:', invoiceData); // Debug log
+
+      // If it's an existing invoice, include the ID
+      if (existingInvoice) {
+        invoiceData.id = existingInvoice._id || existingInvoice.id;
+      }
 
       // Dispatch the createInvoice thunk
       const result = await dispatch(createInvoice(invoiceData)).unwrap();
@@ -274,7 +285,7 @@ function Home() {
       // Show success message
       Swal.fire({
         title: t("success"),
-        text: t("invoiceSaved"),
+        text: existingInvoice ? t("invoiceUpdated") : t("invoiceSaved"),
         icon: "success",
         showCancelButton: true,
         confirmButtonColor: "#3085d6",
@@ -296,7 +307,8 @@ function Home() {
         if (result.isConfirmed) {
           // Reset form for new invoice
           dispatch(resetInvoice());
-          dispatch(generateInvoiceNumber());
+          // Get next invoice number from backend
+          dispatch(getNextInvoiceNumber());
           dispatch(setSelectedCustomerId(null));
           if (items.length === 0) {
             dispatch(addItem());
@@ -308,9 +320,10 @@ function Home() {
       console.error('Failed to save invoice:', error);
       
       let errorMessage = t("failedToSaveInvoice");
-      if (error.message?.includes('duplicate key error')) {
+      if (error.message?.includes('duplicate key error') || 
+          error.message?.includes('already exists')) {
         errorMessage = t("duplicateInvoiceNumber");
-        dispatch(generateInvoiceNumber());
+        dispatch(getNextInvoiceNumber());
       }
       
       Swal.fire({
@@ -480,7 +493,7 @@ function Home() {
       if (!item.name.trim()) {
         newErrors[itemId] = { ...newErrors[itemId], name: t("nameRequired") };
       } else {
-        const { name, ...rest } = newErrors[itemId] || {};
+        const { ...rest } = newErrors[itemId] || {};
         newErrors[itemId] = rest;
       }
     }
@@ -489,7 +502,7 @@ function Home() {
       if (!item.price || item.price <= 0) {
         newErrors[itemId] = { ...newErrors[itemId], price: t("priceRequired") };
       } else {
-        const { price, ...rest } = newErrors[itemId] || {};
+        const { ...rest } = newErrors[itemId] || {};
         newErrors[itemId] = rest;
       }
     }
@@ -498,7 +511,7 @@ function Home() {
       if (!item.quantity || item.quantity <= 0) {
         newErrors[itemId] = { ...newErrors[itemId], quantity: t("quantityRequired") };
       } else {
-        const { quantity, ...rest } = newErrors[itemId] || {};
+        const { ...rest } = newErrors[itemId] || {};
         newErrors[itemId] = rest;
       }
     }

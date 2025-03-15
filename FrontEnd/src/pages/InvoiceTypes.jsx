@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { setInvoiceType } from "../store/invoiceSlice";
@@ -8,6 +9,7 @@ function InvoiceTypes() {
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const companyData = useSelector((state) => state.company);
+  const currentInvoiceType = useSelector((state) => state.main.invoice.type);
   const isRTL = i18n.dir() === 'rtl';
 
   const invoiceTypes = [
@@ -50,11 +52,11 @@ function InvoiceTypes() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 py-8 px-3 sm:px-4 md:px-6 lg:px-8" dir={isRTL ? 'rtl' : 'ltr'}>
       <div className="max-w-4xl mx-auto">
-        <div className="text-center mb-8 sm:mb-12 md:mb-16">
-          <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold bg-gradient-to-r from-primary-600 via-purple-500 to-pink-500 bg-clip-text text-transparent pb-2 inline-block">
+        <div className="text-center mb-8">
+          <h2 className="text-3xl sm:text-4xl font-extrabold bg-gradient-to-r from-primary-600 via-purple-500 to-pink-500 bg-clip-text text-transparent pb-2 inline-block">
             {t('selectInvoiceType')}
           </h2>
-          <p className="mt-3 sm:mt-4 text-base sm:text-lg md:text-xl text-gray-600">
+          <p className="mt-3 sm:mt-4 text-base sm:text-lg text-gray-600">
             {t('chooseInvoiceType')}
           </p>
         </div>
@@ -63,12 +65,20 @@ function InvoiceTypes() {
           {invoiceTypes.map((type) => (
             <div
               key={type.type}
-              className="group relative bg-white rounded-xl sm:rounded-2xl shadow-lg sm:shadow-xl overflow-hidden cursor-pointer transform transition-all duration-500 hover:scale-[1.02] hover:shadow-2xl h-full"
+              className={`group relative bg-white rounded-xl sm:rounded-2xl shadow-lg sm:shadow-xl overflow-hidden cursor-pointer transform transition-all duration-500 hover:scale-[1.02] hover:shadow-2xl h-full ${
+                currentInvoiceType === type.type ? "ring-2 ring-primary-500" : ""
+              }`}
               onClick={() => handleTypeSelection(type.type)}
             >
+              {currentInvoiceType === type.type && (
+                <div className={`absolute ${isRTL ? 'left-2' : 'right-2'} top-2 bg-primary-500 text-white text-xs px-2 py-1 rounded-full z-10 whitespace-nowrap`}>
+                  {t('current')}
+                </div>
+              )}
+              
               <div className={`absolute inset-0 bg-gradient-to-r ${isRTL ? 'from-primary-700/10 to-primary-500/10' : 'from-primary-500/10 to-primary-700/10'} opacity-0 group-hover:opacity-100 transition-opacity duration-500`} />
               <div className="relative p-4 sm:p-6 md:p-8 flex flex-col h-full">
-                <h3 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2 sm:mb-3 group-hover:text-primary-600 transition-colors duration-300">
+                <h3 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2 sm:mb-3 group-hover:text-primary-600 transition-colors duration-300 ">
                   {type.name}
                 </h3>
                 <p className="text-sm sm:text-base text-gray-600 mb-3 sm:mb-4 flex-grow">
@@ -94,7 +104,7 @@ function InvoiceTypes() {
                              hover:bg-primary-600 transform transition-all duration-300 
                              hover:scale-[1.02]"
                   >
-                    {t('createInvoice')} {type.name}
+                    {currentInvoiceType === type.type ? t('useThisType') : t('selectType')}
                   </button>
                 </div>
               </div>

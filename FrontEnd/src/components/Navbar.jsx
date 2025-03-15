@@ -1,10 +1,17 @@
 import { NavLink, useNavigate } from "react-router-dom";
 import { FiPlus, FiMenu, FiX } from "react-icons/fi";
 import { useDispatch, useSelector } from "react-redux";
-import { resetInvoice, generateInvoiceNumber } from "../store/invoiceSlice";
-import { setSelectedCustomerId } from "../store/customersSlice"; // Add this import
+import { 
+  resetInvoice, 
+  getNextInvoiceNumber, 
+  addItem, 
+  createInvoice, 
+  saveToHistory 
+} from "../store/invoiceSlice";
+import { setSelectedCustomerId } from "../store/customersSlice";
 import { useState, useRef, useEffect } from "react";
 import { useTranslation } from "react-i18next";
+import Swal from "sweetalert2";
 
 const getInitials = (name = "") => {
   if (!name || typeof name !== "string") return "?";
@@ -24,10 +31,19 @@ const Navbar = () => {
   const activeStyle = "bg-blue-700";
   const navigate = useNavigate();
   const dispatch = useDispatch();
-  const { invoiceHistory, invoiceNumber } = useSelector(
-    (state) => state.main.invoice
-  );
+  const { 
+    invoiceHistory, 
+    invoiceNumber, 
+    items, 
+    tax, 
+    discount, 
+    privacy, 
+    notes,
+    type: invoiceType 
+  } = useSelector((state) => state.main.invoice);
+  const { selectedCustomerId } = useSelector((state) => state.customers);
   const { userData } = useSelector((state) => state.profile);
+  const company = useSelector((state) => state.company);
   const { t, i18n } = useTranslation();
 
   useEffect(() => {
@@ -50,18 +66,265 @@ const Navbar = () => {
     return null;
   }
 
-  const handleCreateInvoice = () => {
-    const isExistingInvoice = invoiceHistory.some(
-      (inv) => inv.invoiceNumber === invoiceNumber
+  const hasUnsavedChanges = () => {
+    // Check if there are any items with content
+    const hasItems = items.some(item => 
+      item.name.trim() !== "" || 
+      item.description.trim() !== "" || 
+      item.quantity > 0 || 
+      item.price > 0
     );
+    
+    // Check if there are any other fields with content
+    const hasOtherContent = 
+      tax > 0 || 
+      discount > 0 || 
+      (privacy && privacy.trim() !== "") || 
+      (notes && notes.trim() !== "");
+    
+    return hasItems || hasOtherContent;
+  };
 
-    if (isExistingInvoice) {
-      dispatch(resetInvoice());
-      dispatch(generateInvoiceNumber());
-      dispatch(setSelectedCustomerId(null)); // Add this line to reset customer selection
+  const handleCreateInvoice = async () => {
+    // Check if there are unsaved changes
+    if (hasUnsavedChanges()) {
+      Swal.fire({
+        title: t("createNewInvoice"),
+        text: t("saveCurrentInvoicePrompt"),
+        icon: "question",
+        showDenyButton: true,
+        showCancelButton: true,
+        confirmButtonColor: "#3085d6",
+        denyButtonColor: "#d33",
+        cancelButtonColor: "#6c757d",
+        confirmButtonText: t("saveAndCreate"),
+        denyButtonText: t("createWithoutSaving"),
+        cancelButtonText: t("cancel"),
+        buttonsStyling: true,
+      }).then(async (result) => {
+        if (result.isConfirmed) {
+          // User wants to save current invoice first
+          const saveResult = await saveCurrentInvoice();
+          if (saveResult !== null) {
+            // Only create new invoice if save was successful
+            createNewInvoice();
+          }
+        } else if (result.isDenied) {
+          // User wants to discard changes and create new invoice
+          createNewInvoice();
+        }
+        // If canceled, do nothing
+      });
+    } else {
+      // No unsaved changes, create new invoice directly
+      createNewInvoice();
     }
+  };
 
+  // Function to save the current invoice
+  const saveCurrentInvoice = async () => {
+    try {
+      // Validate inputs before saving
+      if (!validateInputs()) {
+        return null; // Return null instead of throwing an error to handle validation failures gracefully
+      }
+      
+      // Make sure we're using the new invoice number format
+      if (!invoiceNumber || !invoiceNumber.startsWith('#')) {
+        dispatch(getNextInvoiceNumber());
+      }
+      
+      // Calculate totals
+      const subtotal = items.reduce(
+        (sum, item) => sum + item.quantity * item.price,
+        0
+      );
+      const discountAmount = (subtotal * discount) / 100;
+      const subtotalAfterDiscount = subtotal - discountAmount;
+      const taxAmount = (subtotalAfterDiscount * tax) / 100;
+      const total = subtotalAfterDiscount + taxAmount;
+
+      // Check if this invoice already exists in our history
+      const existingInvoice = invoiceHistory.find(
+        inv => inv.invoiceNumber === invoiceNumber || inv.invoice_number === invoiceNumber
+      );
+
+      // Create the invoice data object for the backend
+      const invoiceData = {
+        invoice_number: invoiceNumber,
+        user_id: userData?.id,
+        company_id: company._id || company.id,
+        customer_id: selectedCustomerId,
+        items: items
+          .filter((item) => item.name.trim() !== "")
+          .map(item => ({
+            name: item.name,
+            description: item.description || "",
+            quantity: Number(item.quantity),
+            price: Number(item.price)
+          })),
+        subtotal: Number(subtotal),
+        discount: Number(discount),
+        discountAmount: Number(discountAmount),
+        tax: Number(tax),
+        taxAmount: Number(taxAmount),
+        total: Number(total),
+        type: invoiceType,
+        privacy: privacy || "",
+        notes: notes || "",
+      };
+
+      // If it's an existing invoice, include the ID
+      if (existingInvoice) {
+        invoiceData.id = existingInvoice._id || existingInvoice.id;
+      }
+
+      // Dispatch the createInvoice thunk
+      const result = await dispatch(createInvoice(invoiceData)).unwrap();
+      
+      // Save to local history with company data
+      dispatch(saveToHistory({
+        ...result,
+        id: result._id,
+        sender: {
+          name: company.name || "",
+          email: company.email || "",
+          phone: company.phone || "",
+          address: company.address || "",
+          logo: company.logo || "",
+        },
+        customer: result.customer ? {
+          name: result.customer.name || "",
+          email: result.customer.email || "",
+          phone: result.customer.phone || "",
+          address: result.customer.address || "",
+        } : {},
+        createdAt: result.createdAt || new Date().toISOString(),
+        updatedAt: result.updatedAt || new Date().toISOString(),
+      }));
+      
+      // Show success toast
+      Swal.fire({
+        icon: "success",
+        text: existingInvoice ? t("invoiceUpdated") : t("invoiceSaved"),
+        toast: true,
+        position: "bottom-end",
+        showConfirmButton: false,
+        timer: 3000,
+      });
+
+      return result;
+    } catch (error) {
+      console.error('Failed to save invoice:', error);
+      
+      let errorMessage = t("failedToSaveInvoice");
+      if (error.message?.includes('duplicate key error') || 
+          error.message?.includes('already exists')) {
+        errorMessage = t("duplicateInvoiceNumber");
+        dispatch(getNextInvoiceNumber());
+      }
+      
+      Swal.fire({
+        icon: "error",
+        text: errorMessage,
+        toast: true,
+        position: "bottom-end",
+        showConfirmButton: false,
+        timer: 3000,
+      });
+      
+      throw error;
+    }
+  };
+
+  // Update the validateInputs function to check all validation conditions
+  const validateInputs = () => {
+    let isValid = true;
+    
+    // Check if there are any items with valid data
+    const hasValidItems = items.some(item => 
+      item.name.trim() !== "" && 
+      item.quantity > 0 && 
+      item.price > 0
+    );
+    
+
+    
+    // For complete invoice type, validate customer selection
+    if (invoiceType === 'complete' && !selectedCustomerId) {
+      Swal.fire({
+        icon: "error",
+        text: t("pleaseSelectCustomer"),
+        toast: true,
+        position: "bottom-end",
+        showConfirmButton: false,
+        timer: 3000,
+      });
+      return false; // Return false immediately for this critical error
+    }
+    
+    // Validate each item individually
+    for (const item of items) {
+      if (item.name.trim() !== "") {
+        if (item.quantity <= 0) {
+          Swal.fire({
+            icon: "error",
+            text: `${t("quantityRequired")} ${t("for")} ${item.name}`,
+            toast: true,
+            position: "bottom-end",
+            showConfirmButton: false,
+            timer: 3000,
+          });
+          return false; // Return false immediately for this error
+        }
+        
+        if (item.price <= 0) {
+          Swal.fire({
+            icon: "error",
+            text: `${t("priceRequired")} ${t("for")} ${item.name}`,
+            toast: true,
+            position: "bottom-end",
+            showConfirmButton: false,
+            timer: 3000,
+          });
+          return false; // Return false immediately for this error
+        }
+      }
+    }
+    if (!hasValidItems) {
+      Swal.fire({
+        icon: "error",
+        text: t("pleaseAddValidItems"),
+        toast: true,
+        position: "bottom-end",
+        showConfirmButton: false,
+        timer: 3000,
+      });
+      return false; // Return false immediately for this critical error
+    }
+    
+    return true; // All validations passed
+  };
+
+  const createNewInvoice = () => {
+    // Reset the invoice
+    dispatch(resetInvoice());
+    
+    // Get the next invoice number from the backend
+    dispatch(getNextInvoiceNumber());
+    
+    // Reset customer selection
+    dispatch(setSelectedCustomerId(null));
+    
+    // Don't add an initial item here, as Home.jsx will handle that
+    
+    // Navigate to home
     navigate("/");
+    
+    // Close the menu if it's open
+    if (isMenuOpen) {
+      setIsMenuOpen(false);
+    }
   };
 
   const toggleLanguage = () => {

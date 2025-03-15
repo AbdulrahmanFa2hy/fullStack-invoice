@@ -267,7 +267,7 @@ const Invoices = () => {
       <div className="max-w-7xl mx-auto">
         {/* Header with title and filter button */}
         <div className="flex justify-between items-center mb-6">
-          <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-800">
+          <h1 className="text-2xl  font-bold text-gray-800">
             {t("invoiceHistory")}
           </h1>
           
@@ -408,7 +408,7 @@ const Invoices = () => {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                  <div className="grid gird-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
                     {invoiceType !== "quick" && (
                       <>
                         <div className="space-y-2">
