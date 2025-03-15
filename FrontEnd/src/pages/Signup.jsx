@@ -1,11 +1,11 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
 import { useTranslation } from "react-i18next";
 import { signupUser } from "../store/profileSlice";
 
 function Signup() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const { loading, error } = useSelector((state) => state.profile);
@@ -15,15 +15,48 @@ function Signup() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [acceptTerms, setAcceptTerms] = useState(false);
+  const [displayError, setDisplayError] = useState(null);
+
+  // Process and translate error messages
+  useEffect(() => {
+    if (!error) {
+      setDisplayError(null);
+      return;
+    }
+
+    // Skip token errors on signup page
+    if (error.message === "No token found" || error.message === "Token not provided") {
+      setDisplayError(null);
+      return;
+    }
+
+    // Translate common error messages to user-friendly versions
+    let friendlyMessage = "";
+    
+    if (error.message.includes("User already exist")) {
+      friendlyMessage = t("emailAlreadyExists");
+    } else if (error.message.includes("User phone number must be unique") || 
+               error.message.includes("phone_1 dup key")) {
+      friendlyMessage = t("phoneNumberAlreadyExists");
+    } else if (error.message.includes("User email must be unique") || 
+               error.message.includes("email_1 dup key")) {
+      friendlyMessage = t("emailAlreadyExists");
+    } else {
+      // For any other errors, use the original message
+      friendlyMessage = error.message;
+    }
+
+    setDisplayError({ message: friendlyMessage });
+  }, [error, t]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (password !== confirmPassword) {
-      alert("Passwords don't match!");
+      setDisplayError({ message: t("passwordsDontMatch") });
       return;
     }
     if (!acceptTerms) {
-      alert("Please accept the terms and conditions");
+      setDisplayError({ message: t("pleaseAcceptTerms") });
       return;
     }
 
@@ -46,13 +79,13 @@ function Signup() {
             {t("joinUs")}
           </p>
         </div>
-        {error && (
+        {displayError && (
           <div
             className="bg-red-50 border border-red-400 text-red-700 px-4 py-3 rounded relative"
             role="alert"
           >
-            <span className="block sm:inline">
-              {error.message || "An error occurred during signup"}
+            <span className="block sm:inline text-sm">
+              {displayError.message}
             </span>
           </div>
         )}

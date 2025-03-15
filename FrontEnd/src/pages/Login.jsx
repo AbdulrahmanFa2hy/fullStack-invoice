@@ -1,11 +1,11 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
 import { useTranslation } from "react-i18next";
 import { signinUser } from "../store/profileSlice";
 
 function Login() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const { loading, error } = useSelector((state) => state.profile);
@@ -13,6 +13,37 @@ function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [rememberMe, setRememberMe] = useState(false);
+  const [displayError, setDisplayError] = useState(null);
+
+  // Process and translate error messages
+  useEffect(() => {
+    if (!error) {
+      setDisplayError(null);
+      return;
+    }
+
+    // Skip token errors on login page
+    if (error.message === "No token found" || error.message === "Token not provided") {
+      setDisplayError(null);
+      return;
+    }
+
+    // Translate common error messages to user-friendly versions
+    let friendlyMessage = "";
+    
+    if (error.message.includes("invalid email or password")) {
+      friendlyMessage = t("invalidCredentials");
+    } else if (error.message.includes("User not existed")) {
+      friendlyMessage = t("userNotFound");
+    } else if (error.message.includes("User not found")) {
+      friendlyMessage = t("userNotFound");
+    } else {
+      // For any other errors, use the original message
+      friendlyMessage = error.message;
+    }
+
+    setDisplayError({ message: friendlyMessage });
+  }, [error, t]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -42,13 +73,13 @@ function Login() {
             {t("signInToAccount")}
           </p>
         </div>
-        {error && (
+        {displayError && (
           <div
-            className="bg-red-50 border border-red-400 text-red-700 px-4 py-3 rounded relative"
+            className="bg-red-50 border border-red-400 text-red-700 px-4 py-3 rounded relative "
             role="alert"
           >
-            <span className="block sm:inline">
-              {error.message || "An error occurred during login"}
+            <span className="block sm:inline !text-sm">
+              {displayError.message}
             </span>
           </div>
         )}

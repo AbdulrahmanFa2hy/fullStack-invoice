@@ -290,7 +290,7 @@ function Home() {
         showCancelButton: true,
         confirmButtonColor: "#3085d6",
         cancelButtonColor: "#d33",
-        confirmButtonText: t("createNew"),
+        confirmButtonText: t("createNewInvoice"),
         cancelButtonText: t("close"),
         customClass: {
           popup: "rounded-2xl shadow-lg",

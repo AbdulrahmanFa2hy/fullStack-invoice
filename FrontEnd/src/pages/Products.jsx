@@ -5,14 +5,12 @@ import {
   deleteProductThunk,
   addProduct,
   fetchProducts,
-  setSelectedProductId,
   clearProductError,
 } from "../store/productSlice";
 import { normalizeArabicText } from "../utils/arabicNormalization";
 import { useTranslation } from "react-i18next";
 import { FiPackage } from "react-icons/fi";
 import Swal from "sweetalert2";
-import LoadingSpinner from "../components/LoadingSpinner";
 
 const ProductModal = ({ product, onClose, onEdit, onDelete }) => {
   const { t, i18n } = useTranslation();
@@ -38,11 +36,6 @@ const ProductModal = ({ product, onClose, onEdit, onDelete }) => {
       newErrors.price = t("invalidPrice");
     }
 
-    // Quantity validation (must be a positive integer)
-    if (isNaN(formData.quantity) || formData.quantity <= 0 || !Number.isInteger(Number(formData.quantity))) {
-      newErrors.quantity = t("invalidQuantity");
-    }
-
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -53,7 +46,7 @@ const ProductModal = ({ product, onClose, onEdit, onDelete }) => {
       onEdit({
         ...formData,
         price: Number(formData.price),
-        quantity: Number(formData.quantity),
+        quantity: 1  // Add default quantity for backend compatibility
       });
       setIsEditing(false);
     }
@@ -129,8 +122,8 @@ const ProductModal = ({ product, onClose, onEdit, onDelete }) => {
                   onChange={(e) => {
                     setFormData({ ...formData, price: e.target.value });
                   }}
-                  min="0.01"
-                  step="0.01"
+                  min="0"
+                  step="1"
                   dir="ltr"
                   className={`w-full px-4 py-2 rounded-lg border ${
                     errors.price ? "border-red-500" : "border-gray-200"
@@ -140,28 +133,6 @@ const ProductModal = ({ product, onClose, onEdit, onDelete }) => {
               </div>
               {errors.price && (
                 <p className="text-red-500 text-sm mt-1">{errors.price}</p>
-              )}
-            </div>
-            <div>
-              <label className="text-gray-600 text-sm">{t("quantity")}</label>
-              <div className={`relative ${isRTL ? "text-right" : "text-left"}`}>
-                <input
-                  type="number"
-                  value={formData.quantity || ""}
-                  onChange={(e) => {
-                    setFormData({ ...formData, quantity: e.target.value });
-                  }}
-                  min="1"
-                  step="1"
-                  dir="ltr"
-                  className={`w-full px-4 py-2 rounded-lg border ${
-                    errors.quantity ? "border-red-500" : "border-gray-200"
-                  } bg-gray-50 focus:bg-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none`}
-                  required
-                />
-              </div>
-              {errors.quantity && (
-                <p className="text-red-500 text-sm mt-1">{errors.quantity}</p>
               )}
             </div>
             <div className="mt-6 flex justify-end gap-3">
@@ -189,7 +160,13 @@ const ProductModal = ({ product, onClose, onEdit, onDelete }) => {
               </div>
               <div>
                 <label className="text-gray-600 text-sm">{t("description")}</label>
-                <p className="font-medium">{product.description || t("noDescription")}</p>
+                {product.description ? (
+                  <p className="font-medium">{product.description}</p>
+                ) : (
+                  <p className="text-gray-400 text-sm flex items-center gap-1.5">
+                    {t("noDescription")}
+                  </p>
+                )}
               </div>
               <div>
                 <label className="text-gray-600 text-sm">{t("price")}</label>
@@ -200,28 +177,6 @@ const ProductModal = ({ product, onClose, onEdit, onDelete }) => {
                   dir="ltr"
                 >
                   {product.price}
-                </p>
-              </div>
-              <div>
-                <label className="text-gray-600 text-sm">{t("quantity")}</label>
-                <p
-                  className={`font-medium ${
-                    isRTL ? "text-right" : "text-left"
-                  }`}
-                  dir="ltr"
-                >
-                  {product.quantity}
-                </p>
-              </div>
-              <div>
-                <label className="text-gray-600 text-sm">{t("total")}</label>
-                <p
-                  className={`font-medium ${
-                    isRTL ? "text-right" : "text-left"
-                  }`}
-                  dir="ltr"
-                >
-                  {(product.price * product.quantity).toFixed(2)}
                 </p>
               </div>
             </div>
@@ -307,7 +262,7 @@ const Products = () => {
 
     try {
       await Swal.fire({
-        title: t("confirmDelete"),
+        title: t("confirmDeleteProduct"),
         text: t("deleteProductConfirmation"),
         icon: "warning",
         showCancelButton: true,
@@ -379,23 +334,19 @@ const Products = () => {
 
   const handleAddProduct = async () => {
     const showAddProductModal = async (initialValues = {}, fieldErrors = {}) => {
+      // Store references to the input elements
+      let nameInput, descriptionInput, priceInput;
+      
       const formHtml = `
         <div class="space-y-4 mt-4">
           <div class="relative">
-            <input id="name" class="w-full px-4 py-2.5 rounded-lg border ${fieldErrors.name ? 'border-red-500' : 'border-gray-200'} bg-gray-50 focus:bg-white focus:border-primary focus:ring-1 focus:ring-primary outline-none" placeholder="${t("name")}" value="${initialValues.name || ''}">
-            ${fieldErrors.name ? `<p class="text-red-500 text-xs mt-1">${fieldErrors.name}</p>` : ''}
+            <input id="name" class="w-full px-4 py-2.5 rounded-lg border ${fieldErrors.name ? 'border-red-500 bg-red-50' : 'border-gray-200'} bg-gray-50 focus:bg-white focus:border-primary focus:ring-1 focus:ring-primary outline-none" placeholder="${t("name")}" value="${initialValues.name || ''}">
           </div>
           <div class="relative">
-            <textarea id="description" class="w-full px-4 py-2.5 rounded-lg border ${fieldErrors.description ? 'border-red-500' : 'border-gray-200'} bg-gray-50 focus:bg-white focus:border-primary focus:ring-1 focus:ring-primary outline-none" placeholder="${t("description")}" rows="3">${initialValues.description || ''}</textarea>
-            ${fieldErrors.description ? `<p class="text-red-500 text-xs mt-1">${fieldErrors.description}</p>` : ''}
+            <textarea id="description" class="w-full px-4 py-2.5 rounded-lg border ${fieldErrors.description ? 'border-red-500 bg-red-50' : 'border-gray-200'} bg-gray-50 focus:bg-white focus:border-primary focus:ring-1 focus:ring-primary outline-none" placeholder="${t("description")}" rows="3">${initialValues.description || ''}</textarea>
           </div>
           <div class="relative">
-            <input id="price" class="w-full px-4 py-2.5 rounded-lg border ${fieldErrors.price ? 'border-red-500' : 'border-gray-200'} bg-gray-50 focus:bg-white focus:border-primary focus:ring-1 focus:ring-primary outline-none" placeholder="${t("price")}" type="number" min="0.00" step="1" value="${initialValues.price || ''}">
-            ${fieldErrors.price ? `<p class="text-red-500 text-xs mt-1">${fieldErrors.price}</p>` : ''}
-          </div>
-          <div class="relative">
-            <input id="quantity" class="w-full px-4 py-2.5 rounded-lg border ${fieldErrors.quantity ? 'border-red-500' : 'border-gray-200'} bg-gray-50 focus:bg-white focus:border-primary focus:ring-1 focus:ring-primary outline-none" placeholder="${t("quantity")}" type="number" min="1" step="1" value="${initialValues.quantity || ''}">
-            ${fieldErrors.quantity ? `<p class="text-red-500 text-xs mt-1">${fieldErrors.quantity}</p>` : ''}
+            <input id="price" class="w-full px-4 py-2.5 rounded-lg border ${fieldErrors.price ? 'border-red-500 bg-red-50' : 'border-gray-200'} bg-gray-50 focus:bg-white focus:border-primary focus:ring-1 focus:ring-primary outline-none" placeholder="${t("price")}" type="number" min="0" step="1" value="${initialValues.price || ''}">
           </div>
         </div>
       `;
@@ -409,39 +360,68 @@ const Products = () => {
         buttonsStyling: true,
         confirmButtonColor: '#4f46e5',
         cancelButtonColor: '#f3f4f6',
+        didOpen: () => {
+          // Get references to the input elements
+          nameInput = document.getElementById("name");
+          descriptionInput = document.getElementById("description");
+          priceInput = document.getElementById("price");
+          
+          // Add input event listeners to remove error styling when user types
+          nameInput.addEventListener('input', () => {
+            nameInput.classList.remove('border-red-500', 'bg-red-50');
+          });
+          
+          descriptionInput.addEventListener('input', () => {
+            descriptionInput.classList.remove('border-red-500', 'bg-red-50');
+          });
+          
+          priceInput.addEventListener('input', () => {
+            priceInput.classList.remove('border-red-500', 'bg-red-50');
+          });
+          
+          const cancelButton = Swal.getCancelButton();
+          if (cancelButton) {
+            cancelButton.style.color = '#374151';
+          }
+        },
         preConfirm: () => {
-          const name = document.getElementById("name").value;
-          const description = document.getElementById("description").value;
-          const price = document.getElementById("price").value;
-          const quantity = document.getElementById("quantity").value;
+          const name = nameInput.value;
+          const description = descriptionInput.value;
+          const price = priceInput.value;
+          
+          let isValid = true;
 
-          if (!name || !price || !quantity) {
-            Swal.showValidationMessage(t("pleaseFillAllFields"));
-            return false;
+          // Validate name (3-30 characters as per backend model)
+          if (!name) {
+            nameInput.classList.add('border-red-500', 'bg-red-50');
+            isValid = false;
+          } else if (name.length < 3 || name.length > 30) {
+            nameInput.classList.add('border-red-500', 'bg-red-50');
+            isValid = false;
           }
 
-          if (isNaN(price) || Number(price) <= 0) {
-            Swal.showValidationMessage(t("invalidPrice"));
-            return false;
+          // Validate description (if provided, must be 3-600 characters)
+          if (description && (description.length < 3 || description.length > 600)) {
+            descriptionInput.classList.add('border-red-500', 'bg-red-50');
+            isValid = false;
           }
 
-          if (isNaN(quantity) || Number(quantity) <= 0 || !Number.isInteger(Number(quantity))) {
-            Swal.showValidationMessage(t("invalidQuantity"));
+          // Validate price
+          if (!price || isNaN(price) || Number(price) <= 0) {
+            priceInput.classList.add('border-red-500', 'bg-red-50');
+            isValid = false;
+          }
+
+          if (!isValid) {
             return false;
           }
 
           return { 
             name, 
-            description, 
-            price: Number(price), 
-            quantity: Number(quantity) 
+            description: description && description.length >= 3 ? description : "",
+            price: Number(price),
+            quantity: 1  // Add a default quantity to satisfy the backend requirements
           };
-        },
-        didOpen: () => {
-          const cancelButton = Swal.getCancelButton();
-          if (cancelButton) {
-            cancelButton.style.color = '#374151';
-          }
         }
       });
 
@@ -529,8 +509,6 @@ const Products = () => {
         </div>
       </div>
 
-      {/* Loading state */}
-
       {/* Error state */}
       {status === "failed" && (
         <div className="text-center py-8 text-red-600 bg-white rounded-xl shadow-sm p-6">
@@ -567,20 +545,6 @@ const Products = () => {
                     >
                       {t("price")}
                     </th>
-                    <th
-                      className={`hidden sm:table-cell px-6 py-4 ${
-                        isRTL ? "text-end" : "text-start"
-                      } text-xs sm:text-sm font-medium text-gray-600`}
-                    >
-                      {t("quantity")}
-                    </th>
-                    <th
-                      className={`hidden sm:table-cell px-6 py-4 ${
-                        isRTL ? "text-end" : "text-start"
-                      } text-xs sm:text-sm font-medium text-gray-600`}
-                    >
-                      {t("total")}
-                    </th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
@@ -616,20 +580,6 @@ const Products = () => {
                           >
                             {t("price")}: {product.price}
                           </span>
-                          <br />
-                          <span
-                            dir="ltr"
-                            className={isRTL ? "text-right" : "text-left"}
-                          >
-                            {t("quantity")}: {product.quantity}
-                          </span>
-                          <br />
-                          <span
-                            dir="ltr"
-                            className={isRTL ? "text-right" : "text-left"}
-                          >
-                            {t("total")}: {(product.price * product.quantity).toFixed(2)}
-                          </span>
                         </div>
                         <div className="hidden sm:block">{product.name}</div>
                       </td>
@@ -644,7 +594,9 @@ const Products = () => {
                             {product.description.length > 50 ? "..." : ""}
                           </>
                         ) : (
-                          <span className="text-gray-400">{t("noDescription")}</span>
+                          <span className="text-gray-400  text-sm flex items-center gap-1.5">
+                            {t("noDescription")}
+                          </span>
                         )}
                       </td>
                       <td
@@ -655,26 +607,6 @@ const Products = () => {
                       >
                         <span className={isRTL ? "text-right" : "text-left"}>
                           {product.price}
-                        </span>
-                      </td>
-                      <td
-                        className={`hidden sm:table-cell px-6 py-4 text-gray-700 ${
-                          isRTL ? "text-end" : "text-start"
-                        }`}
-                        dir="ltr"
-                      >
-                        <span className={isRTL ? "text-right" : "text-left"}>
-                          {product.quantity}
-                        </span>
-                      </td>
-                      <td
-                        className={`hidden sm:table-cell px-6 py-4 text-gray-700 ${
-                          isRTL ? "text-end" : "text-start"
-                        }`}
-                        dir="ltr"
-                      >
-                        <span className={isRTL ? "text-right" : "text-left"}>
-                          {(product.price * product.quantity).toFixed(2)}
                         </span>
                       </td>
                     </tr>
@@ -723,4 +655,4 @@ const Products = () => {
   );
 };
 
-export default Products; 
+export default Products;

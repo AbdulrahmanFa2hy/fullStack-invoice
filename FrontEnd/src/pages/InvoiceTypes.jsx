@@ -104,7 +104,7 @@ function InvoiceTypes() {
                              hover:bg-primary-600 transform transition-all duration-300 
                              hover:scale-[1.02]"
                   >
-                    {currentInvoiceType === type.type ? t('useThisType') : t('selectType')}
+                    {currentInvoiceType === type.type ? t('selectType') : t('selectType')}
                   </button>
                 </div>
               </div>
