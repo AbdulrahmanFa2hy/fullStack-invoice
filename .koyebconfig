@@ -1,0 +1,6 @@
+app:
+  build:
+    type: nodejs
+  run:
+    command: npm start
+    port: 8080 

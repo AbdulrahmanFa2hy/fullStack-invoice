@@ -34,3 +34,12 @@
 # OS files
 .DS_Store
 Thumbs.db
+
+node_modules/
+.env
+.DS_Store
+npm-debug.log
+yarn-error.log
+FrontEnd/build/
+FrontEnd/node_modules/
+BackEnd/node_modules/

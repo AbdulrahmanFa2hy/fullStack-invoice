@@ -1,0 +1,13 @@
+{
+  "name": "fullstack-invoice",
+  "version": "1.0.0",
+  "description": "Full Stack Invoice Application",
+  "scripts": {
+    "start": "cd BackEnd && npm start",
+    "build": "cd BackEnd && npm install && cd ../FrontEnd && npm install && npm run build",
+    "postinstall": "cd BackEnd && npm install && cd ../FrontEnd && npm install"
+  },
+  "engines": {
+    "node": ">=14.0.0"
+  }
+} 
