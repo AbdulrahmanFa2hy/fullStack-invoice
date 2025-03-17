@@ -6,8 +6,6 @@ import {
     createInvoice, 
     updateInvoice, 
     deleteInvoice, 
-    generateInvoicePdf, 
-    sendInvoiceByWhatsApp 
 } from "./invoice.controller.js";
 
 const invoiceRouter = express.Router(); 
@@ -17,7 +15,5 @@ invoiceRouter.get('/:id', getInvoiceById)
 invoiceRouter.post('/', createInvoice)
 invoiceRouter.put('/:id', protectedRoutes, allowedTo('admin', 'user'), updateInvoice)
 invoiceRouter.delete('/:id', protectedRoutes, allowedTo('admin', 'user'), deleteInvoice)
-invoiceRouter.get('/pdf/:id', generateInvoicePdf)
-invoiceRouter.get('/whatsapp/:id/:phone', sendInvoiceByWhatsApp)
 
 export default invoiceRouter; 
