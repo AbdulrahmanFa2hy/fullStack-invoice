@@ -36,6 +36,7 @@ import InvoiceFrom from "../components/InvoiceFrom";
 import InvoiceTo from "../components/InvoiceTo";
 import LoadingSpinner from "../components/LoadingSpinner";
 import ProductItem from '../components/ProductItem';
+import { fetchProducts } from '../store/productSlice';
 
 function Home() {
   const dispatch = useDispatch();
@@ -120,18 +121,21 @@ function Home() {
     document.documentElement.lang = i18n.language;
   }, [i18n.language]);
 
-  // Update the useEffect to fetch customers when the component mounts
+  // Update the useEffect to fetch products when the component mounts
   useEffect(() => {
     const fetchData = async () => {
       setIsLoading(true);
       try {
         // Fetch company data
-      if (userId) {
+        if (userId) {
           await dispatch(fetchCompanyByUserId()).unwrap();
         }
         
         // Fetch customers
         await dispatch(fetchCustomers()).unwrap();
+        
+        // Fetch products
+        await dispatch(fetchProducts()).unwrap();
         
         setIsLoading(false);
       } catch (err) {
