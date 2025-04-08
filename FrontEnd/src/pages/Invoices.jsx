@@ -100,12 +100,50 @@ const Invoices = () => {
     }
   };
 
+  // Helper function to safely get company data - updated to be more robust
+  const getCompanyById = (companyId, fallbackCompany = {}) => {
+    // First check if we have a populated company object directly in the invoice
+    if (typeof companyId === 'object' && companyId !== null) {
+      return {
+        ...companyId,
+        name: companyId.name || company.data?.name || '',
+        email: companyId.email || company.data?.email || '',
+        phone: companyId.phone || company.data?.phone || '',
+        address: companyId.address || company.data?.address || '',
+        logo: companyId.logo || company.data?.logo || ''
+      };
+    }
+    
+    // Then use the company data from the Redux store
+    if (company.data) {
+      return {
+        ...company.data,
+        name: company.data.name || '',
+        email: company.data.email || '',
+        phone: company.data.phone || '',
+        address: company.data.address || '',
+        logo: company.data.logo || ''
+      };
+    }
+    
+    // Finally, use the fallback data
+    return {
+      ...fallbackCompany,
+      name: fallbackCompany.name || '',
+      email: fallbackCompany.email || '',
+      phone: fallbackCompany.phone || '',
+      address: fallbackCompany.address || '',
+      logo: fallbackCompany.logo || ''
+    };
+  };
+
   const handleInvoiceClick = (invoice) => {
     // Prepare complete invoice data with customer and company info
     const completeInvoice = {
       ...invoice,
       customer: getCustomerById(invoice.customer_id, invoice.customer),
       sender: getCompanyById(invoice.company_id, invoice.sender),
+      company_id: invoice.company_id || company.data?._id,
       items: invoice.items.map(item => ({
         ...item,
         id: item.id || item._id || Date.now() + Math.random()
@@ -117,26 +155,41 @@ const Invoices = () => {
   const handleUpdate = async (updatedInvoice) => {
     try {
       setIsLoading(true);
-      const id = updatedInvoice._id || updatedInvoice.id;
+
+      // Ensure company data is preserved in the update
+      const completeInvoiceData = {
+        ...updatedInvoice,
+        sender: getCompanyById(updatedInvoice.company_id, updatedInvoice.sender),
+        company_id: updatedInvoice.company_id || company.data?._id
+      };
+      
+      // Dispatch the update to the server
       await dispatch(updateInvoiceThunk({ 
-        id,
-        invoiceData: updatedInvoice 
+        id: completeInvoiceData._id || completeInvoiceData.id,
+        invoiceData: completeInvoiceData
       })).unwrap();
       
-      // Refresh the data after update
+      // Refresh the invoices data
       if (userData?._id) {
         await dispatch(fetchInvoices(userData._id)).unwrap();
       }
       
-      // Update the selected invoice with the new data including customer
-      setSelectedInvoice({
-        ...updatedInvoice,
-        customer: updatedInvoice.customer,
-        customer_id: updatedInvoice.customer_id
-      });
+      // Close the modal
+      setSelectedInvoice(null);
+      
     } catch (error) {
       console.error('Failed to update invoice:', error);
       setError(error.message || 'Failed to update invoice');
+      
+      // Show error message
+      Swal.fire({
+        icon: 'error',
+        text: error.message || t('failedToUpdateInvoice'),
+        toast: true,
+        position: 'bottom-end',
+        showConfirmButton: false,
+        timer: 3000,
+      });
     } finally {
       setIsLoading(false);
     }
@@ -189,31 +242,6 @@ const Invoices = () => {
       email: "",
       phone: "",
       address: ""
-    };
-  };
-
-  // Helper function to safely get company data
-  const getCompanyById = (companyId, fallbackCompany = {}) => {
-    // First check if we have a populated company object directly in the invoice
-    if (typeof companyId === 'object' && companyId !== null) {
-      return companyId;
-    }
-    
-    // Then check if we can find it in the company data
-    return company.data || fallbackCompany || {
-      name: "",
-      email: "",
-      phone: "",
-      address: ""
-    };
-  };
-
-  // Helper function to get product details
-  const getProductById = (productId) => {
-    return products.find(p => p._id === productId || p.id === productId) || {
-      name: "",
-      price: 0,
-      description: ""
     };
   };
 
@@ -415,6 +443,7 @@ const Invoices = () => {
           <div className="grid gap-4 sm:gap-6">
             {filterInvoices(invoiceHistory).map((invoice) => {
               const customer = getCustomerById(invoice.customer_id, invoice.customer);
+              // Always get fresh company data for each invoice
               const companyData = getCompanyById(invoice.company_id, invoice.sender);
               const total = calculateInvoiceTotal(invoice);
               const invoiceType = invoice.type || "complete";
@@ -465,8 +494,8 @@ const Invoices = () => {
                               </span>
                             </div>
                             <div>
-                              <p className="font-medium text-gray-800">{companyData?.name}</p>
-                              <p className="text-sm text-gray-600">{companyData?.email}</p>
+                              <p className="font-medium text-gray-800">{companyData?.name || t("notAvailable")}</p>
+                              <p className="text-sm text-gray-600">{companyData?.email || t("notAvailable")}</p>
                             </div>
                           </div>
                         </div>
@@ -522,7 +551,7 @@ const Invoices = () => {
             onDelete={handleDelete}
             customers={customers}
             products={products}
-            company={company}
+            company={company.data}
           />
         )}
       </div>

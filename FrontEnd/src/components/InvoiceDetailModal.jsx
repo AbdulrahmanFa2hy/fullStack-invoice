@@ -43,6 +43,7 @@ const calculateInvoiceTotal = (invoice) => {
 const InvoiceDetailModal = ({ 
   invoice = {}, 
   onClose = () => {}, 
+  onUpdate = () => {},
   customers = [],
   company = {}
 }) => {
@@ -129,16 +130,19 @@ const InvoiceDetailModal = ({
   // Effect to update form when invoice changes
   useEffect(() => {
     if (invoice) {
-      setEditForm(prev => ({
-        ...prev,
+      const invoiceItems = (invoice.items || []).map(item => ({
+        ...item,
+        id: item.id || item._id || Date.now() + Math.random()
+      }));
+
+      const senderData = invoice.sender || company || {};
+      
+      setEditForm({
         id: invoice._id || invoice.id || '',
         invoiceNumber: invoice.invoice_number || invoice.invoiceNumber || '',
-        sender: invoice.sender || company || {},
+        sender: senderData,
         customerId: invoice.customer_id || invoice.customerId || '',
-        items: (invoice.items || []).map(item => ({
-          ...item,
-          id: item.id || item._id || Date.now() + Math.random()
-        })),
+        items: invoiceItems,
         tax: Number(invoice.tax) || 0,
         discount: Number(invoice.discount) || 0,
         subtotal: Number(invoice.subtotal) || 0,
@@ -146,15 +150,12 @@ const InvoiceDetailModal = ({
         privacy: invoice.privacy || "",
         notes: invoice.notes || "",
         type: invoice.type || "complete",
-      }));
+      });
 
       setCurrentInvoice({
         ...invoice,
-        sender: invoice.sender || company || {},
-        items: (invoice.items || []).map(item => ({
-          ...item,
-          id: item.id || item._id || Date.now() + Math.random()
-        })),
+        sender: senderData,
+        items: invoiceItems,
         tax: invoice.tax || 0,
         discount: invoice.discount || 0,
       });
@@ -162,19 +163,26 @@ const InvoiceDetailModal = ({
       // Update customer state when invoice changes
       if (invoice.customer && Object.keys(invoice.customer).length > 0) {
         setCustomer(invoice.customer);
-      } else {
+      } else if (customers.length > 0) {
         const foundCustomer = customers.find(c => 
           c._id === (invoice.customer_id || invoice.customerId)
         );
         if (foundCustomer) {
           setCustomer(foundCustomer);
+        } else {
+          setCustomer({
+            name: t("notAvailable"),
+            email: t("notAvailable"),
+            phone: t("notAvailable"),
+            address: t("notAvailable")
+          });
         }
       }
 
       // Reset item errors when invoice changes
       setItemErrors({});
     }
-  }, [invoice, company, customers, t]);
+  }, [invoice?._id, invoice?.invoiceNumber, company?._id, customers.length]); // Only depend on essential values that should trigger an update
 
   if (!invoice) return null;
 
@@ -199,7 +207,7 @@ const InvoiceDetailModal = ({
       if (!item.name.trim()) {
         newErrors[itemId] = { ...newErrors[itemId], name: t("nameRequired") };
       } else {
-        const { name, ...rest } = newErrors[itemId] || {};
+        const { ...rest } = newErrors[itemId] || {};
         newErrors[itemId] = rest;
       }
     }
@@ -208,7 +216,7 @@ const InvoiceDetailModal = ({
       if (!item.price || item.price <= 0) {
         newErrors[itemId] = { ...newErrors[itemId], price: t("priceRequired") };
       } else {
-        const { price, ...rest } = newErrors[itemId] || {};
+        const { ...rest } = newErrors[itemId] || {};
         newErrors[itemId] = rest;
       }
     }
@@ -217,7 +225,7 @@ const InvoiceDetailModal = ({
       if (!item.quantity || item.quantity <= 0) {
         newErrors[itemId] = { ...newErrors[itemId], quantity: t("quantityRequired") };
       } else {
-        const { quantity, ...rest } = newErrors[itemId] || {};
+        const { ...rest } = newErrors[itemId] || {};
         newErrors[itemId] = rest;
       }
     }
@@ -232,20 +240,74 @@ const InvoiceDetailModal = ({
       setIsLoading(true);
       setError(null);
       
-      const updatedInvoice = {
-        ...editForm,
-        total: calculateInvoiceTotal(editForm)
+      // Ensure we preserve the existing sender/company data
+      const existingSender = invoice.sender || company || {};
+      
+      // Create an object with only the modified fields
+      const updatedFields = {
+        id: editForm.id,
+        items: editForm.items,
+        tax: editForm.tax,
+        discount: editForm.discount,
+        privacy: editForm.privacy,
+        notes: editForm.notes,
+        total: calculateInvoiceTotal(editForm),
+        // Explicitly preserve ALL sender/company data
+        sender: {
+          ...existingSender,
+          name: existingSender.name || '',
+          email: existingSender.email || '',
+          phone: existingSender.phone || '',
+          address: existingSender.address || '',
+          logo: existingSender.logo || ''
+        },
+        customer_id: editForm.customerId || invoice.customer_id,
+        invoice_number: editForm.invoiceNumber || invoice.invoice_number,
+        type: editForm.type || invoice.type,
+        company_id: invoice.company_id // Preserve the company_id
       };
       
-      await dispatch(updateInvoiceThunk(updatedInvoice)).unwrap();
-      setIsEditing(false);
-      onClose();
+      // Make the API call with the complete data
+      const result = await dispatch(updateInvoiceThunk({
+        id: invoice._id || invoice.id,
+        invoiceData: updatedFields
+      })).unwrap();
       
-      Swal.fire({
+      // Create the complete updated invoice with all necessary data
+      const completeUpdatedInvoice = {
+        ...invoice,
+        ...result,
+        sender: existingSender, // Ensure sender data is preserved
+        company_id: invoice.company_id, // Preserve company_id
+        items: result.items || editForm.items,
+        tax: result.tax || editForm.tax,
+        discount: result.discount || editForm.discount,
+        privacy: result.privacy || editForm.privacy,
+        notes: result.notes || editForm.notes,
+        total: result.total || calculateInvoiceTotal(editForm),
+        customer: customer, // Preserve customer data
+        customer_id: editForm.customerId || invoice.customer_id
+      };
+      
+      setCurrentInvoice(completeUpdatedInvoice);
+      setEditForm(prev => ({
+        ...prev,
+        ...completeUpdatedInvoice
+      }));
+      
+      setIsEditing(false);
+      
+      // Show success message
+      await Swal.fire({
         icon: 'success',
         title: t('Success'),
         text: t('Invoice updated successfully'),
       });
+
+      // Close modal and trigger parent update
+      if (typeof onClose === 'function') onClose();
+      if (typeof onUpdate === 'function') onUpdate(completeUpdatedInvoice);
+      
     } catch (err) {
       setError(err.message || t('Failed to update invoice'));
       Swal.fire({
@@ -374,11 +436,13 @@ const InvoiceDetailModal = ({
     >
       <div
         ref={modalContentRef}
-        className="bg-white rounded-lg w-full max-w-4xl max-h-[95vh] sm:max-h-[90vh] overflow-y-auto p-3 sm:p-4 md:p-6 relative [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-track]:bg-gray-100 [&::-webkit-scrollbar-thumb]:bg-gray-300 hover:[&::-webkit-scrollbar-thumb]:bg-gray-400"
+        className="bg-white rounded-lg w-full max-w-6xl max-h-[95vh] sm:max-h-[90vh] overflow-y-auto p-3 sm:p-4 md:p-6 relative [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-track]:bg-gray-100 [&::-webkit-scrollbar-thumb]:bg-gray-300 hover:[&::-webkit-scrollbar-thumb]:bg-gray-400"
       >
         <div className="flex justify-between items-center mb-4 sm:mb-6">
           <h2 className="text-lg sm:text-xl md:text-2xl font-bold">
-            {t("invoiceDetails")} - {invoice.invoiceNumber}
+            {t("invoiceDetails")} {invoice.invoice_number?.startsWith('#') 
+              ? invoice.invoice_number 
+              : `#${invoice.invoice_number?.replace(/^INV-\d{8}-(\d{3}).*$/, '$1')}`}
           </h2>
           <button
             onClick={onClose}
@@ -688,23 +752,23 @@ const InvoiceDetailModal = ({
           )}
         </div>
 
-        {/* Add the missing buttons at the bottom of the component */}
+        {/* Modernized bottom buttons */}
         {!isEditing && (
           <motion.div
             initial={{ y: 20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: 20, opacity: 0 }}
-            className="fixed bottom-0 start-0 end-0 bg-white border-t border-gray-200 p-2 sm:p-4 flex flex-wrap sm:flex-nowrap justify-center gap-2 sm:gap-3 rounded-t-lg"
+            className="fixed bottom-0 start-0 end-0 bg-white/80 backdrop-blur-md border-t border-gray-200 p-3 sm:p-4 flex flex-wrap sm:flex-nowrap justify-center gap-3 sm:gap-4"
             style={{
-              maxWidth: "60rem",
+              maxWidth: "72rem",
               margin: "0 auto",
-              boxShadow: "0 -4px 6px -1px rgba(0, 0, 0, 0.1)",
+              boxShadow: "0 -4px 6px -1px rgba(0, 0, 0, 0.05)",
             }}
           >
             <motion.button
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
-              className="w-full sm:w-auto flex-1 sm:flex-none px-3 sm:px-4 py-2 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-lg shadow-lg hover:shadow-xl transition-all duration-200 flex items-center justify-center gap-2 text-sm sm:text-base"
+              className="w-full sm:w-auto flex-1 sm:flex-none px-4 py-2.5 bg-gradient-to-br from-emerald-500 to-emerald-600 text-white rounded-xl shadow-lg shadow-emerald-500/20 hover:shadow-xl hover:shadow-emerald-500/30 transition-all duration-200 flex items-center justify-center gap-2 text-sm sm:text-base font-medium"
             >
               <span>{t("downloadPdf")}</span>
             </motion.button>
@@ -713,7 +777,7 @@ const InvoiceDetailModal = ({
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
               onClick={() => setIsEditing(true)}
-              className="w-full sm:w-auto flex-1 sm:flex-none px-3 sm:px-4 py-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg shadow-lg hover:shadow-xl transition-all duration-200 flex items-center justify-center gap-2 text-sm sm:text-base"
+              className="w-full sm:w-auto flex-1 sm:flex-none px-4 py-2.5 bg-gradient-to-br from-blue-500 to-blue-600 text-white rounded-xl shadow-lg shadow-blue-500/20 hover:shadow-xl hover:shadow-blue-500/30 transition-all duration-200 flex items-center justify-center gap-2 text-sm sm:text-base font-medium"
             >
               <span>{t("edit")}</span>
             </motion.button>
@@ -722,7 +786,7 @@ const InvoiceDetailModal = ({
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
               onClick={handleDelete}
-              className="w-full sm:w-auto flex-1 sm:flex-none px-3 sm:px-4 py-2 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-lg shadow-lg hover:shadow-xl transition-all duration-200 flex items-center justify-center gap-2 text-sm sm:text-base"
+              className="w-full sm:w-auto flex-1 sm:flex-none px-4 py-2.5 bg-gradient-to-br from-red-500 to-red-600 text-white rounded-xl shadow-lg shadow-red-500/20 hover:shadow-xl hover:shadow-red-500/30 transition-all duration-200 flex items-center justify-center gap-2 text-sm sm:text-base font-medium"
             >
               <span>{t("delete")}</span>
             </motion.button>

@@ -113,7 +113,7 @@ const ProductItem = ({
           onBlur={() => handleBlur('price')}
           className={`${getInputClassName('input w-full text-center', 'number')} ${itemErrors[item.id]?.price ? 'border-red-500' : ''}`}
           min="0"
-          step="0.01"
+          step="1"
         />
       </div>
 

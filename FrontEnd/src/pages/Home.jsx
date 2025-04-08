@@ -184,6 +184,14 @@ function Home() {
     e.target.style.height = e.target.scrollHeight + "px";
   };
 
+  // Add function to scroll to bottom
+  const scrollToBottom = () => {
+    window.scrollTo({
+      top: document.documentElement.scrollHeight,
+      behavior: 'smooth'
+    });
+  };
+
   // Update the calculations
   const subtotal = items.reduce(
     (sum, item) => sum + item.quantity * item.price,
@@ -645,7 +653,11 @@ function Home() {
             </div>
 
             <button
-              onClick={() => dispatch(addItem())}
+              onClick={() => {
+                dispatch(addItem());
+                // Add a small delay to ensure the new item is rendered before scrolling
+                setTimeout(scrollToBottom, 100);
+              }}
               className="btn btn-accent flex items-center space-s-2 text-sm md:text-base mb-2"
             >
               <FiPlus size={20} /> {t("addItem")}
