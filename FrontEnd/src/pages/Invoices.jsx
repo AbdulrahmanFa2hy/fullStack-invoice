@@ -14,8 +14,9 @@ import { fetchProducts } from "../store/productSlice";
 import InvoiceDetailModal from "../components/InvoiceDetailModal";
 import { normalizeArabicText } from "../utils/arabicNormalization";
 import LoadingSpinner from "../components/LoadingSpinner";
-import { FiFilter, FiX, FiSearch, FiCalendar } from "react-icons/fi";
+import { FiFilter, FiX, FiSearch } from "react-icons/fi";
 import DatePickerModal from "../components/DatePickerModal";
+import Swal from "sweetalert2";
 
 const Invoices = () => {
   const { t, i18n } = useTranslation();
@@ -100,33 +101,77 @@ const Invoices = () => {
   };
 
   const handleInvoiceClick = (invoice) => {
-    setSelectedInvoice(invoice);
+    // Prepare complete invoice data with customer and company info
+    const completeInvoice = {
+      ...invoice,
+      customer: getCustomerById(invoice.customer_id, invoice.customer),
+      sender: getCompanyById(invoice.company_id, invoice.sender),
+      items: invoice.items.map(item => ({
+        ...item,
+        id: item.id || item._id || Date.now() + Math.random()
+      }))
+    };
+    setSelectedInvoice(completeInvoice);
   };
 
   const handleUpdate = async (updatedInvoice) => {
     try {
-      const id = updatedInvoice._id || updatedInvoice.id; // Handle both MongoDB _id and local id
+      setIsLoading(true);
+      const id = updatedInvoice._id || updatedInvoice.id;
       await dispatch(updateInvoiceThunk({ 
         id,
         invoiceData: updatedInvoice 
       })).unwrap();
       
-      setSelectedInvoice(null);
+      // Refresh the data after update
+      if (userData?._id) {
+        await dispatch(fetchInvoices(userData._id)).unwrap();
+      }
+      
+      // Update the selected invoice with the new data including customer
+      setSelectedInvoice({
+        ...updatedInvoice,
+        customer: updatedInvoice.customer,
+        customer_id: updatedInvoice.customer_id
+      });
     } catch (error) {
       console.error('Failed to update invoice:', error);
-      // Handle error (show toast/alert)
+      setError(error.message || 'Failed to update invoice');
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const handleDelete = async (id) => {
-    if (window.confirm(t("confirmDelete"))) {
-      try {
-        await dispatch(deleteInvoiceThunk(id)).unwrap();
-        setSelectedInvoice(null);
-      } catch (error) {
-        console.error('Failed to delete invoice:', error);
-        // Handle error (show toast/alert)
-      }
+    setIsLoading(true);
+    try {
+      await dispatch(deleteInvoiceThunk(id)).unwrap();
+      await dispatch(fetchInvoices(userData._id));
+      setSelectedInvoice(null);
+      
+      // Show success message
+      Swal.fire({
+        icon: "success",
+        text: t("invoiceDeletedSuccessfully"),
+        toast: true,
+        position: "bottom-end",
+        showConfirmButton: false,
+        timer: 3000,
+      });
+    } catch (error) {
+      console.error('Failed to delete invoice:', error);
+      
+      // Show error message
+      Swal.fire({
+        icon: "error",
+        text: error.message || t("failedToDeleteInvoice"),
+        toast: true,
+        position: "bottom-end",
+        showConfirmButton: false,
+        timer: 3000,
+      });
+    } finally {
+      setIsLoading(false);
     }
   };
 

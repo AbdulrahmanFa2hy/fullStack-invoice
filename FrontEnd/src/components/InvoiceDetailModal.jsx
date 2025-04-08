@@ -1,25 +1,50 @@
+import { useDispatch } from "react-redux";
+import { useTranslation } from "react-i18next";
+import Swal from "sweetalert2";
 import { format, parseISO } from "date-fns";
 import { ar } from "date-fns/locale";
 import { useState, useRef, useEffect } from "react";
 import { motion } from "framer-motion";
-import { useSelector, useDispatch } from "react-redux";
-import { useTranslation } from "react-i18next";
-import CustomerSelector from "./CustomerSelector";
 import InvoiceFrom from "./InvoiceFrom";
 import InvoiceTo from "./InvoiceTo";
 import ProductItem from './ProductItem';
-import Swal from "sweetalert2";
 import { FiPlus } from "react-icons/fi";
 import { updateInvoiceThunk, deleteInvoiceThunk } from "../store/invoiceSlice";
 
+// Helper function to calculate invoice total
+const calculateInvoiceTotal = (invoice) => {
+  if (!invoice) return 0;
+  
+  // If total is already calculated
+  if (typeof invoice.total === 'number') {
+    return invoice.total;
+  }
+
+  // Calculate total from items if available
+  if (Array.isArray(invoice.items)) {
+    const subtotal = invoice.items.reduce((sum, item) => {
+      const quantity = Number(item.quantity) || 0;
+      const price = Number(item.price) || 0;
+      return sum + (quantity * price);
+    }, 0);
+
+    const discount = Number(invoice.discount) || 0;
+    const discountAmount = (subtotal * discount) / 100;
+    const subtotalAfterDiscount = subtotal - discountAmount;
+    const tax = Number(invoice.tax) || 0;
+    const taxAmount = (subtotalAfterDiscount * tax) / 100;
+    
+    return subtotalAfterDiscount + taxAmount;
+  }
+
+  return 0;
+};
+
 const InvoiceDetailModal = ({ 
-  invoice, 
-  onClose, 
-  onUpdate, 
-  onDelete,
-  customers,
-  products,
-  company
+  invoice = {}, 
+  onClose = () => {}, 
+  customers = [],
+  company = {}
 }) => {
   const { t, i18n } = useTranslation();
   const modalContentRef = useRef();
@@ -27,89 +52,129 @@ const InvoiceDetailModal = ({
   const dispatch = useDispatch();
 
   const [isEditing, setIsEditing] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [itemErrors, setItemErrors] = useState({});
+
   // Initialize editForm with calculated total if needed
   const [editForm, setEditForm] = useState({
-    id: invoice?.id,
-    invoiceNumber: invoice?.invoiceNumber,
-    sender: invoice?.sender || {},
-    customerId: invoice?.customerId,
-    items: invoice?.items || [],
+    id: invoice?._id || invoice?.id || '',
+    invoiceNumber: invoice?.invoice_number || invoice?.invoiceNumber || '',
+    sender: invoice?.sender || company || {},
+    customerId: invoice?.customer_id || invoice?.customerId || '',
+    items: invoice?.items?.map(item => ({
+      ...item,
+      id: item.id || item._id || Date.now() + Math.random()
+    })) || [],
     tax: Number(invoice?.tax) || 0,
     discount: Number(invoice?.discount) || 0,
     subtotal: Number(invoice?.subtotal) || 0,
-    total: calculateInvoiceTotal(invoice), // Use the same helper function
-    createdAt: invoice?.createdAt,
-    updatedAt: invoice?.updatedAt,
+    total: calculateInvoiceTotal(invoice),
+    createdAt: invoice?.createdAt || new Date().toISOString(),
+    updatedAt: invoice?.updatedAt || new Date().toISOString(),
     privacy: invoice?.privacy || "",
     notes: invoice?.notes || "",
     type: invoice?.type || "complete",
   });
   const [currentInvoice, setCurrentInvoice] = useState({
     ...invoice,
-    tax: invoice.tax || 0,
-    discount: invoice.discount || 0,
+    sender: invoice?.sender || company || {
+      name: t("notAvailable"),
+      email: t("notAvailable"),
+      phone: t("notAvailable"),
+      address: t("notAvailable")
+    },
+    items: invoice?.items?.map(item => ({
+      ...item,
+      id: item.id || item._id || Date.now() + Math.random()
+    })) || [],
+    tax: invoice?.tax || 0,
+    discount: invoice?.discount || 0,
+    customer: invoice?.customer || {
+      name: t("notAvailable"),
+      email: t("notAvailable"),
+      phone: t("notAvailable"),
+      address: t("notAvailable")
+    }
   });
 
   // Add these selectors to get customers and check invoice type
   const invoiceType = invoice?.type;
 
-  // Add the missing customer state
-  const [customer, setCustomer] = useState({
-    name: "N/A",
-    email: "N/A",
-    phone: "N/A",
-    address: "N/A"
+  // Initialize customer state
+  const [customer, setCustomer] = useState(() => {
+    // First try to use the customer data from the invoice
+    if (invoice?.customer && Object.keys(invoice.customer).length > 0) {
+      return invoice.customer;
+    }
+    
+    // Then try to find the customer in the customers array
+    const foundCustomer = customers.find(c => 
+      c._id === (invoice?.customer_id || invoice?.customerId)
+    );
+    
+    if (foundCustomer) {
+      return foundCustomer;
+    }
+    
+    // Finally, fall back to default values
+    return {
+      name: t("notAvailable"),
+      email: t("notAvailable"),
+      phone: t("notAvailable"),
+      address: t("notAvailable")
+    };
   });
 
-  // Add state for item errors
-  const [itemErrors, setItemErrors] = useState({});
-
-  // Reset editForm when invoice changes
+  // Effect to update form when invoice changes
   useEffect(() => {
     if (invoice) {
-      setEditForm({
-        id: invoice.id,
-        invoiceNumber: invoice.invoiceNumber,
-        sender: invoice.sender || {},
-        customerId: invoice.customerId,
-        items: invoice.items || [],
+      setEditForm(prev => ({
+        ...prev,
+        id: invoice._id || invoice.id || '',
+        invoiceNumber: invoice.invoice_number || invoice.invoiceNumber || '',
+        sender: invoice.sender || company || {},
+        customerId: invoice.customer_id || invoice.customerId || '',
+        items: (invoice.items || []).map(item => ({
+          ...item,
+          id: item.id || item._id || Date.now() + Math.random()
+        })),
         tax: Number(invoice.tax) || 0,
         discount: Number(invoice.discount) || 0,
         subtotal: Number(invoice.subtotal) || 0,
-        total: calculateInvoiceTotal(invoice), // Use the same helper function
-        createdAt: invoice.createdAt,
-        updatedAt: invoice.updatedAt,
+        total: calculateInvoiceTotal(invoice),
         privacy: invoice.privacy || "",
         notes: invoice.notes || "",
         type: invoice.type || "complete",
+      }));
+
+      setCurrentInvoice({
+        ...invoice,
+        sender: invoice.sender || company || {},
+        items: (invoice.items || []).map(item => ({
+          ...item,
+          id: item.id || item._id || Date.now() + Math.random()
+        })),
+        tax: invoice.tax || 0,
+        discount: invoice.discount || 0,
       });
 
-      // Get customer data - first try from the invoice's embedded customer data
-      let customerData;
-      if (invoice.customer && invoice.customer.name) {
-        customerData = invoice.customer;
-      } else if (invoice.customerId) {
-        // Fall back to looking up by ID
-        customerData = customers.find(c => c._id === invoice.customerId || c.id === invoice.customerId) || {
-          name: t("notAvailable"),
-          email: t("notAvailable"),
-          phone: t("notAvailable"),
-          address: t("notAvailable")
-        };
+      // Update customer state when invoice changes
+      if (invoice.customer && Object.keys(invoice.customer).length > 0) {
+        setCustomer(invoice.customer);
       } else {
-        // Default empty customer
-        customerData = {
-          name: t("notAvailable"),
-          email: t("notAvailable"),
-          phone: t("notAvailable"),
-          address: t("notAvailable")
-        };
+        const foundCustomer = customers.find(c => 
+          c._id === (invoice.customer_id || invoice.customerId)
+        );
+        if (foundCustomer) {
+          setCustomer(foundCustomer);
+        }
       }
-      
-      setCurrentInvoice(invoice);
-      setCustomer(customerData);
+
+      // Reset item errors when invoice changes
+      setItemErrors({});
     }
-  }, [invoice, customers, t]);
+  }, [invoice, company, customers, t]);
 
   if (!invoice) return null;
 
@@ -161,105 +226,35 @@ const InvoiceDetailModal = ({
     return Object.keys(newErrors[itemId] || {}).length === 0;
   };
 
-  // Validate all items
-  const validateAllItems = () => {
-    let isValid = true;
-    const newErrors = {};
-    
-    editForm.items.forEach(item => {
-      newErrors[item.id] = {};
-      
-      if (!item.name.trim()) {
-        newErrors[item.id].name = t("nameRequired");
-        isValid = false;
-      }
-      
-      if (!item.price || item.price <= 0) {
-        newErrors[item.id].price = t("priceRequired");
-        isValid = false;
-      }
-      
-      if (!item.quantity || item.quantity <= 0) {
-        newErrors[item.id].quantity = t("quantityRequired");
-        isValid = false;
-      }
-    });
-    
-    setItemErrors(newErrors);
-    
-    if (!isValid) {
-      Swal.fire({
-        icon: "error",
-        text: t("pleaseFillRequiredItemFields"),
-        toast: true,
-        position: "bottom-end",
-        showConfirmButton: false,
-        timer: 3000,
-      });
-    }
-    
-    return isValid;
-  };
-
   // Update handleUpdate to use SweetAlert
   const handleUpdate = async () => {
-    // Validate all items first
-    if (!validateAllItems()) {
-      return;
-    }
-
-    if (editForm.total <= 0) {
-      Swal.fire({
-        icon: "error",
-        text: t("totalMustBePositive"),
-        toast: true,
-        position: "bottom-end",
-        showConfirmButton: false,
-        timer: 3000,
-      });
-      return;
-    }
-
-    // Calculate new totals with correct order
-    const subtotal = editForm.items.reduce(
-      (sum, item) => sum + item.quantity * item.price,
-      0
-    );
-    const discountAmount = (subtotal * editForm.discount) / 100;
-    const subtotalAfterDiscount = subtotal - discountAmount;
-    const taxAmount = (subtotalAfterDiscount * editForm.tax) / 100;
-    const total = subtotalAfterDiscount + taxAmount;
-
     try {
+      setIsLoading(true);
+      setError(null);
+      
       const updatedInvoice = {
         ...editForm,
-        subtotal,
-        taxAmount,
-        discountAmount,
-        total,
-        updatedAt: new Date().toISOString(),
-        customer: customer || {},
-        _id: invoice._id || invoice.id,
+        total: calculateInvoiceTotal(editForm)
       };
-
-      await dispatch(updateInvoiceThunk({ 
-        id: invoice._id || invoice.id,
-        invoiceData: updatedInvoice 
-      })).unwrap();
-
-      setCurrentInvoice(updatedInvoice);
+      
+      await dispatch(updateInvoiceThunk(updatedInvoice)).unwrap();
       setIsEditing(false);
-      onUpdate(updatedInvoice);
-    } catch (error) {
-      console.error('Failed to update invoice:', error);
+      onClose();
+      
       Swal.fire({
-        icon: "error",
-        text: t("failedToUpdateInvoice"),
-        toast: true,
-        position: "bottom-end",
-        showConfirmButton: false,
-        timer: 3000,
+        icon: 'success',
+        title: t('Success'),
+        text: t('Invoice updated successfully'),
       });
+    } catch (err) {
+      setError(err.message || t('Failed to update invoice'));
+      Swal.fire({
+        icon: 'error',
+        title: t('Error'),
+        text: err.message || t('Failed to update invoice'),
+      });
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -325,24 +320,49 @@ const InvoiceDetailModal = ({
     return `${baseClass} text-start`;
   };
 
+  // Update handleDelete to handle confirmation only
   const handleDelete = async () => {
     try {
-      if (window.confirm(t("confirmDelete"))) {
-        const idToDelete = invoice._id || invoice.id;
-        await dispatch(deleteInvoiceThunk(idToDelete)).unwrap();
-        onDelete(idToDelete);
+      const result = await Swal.fire({
+        title: t('areYouSure'),
+        text: t('youWillNotBeAbleToRecover'),
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: t('yesDeleteIt'),
+        cancelButtonText: t('noKeepIt'),
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#3085d6'
+      });
+
+      if (result.isConfirmed) {
+        setIsLoading(true);
+        setError(null);
+        await dispatch(deleteInvoiceThunk(invoice._id)).unwrap();
         onClose();
+        
+        Swal.fire({
+          icon: 'success',
+          text: t('invoiceDeletedSuccessfully'),
+          toast: true,
+          position: 'bottom-end',
+          showConfirmButton: false,
+          timer: 3000,
+          timerProgressBar: true
+        });
       }
-    } catch (error) {
-      console.error('Failed to delete invoice:', error);
+    } catch (err) {
+      setError(err.message || t('failedToDeleteInvoice'));
       Swal.fire({
-        icon: "error",
-        text: t("failedToDeleteInvoice"),
+        icon: 'error',
+        text: err.message || t('failedToDeleteInvoice'),
         toast: true,
-        position: "bottom-end",
+        position: 'bottom-end',
         showConfirmButton: false,
         timer: 3000,
+        timerProgressBar: true
       });
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -567,18 +587,22 @@ const InvoiceDetailModal = ({
                     ? `${editForm.total.toFixed(2)}${t("currency")}`
                     : `${t("currency")}${editForm.total.toFixed(2)}`}
                 </div>
-                <div className="flex sm:flex-nowrap md:justify-end gap-2 w-full">
+                <div className="flex justify-end gap-4 mt-6">
                   <button
-                    onClick={() => setIsEditing(false)}
-                    className="w-1/2 md:w-1/4 px-4 py-2 bg-gray-500 text-white rounded text-sm sm:text-base"
+                    type="button"
+                    className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                    onClick={onClose}
+                    disabled={isLoading}
                   >
-                    {t("cancel")}
+                    {t('Cancel')}
                   </button>
                   <button
+                    type="button"
+                    className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 border border-transparent rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
                     onClick={handleUpdate}
-                    className="w-1/2 md:w-1/4 px-4 py-2 bg-blue-500 text-white rounded text-sm sm:text-base"
+                    disabled={isLoading}
                   >
-                    {t("saveChanges")}
+                    {isLoading ? t('Saving...') : t('Save Changes')}
                   </button>
                 </div>
               </div>
@@ -590,17 +614,17 @@ const InvoiceDetailModal = ({
                 <div className="grid md:grid-cols-2 gap-6">
                   <div className="space-y-2">
                     <h3 className="font-semibold">{t("from")}</h3>
-                    <p className="text-lg">{currentInvoice.sender.name}</p>
-                    <p>{currentInvoice.sender.email}</p>
-                    <p>{currentInvoice.sender.phone}</p>
-                    <p>{currentInvoice.sender.address}</p>
+                    <p className="text-lg">{currentInvoice?.sender?.name || t("notAvailable")}</p>
+                    <p>{currentInvoice?.sender?.email || t("notAvailable")}</p>
+                    <p>{currentInvoice?.sender?.phone || t("notAvailable")}</p>
+                    <p>{currentInvoice?.sender?.address || t("notAvailable")}</p>
                   </div>
                   <div className="space-y-2">
                     <h3 className="font-semibold">{t("to")}</h3>
-                    <p className="text-lg">{customer.name}</p>
-                    <p>{customer.email}</p>
-                    <p>{customer.phone}</p>
-                    <p>{customer.address}</p>
+                    <p className="text-lg">{customer?.name || t("notAvailable")}</p>
+                    <p>{customer?.email || t("notAvailable")}</p>
+                    <p>{customer?.phone || t("notAvailable")}</p>
+                    <p>{customer?.address || t("notAvailable")}</p>
                   </div>
                 </div>
               )}
@@ -703,6 +727,13 @@ const InvoiceDetailModal = ({
               <span>{t("delete")}</span>
             </motion.button>
           </motion.div>
+        )}
+
+        {/* Add error display */}
+        {error && (
+          <div className="p-4 mb-4 text-sm text-red-700 bg-red-100 rounded-lg" role="alert">
+            {error}
+          </div>
         )}
       </div>
     </div>
