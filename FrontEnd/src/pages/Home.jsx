@@ -2,12 +2,9 @@ import { useRef, useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import {
   FiPlus,
-  FiTrash2,
   FiSave,
   FiDownload,
-  FiShare2,
   FiEye,
-  FiLoader,
 } from "react-icons/fi";
 import { format } from "date-fns";
 import { ar } from "date-fns/locale";
@@ -15,10 +12,8 @@ import Swal from "sweetalert2";
 import { useInvoiceNumber } from "../hooks/useInvoiceNumber";
 import {
   addItem,
-  removeItem,
   updateItem,
   saveToHistory,
-  generateInvoiceNumber,
   updateTax,
   updateDiscount,
   updatePrivacy,
@@ -31,12 +26,12 @@ import { setSelectedCustomerId, fetchCustomers } from "../store/customersSlice";
 import { updateCompany, fetchCompanyByUserId } from "../store/companySlice";
 import LogoModal from "../components/LogoModal";
 import { useTranslation } from "react-i18next";
-import CustomerSelector from "../components/CustomerSelector";
 import InvoiceFrom from "../components/InvoiceFrom";
 import InvoiceTo from "../components/InvoiceTo";
 import LoadingSpinner from "../components/LoadingSpinner";
 import ProductItem from '../components/ProductItem';
 import { fetchProducts } from '../store/productSlice';
+import PreviewModal from '../components/PreviewModal';
 
 function Home() {
   const dispatch = useDispatch();
@@ -57,15 +52,6 @@ function Home() {
     (state) => state.customers
   );
   const userId = useSelector((state) => state.profile.userData?.id);
-  const selectedCustomer = customers.find(
-    (customer) => customer._id === selectedCustomerId || customer.id === selectedCustomerId
-  ) || {
-    id: "",
-    name: "",
-    phone: "",
-    email: "",
-    address: "",
-  };
 
   const invoiceRef = useRef(null);
 
@@ -201,10 +187,6 @@ function Home() {
   const subtotalAfterDiscount = subtotal - discountAmount;
   const taxAmount = (subtotalAfterDiscount * tax) / 100;
   const total = subtotalAfterDiscount + taxAmount;
-
-  const isExistingInvoice = () => {
-    return invoiceHistory.some((inv) => inv.invoiceNumber === invoiceNumber);
-  };
 
   const saveInvoiceData = async () => {
     try {
@@ -357,11 +339,6 @@ function Home() {
       dispatch(setSelectedCustomerId(null));
     } else {
       dispatch(setSelectedCustomerId(customerId));
-      
-      // Find the selected customer from the customers array
-      const customer = customers.find(c => c._id === customerId || c.id === customerId);
-      
-      // No need to update the form fields as they will be updated via the selectedCustomer variable
     }
   };
 
@@ -528,9 +505,65 @@ function Home() {
     return Object.keys(newErrors[itemId] || {}).length === 0;
   };
 
+  // Update the state for PDF preview
+  const [showPreview, setShowPreview] = useState(false);
+
+  const handlePreview = () => {
+    setShowPreview(true);
+  };
+
+  const handleDownload = () => {
+    // TODO: Implement PDF download functionality
+    console.log('Downloading PDF...');
+  };
+
+  const handleClosePreview = () => {
+    setShowPreview(false);
+  };
+
+  const prepareInvoiceData = () => {
+    return {
+      invoice_number: invoiceNumber,
+      sender: {
+        name: company.name || "",
+        email: company.email || "",
+        phone: company.phone || "",
+        address: company.address || "",
+        logo: company.logo || "",
+      },
+      items: items.map(item => ({
+        id: item.id,
+        name: item.name,
+        description: item.description,
+        quantity: Number(item.quantity),
+        price: Number(item.price)
+      })),
+      subtotal: Number(subtotal),
+      discount: Number(discount),
+      discountAmount: Number(discountAmount),
+      tax: Number(tax),
+      taxAmount: Number(taxAmount),
+      total: Number(total),
+      notes: notes || "",
+      privacy: privacy || "",
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      type: invoiceType
+    };
+  };
+
   return (
     <>
       {isLoading && <LoadingSpinner />}
+      {showPreview && (
+        <PreviewModal
+          invoice={prepareInvoiceData()}
+          customer={localCustomer}
+          onClose={handleClosePreview}
+          onDownload={handleDownload}
+          invoiceType={invoiceType}
+        />
+      )}
 
       <div
         className="min-h-screen py-4 px-0 md:py-8 md:px-2 bg-gray-100 flex flex-col md:flex-row gap-1 sm:gap-8 md:gap-0"
@@ -670,14 +703,17 @@ function Home() {
           <div className="bg-white p-2 md:p-6 rounded-xl drop-shadow-2xl md:drop-shadow-none md:shadow-lg sticky top-8">
             <div className="flex flex-col-reverse md:flex-col gap-4">
               <div className="flex flex-col-reverse md:flex-col gap-3">
-                <button className="btn btn-accent flex items-center gap-2 w-full justify-center text-sm md:text-base">
+                <button
+                  onClick={handleDownload}
+                  className="btn btn-accent flex items-center gap-2 w-full justify-center text-sm md:text-base"
+                >
                   <FiDownload /> {t("downloadPDF")}
                 </button>
-                <button className="btn btn-accent flex items-center gap-2 w-full justify-center text-sm md:text-base">
+                <button
+                  onClick={handlePreview}
+                  className="btn btn-accent flex items-center gap-2 w-full justify-center text-sm md:text-base"
+                >
                   <FiEye /> {t("previewPDF")}
-                </button>
-                <button className="btn btn-accent flex items-center gap-2 w-full justify-center text-sm md:text-base">
-                  <FiShare2 /> {t("shareWhatsApp")}
                 </button>
                 <button
                   onClick={handleSaveInvoice}
