@@ -1,11 +1,6 @@
 import { useRef, useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import {
-  FiPlus,
-  FiSave,
-  FiDownload,
-  FiEye,
-} from "react-icons/fi";
+import { FiPlus, FiSave, FiDownload, FiEye } from "react-icons/fi";
 import { format } from "date-fns";
 import { ar } from "date-fns/locale";
 import Swal from "sweetalert2";
@@ -26,15 +21,15 @@ import {
 } from "../store/invoiceSlice";
 import { setSelectedCustomerId, fetchCustomers } from "../store/customersSlice";
 import { updateCompany, fetchCompanyByUserId } from "../store/companySlice";
-import LogoModal from "../components/LogoModal";
 import { useTranslation } from "react-i18next";
 import InvoiceFrom from "../components/InvoiceFrom";
 import InvoiceTo from "../components/InvoiceTo";
 import LoadingSpinner from "../components/LoadingSpinner";
-import ProductItem from '../components/ProductItem';
-import { fetchProducts } from '../store/productSlice';
-import PreviewModal from '../components/PreviewModal';
+import ProductItem from "../components/ProductItem";
+import { fetchProducts } from "../store/productSlice";
+import PreviewModal from "../components/PreviewModal";
 import InvoiceView from "../components/InvoiceView";
+import { Link } from "react-router-dom";
 
 function Home() {
   const dispatch = useDispatch();
@@ -58,7 +53,6 @@ function Home() {
 
   const invoiceRef = useRef(null);
 
-  const [isLogoModalOpen, setIsLogoModalOpen] = useState(false);
   const [emailErrors, setEmailErrors] = useState({ from: "", to: "" });
   const [itemErrors, setItemErrors] = useState({});
   const { t, i18n } = useTranslation();
@@ -68,7 +62,7 @@ function Home() {
     name: "",
     email: "",
     phone: "",
-    address: ""
+    address: "",
   });
 
   // Add a loading state to the component
@@ -78,13 +72,15 @@ function Home() {
   useEffect(() => {
     // Only update localCustomer when selectedCustomerId changes
     if (selectedCustomerId) {
-      const customer = customers.find(c => c._id === selectedCustomerId || c.id === selectedCustomerId);
+      const customer = customers.find(
+        (c) => c._id === selectedCustomerId || c.id === selectedCustomerId
+      );
       if (customer) {
         setLocalCustomer({
           name: customer.name || "",
           email: customer.email || "",
           phone: customer.phone || "",
-          address: customer.address || ""
+          address: customer.address || "",
         });
       }
     } else {
@@ -93,7 +89,7 @@ function Home() {
         name: "",
         email: "",
         phone: "",
-        address: ""
+        address: "",
       });
     }
   }, [selectedCustomerId, customers]); // Only depend on selectedCustomerId and customers array
@@ -119,13 +115,13 @@ function Home() {
         if (userId) {
           await dispatch(fetchCompanyByUserId()).unwrap();
         }
-        
+
         // Fetch customers
         await dispatch(fetchCustomers()).unwrap();
-        
+
         // Fetch products
         await dispatch(fetchProducts()).unwrap();
-        
+
         setIsLoading(false);
       } catch (err) {
         console.error("Failed to fetch data:", err);
@@ -181,7 +177,7 @@ function Home() {
   const scrollToBottom = () => {
     window.scrollTo({
       top: document.documentElement.scrollHeight,
-      behavior: 'smooth'
+      behavior: "smooth",
     });
   };
 
@@ -198,10 +194,10 @@ function Home() {
   const saveInvoiceData = async () => {
     try {
       // Make sure we're using the new invoice number format
-      if (!invoiceNumber || !invoiceNumber.startsWith('#')) {
+      if (!invoiceNumber || !invoiceNumber.startsWith("#")) {
         dispatch(getNextInvoiceNumber());
       }
-      
+
       // Calculate totals
       const subtotal = items.reduce(
         (sum, item) => sum + item.quantity * item.price,
@@ -214,7 +210,9 @@ function Home() {
 
       // Check if this invoice already exists in our history
       const existingInvoice = invoiceHistory.find(
-        inv => inv.invoiceNumber === invoiceNumber || inv.invoice_number === invoiceNumber
+        (inv) =>
+          inv.invoiceNumber === invoiceNumber ||
+          inv.invoice_number === invoiceNumber
       );
 
       // Create the invoice data object for the backend
@@ -225,11 +223,11 @@ function Home() {
         customer_id: selectedCustomerId,
         items: items
           .filter((item) => item.name.trim() !== "")
-          .map(item => ({
+          .map((item) => ({
             name: item.name,
             description: item.description || "",
             quantity: Number(item.quantity),
-            price: Number(item.price)
+            price: Number(item.price),
           })),
         subtotal: Number(subtotal),
         discount: Number(discount),
@@ -241,10 +239,10 @@ function Home() {
         privacy: privacy || "",
         notes: notes || "",
         lastInvoiceDate: lastInvoiceDate || new Date().toISOString(),
-        dailyCounter: dailyCounter || 1
+        dailyCounter: dailyCounter || 1,
       };
 
-      console.log('Saving invoice data:', invoiceData); // Debug log
+      console.log("Saving invoice data:", invoiceData); // Debug log
 
       // If it's an existing invoice, include the ID
       if (existingInvoice) {
@@ -253,31 +251,33 @@ function Home() {
 
       // Dispatch the createInvoice thunk
       const result = await dispatch(createInvoice(invoiceData)).unwrap();
-      
+
       if (!result) {
-        throw new Error('Failed to create invoice - no response data');
+        throw new Error("Failed to create invoice - no response data");
       }
 
       // Save to local history
-      dispatch(saveToHistory({
-        ...result,
-        id: result._id,
-        sender: {
-          name: company.name || "",
-          email: company.email || "",
-          phone: company.phone || "",
-          address: company.address || "",
-          logo: company.logo || "",
-        },
-        customer: {
-          name: localCustomer.name || "",
-          email: localCustomer.email || "",
-          phone: localCustomer.phone || "",
-          address: localCustomer.address || "",
-        },
-        createdAt: result.createdAt || new Date().toISOString(),
-        updatedAt: result.updatedAt || new Date().toISOString(),
-      }));
+      dispatch(
+        saveToHistory({
+          ...result,
+          id: result._id,
+          sender: {
+            name: company.name || "",
+            email: company.email || "",
+            phone: company.phone || "",
+            address: company.address || "",
+            logo: company.logo || "",
+          },
+          customer: {
+            name: localCustomer.name || "",
+            email: localCustomer.email || "",
+            phone: localCustomer.phone || "",
+            address: localCustomer.address || "",
+          },
+          createdAt: result.createdAt || new Date().toISOString(),
+          updatedAt: result.updatedAt || new Date().toISOString(),
+        })
+      );
 
       // Show success message
       Swal.fire({
@@ -312,17 +312,18 @@ function Home() {
           }
         }
       });
-
     } catch (error) {
-      console.error('Failed to save invoice:', error);
-      
+      console.error("Failed to save invoice:", error);
+
       let errorMessage = t("failedToSaveInvoice");
-      if (error.message?.includes('duplicate key error') || 
-          error.message?.includes('already exists')) {
+      if (
+        error.message?.includes("duplicate key error") ||
+        error.message?.includes("already exists")
+      ) {
         errorMessage = t("duplicateInvoiceNumber");
         dispatch(getNextInvoiceNumber());
       }
-      
+
       Swal.fire({
         icon: "error",
         text: errorMessage,
@@ -335,9 +336,9 @@ function Home() {
   };
 
   const handleCustomerChange = (field, value) => {
-    setLocalCustomer(prev => ({
+    setLocalCustomer((prev) => ({
       ...prev,
-      [field]: value
+      [field]: value,
     }));
   };
 
@@ -363,9 +364,9 @@ function Home() {
       }));
     } else {
       // Update local customer email
-      setLocalCustomer(prev => ({
+      setLocalCustomer((prev) => ({
         ...prev,
-        email: value
+        email: value,
       }));
       setEmailErrors((prev) => ({
         ...prev,
@@ -476,12 +477,12 @@ function Home() {
 
   // Add this function to validate a specific item field
   const validateItem = (itemId, field) => {
-    const item = items.find(item => item.id === itemId);
+    const item = items.find((item) => item.id === itemId);
     if (!item) return;
 
     const newErrors = { ...itemErrors };
-    
-    if (field === 'name' || field === 'all') {
+
+    if (field === "name" || field === "all") {
       if (!item.name.trim()) {
         newErrors[itemId] = { ...newErrors[itemId], name: t("nameRequired") };
       } else {
@@ -489,8 +490,8 @@ function Home() {
         newErrors[itemId] = rest;
       }
     }
-    
-    if (field === 'price' || field === 'all') {
+
+    if (field === "price" || field === "all") {
       if (!item.price || item.price <= 0) {
         newErrors[itemId] = { ...newErrors[itemId], price: t("priceRequired") };
       } else {
@@ -498,16 +499,19 @@ function Home() {
         newErrors[itemId] = rest;
       }
     }
-    
-    if (field === 'quantity' || field === 'all') {
+
+    if (field === "quantity" || field === "all") {
       if (!item.quantity || item.quantity <= 0) {
-        newErrors[itemId] = { ...newErrors[itemId], quantity: t("quantityRequired") };
+        newErrors[itemId] = {
+          ...newErrors[itemId],
+          quantity: t("quantityRequired"),
+        };
       } else {
         const { ...rest } = newErrors[itemId] || {};
         newErrors[itemId] = rest;
       }
     }
-    
+
     setItemErrors(newErrors);
     return Object.keys(newErrors[itemId] || {}).length === 0;
   };
@@ -531,12 +535,12 @@ function Home() {
           address: company.address || "",
           logo: company.logo || "",
         },
-        items: items.map(item => ({
+        items: items.map((item) => ({
           id: item.id,
           name: item.name,
           description: item.description,
           quantity: Number(item.quantity),
-          price: Number(item.price)
+          price: Number(item.price),
         })),
         subtotal: subtotal,
         discount: Number(discount),
@@ -548,39 +552,42 @@ function Home() {
         privacy: privacy || "",
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
-        type: invoiceType
+        type: invoiceType,
       };
 
       // Create a temporary div to hold the InvoiceView
-      const tempDiv = document.createElement('div');
-      tempDiv.style.position = 'absolute';
-      tempDiv.style.left = '-9999px';
+      const tempDiv = document.createElement("div");
+      tempDiv.style.position = "absolute";
+      tempDiv.style.left = "-9999px";
       document.body.appendChild(tempDiv);
 
       // Render InvoiceView into the temporary div
-      const invoiceElement = document.createElement('div');
-      invoiceElement.style.width = '190mm';
-      invoiceElement.style.padding = '0';
-      invoiceElement.style.margin = '0 auto';
-      invoiceElement.style.backgroundColor = 'white';
-      invoiceElement.style.direction = i18n.language === "ar" ? 'rtl' : 'ltr';
-      invoiceElement.style.textAlign = i18n.language === "ar" ? 'right' : 'left';
+      const invoiceElement = document.createElement("div");
+      invoiceElement.style.width = "190mm";
+      invoiceElement.style.padding = "0";
+      invoiceElement.style.margin = "0 auto";
+      invoiceElement.style.backgroundColor = "white";
+      invoiceElement.style.direction = i18n.language === "ar" ? "rtl" : "ltr";
+      invoiceElement.style.textAlign =
+        i18n.language === "ar" ? "right" : "left";
 
       // Create InvoiceView instance
-      const invoiceView = <InvoiceView
-        invoice={invoiceData}
-        customer={localCustomer}
-        invoiceType={invoiceType}
-        isPdfMode={true}
-      />;
+      const invoiceView = (
+        <InvoiceView
+          invoice={invoiceData}
+          customer={localCustomer}
+          invoiceType={invoiceType}
+          isPdfMode={true}
+        />
+      );
 
       // Use ReactDOM createRoot to render the InvoiceView
-      const ReactDOM = await import('react-dom/client');
+      const ReactDOM = await import("react-dom/client");
       const root = ReactDOM.createRoot(invoiceElement);
       root.render(invoiceView);
 
       // Wait for images to load
-      await new Promise(resolve => setTimeout(resolve, 500));
+      await new Promise((resolve) => setTimeout(resolve, 500));
 
       // Generate PDF
       await generatePDF(invoiceElement, `invoice-${invoiceNumber}.pdf`);
@@ -588,14 +595,13 @@ function Home() {
       // Cleanup
       document.body.removeChild(tempDiv);
       root.unmount();
-
     } catch (error) {
-      console.error('Failed to generate PDF:', error);
+      console.error("Failed to generate PDF:", error);
       Swal.fire({
-        icon: 'error',
-        text: t('failedToGeneratePDF'),
+        icon: "error",
+        text: t("failedToGeneratePDF"),
         toast: true,
-        position: 'bottom-end',
+        position: "bottom-end",
         showConfirmButton: false,
         timer: 3000,
       });
@@ -616,12 +622,12 @@ function Home() {
         address: company.address || "",
         logo: company.logo || "",
       },
-      items: items.map(item => ({
+      items: items.map((item) => ({
         id: item.id,
         name: item.name,
         description: item.description,
         quantity: Number(item.quantity),
-        price: Number(item.price)
+        price: Number(item.price),
       })),
       subtotal: Number(subtotal),
       discount: Number(discount),
@@ -633,7 +639,7 @@ function Home() {
       privacy: privacy || "",
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
-      type: invoiceType
+      type: invoiceType,
     };
   };
 
@@ -660,46 +666,48 @@ function Home() {
             className="bg-white rounded-2xl shadow-lg md:shadow-2xl p-2 sm:p-5 md:p-8"
           >
             <div className="relative flex flex-col lg:flex-row justify-between items-center gap-4 mb-4 lg:mb-8">
-              <h1 className="self-start text-2xl sm:text-3xl  font-bold bg-gradient-to-r from-primary-500 to-accent-500 bg-clip-text text-transparent py-3">
-                {t("invoiceGenerator")}
-              </h1>
+              <div className="flex flex-col w-full lg:w-auto gap-2">
+                <h1 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-primary-500 to-accent-500 bg-clip-text text-transparent">
+                  {t("invoiceGenerator")}
+                </h1>
+                <div className="lg:hidden text-sm sm:text-base text-gray-600">
+                  <p>
+                    {format(new Date(), "PPP", {
+                      locale: i18n.language === "ar" ? ar : undefined,
+                    })}
+                  </p>
+                  <p>{invoiceNumber}</p>
+                </div>
+              </div>
+
               <div
                 className={`absolute top-0 ${
                   i18n.language === "ar" ? "left-0" : "right-0"
-                } flex flex-col items-center lg:relative h-16 w-16 lg:h-20 lg:w-20 overflow-hidden`}
+                } flex flex-col items-center lg:relative h-16 w-16 lg:h-20 lg:w-20`}
               >
-                {company.logo ? (
-                  <div
-                    className="cursor-pointer group h-full w-full"
-                    onClick={() => setIsLogoModalOpen(true)}
-                  >
+                <Link
+                  to="/company"
+                  className="group h-full w-full rounded-xl border border-gray-200 flex items-center justify-center overflow-hidden"
+                >
+                  {company.logo ? (
                     <img
                       src={company.logo}
-                      alt="Company logo"
-                      className="h-full w-full object-contain rounded-xl border border-gray-200 "
+                      alt={t("companyLogo")}
+                      className="h-full w-full object-contain"
+                      onError={(e) => {
+                        e.target.onerror = null;
+                        dispatch(updateCompany({ field: "logo", value: null }));
+                      }}
                     />
-                  </div>
-                ) : (
-                  <button
-                    onClick={() => setIsLogoModalOpen(true)}
-                    className="text-sm text-primary-600 hover:text-primary-700"
-                  >
-                    {t("addLogo")}
-                  </button>
-                )}
-                <LogoModal
-                  isOpen={isLogoModalOpen}
-                  onClose={() => setIsLogoModalOpen(false)}
-                  logo={company.logo}
-                  onUpdate={(logoData) =>
-                    dispatch(updateCompany({ field: "logo", value: logoData }))
-                  }
-                  onRemove={() =>
-                    dispatch(updateCompany({ field: "logo", value: null }))
-                  }
-                />
+                  ) : (
+                    <span className="text-sm text-primary-600 hover:text-primary-700 text-center px-2">
+                      {t("addLogo")}
+                    </span>
+                  )}
+                </Link>
               </div>
-              <div className="self-end">
+
+              <div className="hidden lg:block">
                 <p className="text-xs sm:text-base text-gray-600 text-end">
                   {format(new Date(), "PPP", {
                     locale: i18n.language === "ar" ? ar : undefined,
@@ -713,24 +721,24 @@ function Home() {
 
             {/* Conditionally render the 'to' and 'from' sections based on invoice type */}
             {invoiceType !== "quick" && (
-                  <div className="mb-8">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                      <InvoiceFrom 
-                        getInputClassName={getInputClassName}
-                        emailErrors={emailErrors}
-                        onEmailChange={handleEmailChange}
-                        invoiceType={invoiceType}
-                      />
-                      <InvoiceTo 
-                        customer={localCustomer}
-                        selectedCustomerId={selectedCustomerId}
-                        onCustomerSelect={handleCustomerSelect}
-                        onCustomerChange={handleCustomerChange}
-                        emailErrors={emailErrors}
-                        onEmailChange={handleEmailChange}
-                        getInputClassName={getInputClassName}
-                        invoiceType={invoiceType}
-                      />
+              <div className="mb-8">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                  <InvoiceFrom
+                    getInputClassName={getInputClassName}
+                    emailErrors={emailErrors}
+                    onEmailChange={handleEmailChange}
+                    invoiceType={invoiceType}
+                  />
+                  <InvoiceTo
+                    customer={localCustomer}
+                    selectedCustomerId={selectedCustomerId}
+                    onCustomerSelect={handleCustomerSelect}
+                    onCustomerChange={handleCustomerChange}
+                    emailErrors={emailErrors}
+                    onEmailChange={handleEmailChange}
+                    getInputClassName={getInputClassName}
+                    invoiceType={invoiceType}
+                  />
                 </div>
               </div>
             )}
@@ -784,7 +792,7 @@ function Home() {
             </button>
           </div>
         </div>
-          
+
         {/* Action buttons container */}
         <div className="md:min-w-72 md:ms-2">
           <div className="bg-white p-2 md:p-6 rounded-xl drop-shadow-2xl md:drop-shadow-none md:shadow-lg sticky top-8">
@@ -832,7 +840,9 @@ function Home() {
                           onKeyDown={(e) => {
                             if (e.key === "ArrowUp") {
                               e.preventDefault();
-                              dispatch(updateTax(Math.min(100, (tax || 0) + 1)));
+                              dispatch(
+                                updateTax(Math.min(100, (tax || 0) + 1))
+                              );
                             } else if (e.key === "ArrowDown") {
                               e.preventDefault();
                               dispatch(updateTax(Math.max(0, (tax || 0) - 1)));
@@ -865,7 +875,9 @@ function Home() {
                             if (e.key === "ArrowUp") {
                               e.preventDefault();
                               dispatch(
-                                updateDiscount(Math.min(100, (discount || 0) + 1))
+                                updateDiscount(
+                                  Math.min(100, (discount || 0) + 1)
+                                )
                               );
                             } else if (e.key === "ArrowDown") {
                               e.preventDefault();

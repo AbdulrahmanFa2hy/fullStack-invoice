@@ -1,6 +1,9 @@
 // this logo modal for the home page
+import { useTranslation } from "react-i18next";
 
 const LogoModal = ({ isOpen, onClose, logo, onUpdate, onRemove }) => {
+  const { t } = useTranslation();
+
   if (!isOpen) return null;
 
   const handleFileChange = (e) => {
@@ -18,15 +21,21 @@ const LogoModal = ({ isOpen, onClose, logo, onUpdate, onRemove }) => {
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div className="bg-white rounded-lg p-6 max-w-sm w-full mx-4">
-        <h3 className="text-lg font-semibold mb-4">Company Logo</h3>
+        <h3 className="text-lg font-semibold mb-4">{t("companyLogo")}</h3>
         <div className="space-y-4">
           {logo && (
             <div className="flex flex-col items-center gap-2">
-              <img
-                src={logo}
-                alt="Current logo"
-                className="h-24 object-contain"
-              />
+              <div className="w-24 h-24 border rounded-lg flex items-center justify-center overflow-hidden">
+                <img
+                  src={logo}
+                  alt={t("currentLogo")}
+                  className="max-h-full max-w-full object-contain"
+                  onError={(e) => {
+                    e.target.onerror = null; // Prevent infinite loop
+                    onRemove(); // Remove invalid logo
+                  }}
+                />
+              </div>
               <button
                 onClick={() => {
                   onRemove();
@@ -34,7 +43,7 @@ const LogoModal = ({ isOpen, onClose, logo, onUpdate, onRemove }) => {
                 }}
                 className="text-red-500 text-sm hover:text-red-700"
               >
-                Remove current logo
+                {t("removeCurrentLogo")}
               </button>
             </div>
           )}
@@ -51,7 +60,7 @@ const LogoModal = ({ isOpen, onClose, logo, onUpdate, onRemove }) => {
               onClick={onClose}
               className="px-4 py-2 text-sm text-gray-600 hover:text-gray-800"
             >
-              Close
+              {t("close")}
             </button>
           </div>
         </div>

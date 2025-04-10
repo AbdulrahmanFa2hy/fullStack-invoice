@@ -7,7 +7,7 @@ import { useState, useRef, useEffect } from "react";
 import { motion } from "framer-motion";
 import InvoiceFrom from "./InvoiceFrom";
 import InvoiceTo from "./InvoiceTo";
-import ProductItem from './ProductItem';
+import ProductItem from "./ProductItem";
 import { FiPlus } from "react-icons/fi";
 import { updateInvoiceThunk, deleteInvoiceThunk } from "../store/invoiceSlice";
 import { generatePDF } from "../utils/pdfGenerator";
@@ -16,9 +16,9 @@ import InvoiceView from "./InvoiceView";
 // Helper function to calculate invoice total
 const calculateInvoiceTotal = (invoice) => {
   if (!invoice) return 0;
-  
+
   // If total is already calculated
-  if (typeof invoice.total === 'number') {
+  if (typeof invoice.total === "number") {
     return invoice.total;
   }
 
@@ -27,7 +27,7 @@ const calculateInvoiceTotal = (invoice) => {
     const subtotal = invoice.items.reduce((sum, item) => {
       const quantity = Number(item.quantity) || 0;
       const price = Number(item.price) || 0;
-      return sum + (quantity * price);
+      return sum + quantity * price;
     }, 0);
 
     const discount = Number(invoice.discount) || 0;
@@ -35,19 +35,19 @@ const calculateInvoiceTotal = (invoice) => {
     const subtotalAfterDiscount = subtotal - discountAmount;
     const tax = Number(invoice.tax) || 0;
     const taxAmount = (subtotalAfterDiscount * tax) / 100;
-    
+
     return subtotalAfterDiscount + taxAmount;
   }
 
   return 0;
 };
 
-const InvoiceDetailModal = ({ 
-  invoice = {}, 
-  onClose = () => {}, 
+const InvoiceDetailModal = ({
+  invoice = {},
+  onClose = () => {},
   onUpdate = () => {},
   customers = [],
-  company = {}
+  company = {},
 }) => {
   const { t, i18n } = useTranslation();
   const modalContentRef = useRef();
@@ -62,14 +62,15 @@ const InvoiceDetailModal = ({
 
   // Initialize editForm with calculated total if needed
   const [editForm, setEditForm] = useState({
-    id: invoice?._id || invoice?.id || '',
-    invoiceNumber: invoice?.invoice_number || invoice?.invoiceNumber || '',
+    id: invoice?._id || invoice?.id || "",
+    invoiceNumber: invoice?.invoice_number || invoice?.invoiceNumber || "",
     sender: invoice?.sender || company || {},
-    customerId: invoice?.customer_id || invoice?.customerId || '',
-    items: invoice?.items?.map(item => ({
-      ...item,
-      id: item.id || item._id || Date.now() + Math.random()
-    })) || [],
+    customerId: invoice?.customer_id || invoice?.customerId || "",
+    items:
+      invoice?.items?.map((item) => ({
+        ...item,
+        id: item.id || item._id || Date.now() + Math.random(),
+      })) || [],
     tax: Number(invoice?.tax) || 0,
     discount: Number(invoice?.discount) || 0,
     subtotal: Number(invoice?.subtotal) || 0,
@@ -82,24 +83,26 @@ const InvoiceDetailModal = ({
   });
   const [currentInvoice, setCurrentInvoice] = useState({
     ...invoice,
-    sender: invoice?.sender || company || {
-      name: t("notAvailable"),
-      email: t("notAvailable"),
-      phone: t("notAvailable"),
-      address: t("notAvailable")
-    },
-    items: invoice?.items?.map(item => ({
-      ...item,
-      id: item.id || item._id || Date.now() + Math.random()
-    })) || [],
+    sender: invoice?.sender ||
+      company || {
+        name: t("notAvailable"),
+        email: t("notAvailable"),
+        phone: t("notAvailable"),
+        address: t("notAvailable"),
+      },
+    items:
+      invoice?.items?.map((item) => ({
+        ...item,
+        id: item.id || item._id || Date.now() + Math.random(),
+      })) || [],
     tax: invoice?.tax || 0,
     discount: invoice?.discount || 0,
     customer: invoice?.customer || {
       name: t("notAvailable"),
       email: t("notAvailable"),
       phone: t("notAvailable"),
-      address: t("notAvailable")
-    }
+      address: t("notAvailable"),
+    },
   });
 
   // Add these selectors to get customers and check invoice type
@@ -111,40 +114,40 @@ const InvoiceDetailModal = ({
     if (invoice?.customer && Object.keys(invoice.customer).length > 0) {
       return invoice.customer;
     }
-    
+
     // Then try to find the customer in the customers array
-    const foundCustomer = customers.find(c => 
-      c._id === (invoice?.customer_id || invoice?.customerId)
+    const foundCustomer = customers.find(
+      (c) => c._id === (invoice?.customer_id || invoice?.customerId)
     );
-    
+
     if (foundCustomer) {
       return foundCustomer;
     }
-    
+
     // Finally, fall back to default values
     return {
       name: t("notAvailable"),
       email: t("notAvailable"),
       phone: t("notAvailable"),
-      address: t("notAvailable")
+      address: t("notAvailable"),
     };
   });
 
   // Effect to update form when invoice changes
   useEffect(() => {
     if (invoice) {
-      const invoiceItems = (invoice.items || []).map(item => ({
+      const invoiceItems = (invoice.items || []).map((item) => ({
         ...item,
-        id: item.id || item._id || Date.now() + Math.random()
+        id: item.id || item._id || Date.now() + Math.random(),
       }));
 
       const senderData = invoice.sender || company || {};
-      
+
       setEditForm({
-        id: invoice._id || invoice.id || '',
-        invoiceNumber: invoice.invoice_number || invoice.invoiceNumber || '',
+        id: invoice._id || invoice.id || "",
+        invoiceNumber: invoice.invoice_number || invoice.invoiceNumber || "",
         sender: senderData,
-        customerId: invoice.customer_id || invoice.customerId || '',
+        customerId: invoice.customer_id || invoice.customerId || "",
         items: invoiceItems,
         tax: Number(invoice.tax) || 0,
         discount: Number(invoice.discount) || 0,
@@ -167,8 +170,8 @@ const InvoiceDetailModal = ({
       if (invoice.customer && Object.keys(invoice.customer).length > 0) {
         setCustomer(invoice.customer);
       } else if (customers.length > 0) {
-        const foundCustomer = customers.find(c => 
-          c._id === (invoice.customer_id || invoice.customerId)
+        const foundCustomer = customers.find(
+          (c) => c._id === (invoice.customer_id || invoice.customerId)
         );
         if (foundCustomer) {
           setCustomer(foundCustomer);
@@ -177,7 +180,7 @@ const InvoiceDetailModal = ({
             name: t("notAvailable"),
             email: t("notAvailable"),
             phone: t("notAvailable"),
-            address: t("notAvailable")
+            address: t("notAvailable"),
           });
         }
       }
@@ -189,12 +192,12 @@ const InvoiceDetailModal = ({
 
   // Add effect to log state changes
   useEffect(() => {
-    console.log('EditForm items updated:', editForm.items);
+    console.log("EditForm items updated:", editForm.items);
   }, [editForm.items]);
 
   // Add effect to log state changes
   useEffect(() => {
-    console.log('Current invoice items updated:', currentInvoice.items);
+    console.log("Current invoice items updated:", currentInvoice.items);
   }, [currentInvoice.items]);
 
   if (!invoice) return null;
@@ -211,12 +214,12 @@ const InvoiceDetailModal = ({
 
   // Add validation for items
   const validateItem = (itemId, field) => {
-    const item = editForm.items.find(item => item.id === itemId);
+    const item = editForm.items.find((item) => item.id === itemId);
     if (!item) return;
 
     const newErrors = { ...itemErrors };
-    
-    if (field === 'name' || field === 'all') {
+
+    if (field === "name" || field === "all") {
       if (!item.name.trim()) {
         newErrors[itemId] = { ...newErrors[itemId], name: t("nameRequired") };
       } else {
@@ -224,8 +227,8 @@ const InvoiceDetailModal = ({
         newErrors[itemId] = rest;
       }
     }
-    
-    if (field === 'price' || field === 'all') {
+
+    if (field === "price" || field === "all") {
       if (!item.price || item.price <= 0) {
         newErrors[itemId] = { ...newErrors[itemId], price: t("priceRequired") };
       } else {
@@ -233,16 +236,19 @@ const InvoiceDetailModal = ({
         newErrors[itemId] = rest;
       }
     }
-    
-    if (field === 'quantity' || field === 'all') {
+
+    if (field === "quantity" || field === "all") {
       if (!item.quantity || item.quantity <= 0) {
-        newErrors[itemId] = { ...newErrors[itemId], quantity: t("quantityRequired") };
+        newErrors[itemId] = {
+          ...newErrors[itemId],
+          quantity: t("quantityRequired"),
+        };
       } else {
         const { ...rest } = newErrors[itemId] || {};
         newErrors[itemId] = rest;
       }
     }
-    
+
     setItemErrors(newErrors);
     return Object.keys(newErrors[itemId] || {}).length === 0;
   };
@@ -252,10 +258,10 @@ const InvoiceDetailModal = ({
     try {
       setIsLoading(true);
       setError(null);
-      
+
       // Ensure we preserve the existing sender/company data
       const existingSender = invoice.sender || company || {};
-      
+
       // Create an object with only the modified fields
       const updatedFields = {
         id: editForm.id,
@@ -268,24 +274,26 @@ const InvoiceDetailModal = ({
         // Explicitly preserve ALL sender/company data
         sender: {
           ...existingSender,
-          name: existingSender.name || '',
-          email: existingSender.email || '',
-          phone: existingSender.phone || '',
-          address: existingSender.address || '',
-          logo: existingSender.logo || ''
+          name: existingSender.name || "",
+          email: existingSender.email || "",
+          phone: existingSender.phone || "",
+          address: existingSender.address || "",
+          logo: existingSender.logo || "",
         },
         customer_id: editForm.customerId || invoice.customer_id,
         invoice_number: editForm.invoiceNumber || invoice.invoice_number,
         type: editForm.type || invoice.type,
-        company_id: invoice.company_id // Preserve the company_id
+        company_id: invoice.company_id, // Preserve the company_id
       };
-      
+
       // Make the API call with the complete data
-      const result = await dispatch(updateInvoiceThunk({
-        id: invoice._id || invoice.id,
-        invoiceData: updatedFields
-      })).unwrap();
-      
+      const result = await dispatch(
+        updateInvoiceThunk({
+          id: invoice._id || invoice.id,
+          invoiceData: updatedFields,
+        })
+      ).unwrap();
+
       // Create the complete updated invoice with all necessary data
       const completeUpdatedInvoice = {
         ...invoice,
@@ -299,34 +307,33 @@ const InvoiceDetailModal = ({
         notes: result.notes || editForm.notes,
         total: result.total || calculateInvoiceTotal(editForm),
         customer: customer, // Preserve customer data
-        customer_id: editForm.customerId || invoice.customer_id
+        customer_id: editForm.customerId || invoice.customer_id,
       };
-      
+
       setCurrentInvoice(completeUpdatedInvoice);
-      setEditForm(prev => ({
+      setEditForm((prev) => ({
         ...prev,
-        ...completeUpdatedInvoice
+        ...completeUpdatedInvoice,
       }));
-      
+
       setIsEditing(false);
-      
+
       // Show success message
       await Swal.fire({
-        icon: 'success',
-        title: t('Success'),
-        text: t('Invoice updated successfully'),
+        icon: "success",
+        title: t("Success"),
+        text: t("Invoice updated successfully"),
       });
 
       // Close modal and trigger parent update
-      if (typeof onClose === 'function') onClose();
-      if (typeof onUpdate === 'function') onUpdate(completeUpdatedInvoice);
-      
+      if (typeof onClose === "function") onClose();
+      if (typeof onUpdate === "function") onUpdate(completeUpdatedInvoice);
     } catch (err) {
-      setError(err.message || t('Failed to update invoice'));
+      setError(err.message || t("Failed to update invoice"));
       Swal.fire({
-        icon: 'error',
-        title: t('Error'),
-        text: err.message || t('Failed to update invoice'),
+        icon: "error",
+        title: t("Error"),
+        text: err.message || t("Failed to update invoice"),
       });
     } finally {
       setIsLoading(false);
@@ -365,11 +372,11 @@ const InvoiceDetailModal = ({
   };
 
   const handleDeleteItem = (itemId) => {
-    console.log('Deleting item:', itemId);
-    console.log('Current items:', editForm.items);
+    console.log("Deleting item:", itemId);
+    console.log("Current items:", editForm.items);
     setEditForm((prev) => {
       const newItems = prev.items.filter((item) => item.id !== itemId);
-      console.log('New items after deletion:', newItems);
+      console.log("New items after deletion:", newItems);
       return {
         ...prev,
         items: newItems,
@@ -408,14 +415,14 @@ const InvoiceDetailModal = ({
   const handleDelete = async () => {
     try {
       const result = await Swal.fire({
-        title: t('areYouSure'),
-        text: t('youWillNotBeAbleToRecover'),
-        icon: 'warning',
+        title: t("areYouSure"),
+        text: t("youWillNotBeAbleToRecover"),
+        icon: "warning",
         showCancelButton: true,
-        confirmButtonText: t('yesDeleteIt'),
-        cancelButtonText: t('noKeepIt'),
-        confirmButtonColor: '#d33',
-        cancelButtonColor: '#3085d6'
+        confirmButtonText: t("yesDeleteIt"),
+        cancelButtonText: t("noKeepIt"),
+        confirmButtonColor: "#d33",
+        cancelButtonColor: "#3085d6",
       });
 
       if (result.isConfirmed) {
@@ -423,27 +430,27 @@ const InvoiceDetailModal = ({
         setError(null);
         await dispatch(deleteInvoiceThunk(invoice._id)).unwrap();
         onClose();
-        
+
         Swal.fire({
-          icon: 'success',
-          text: t('invoiceDeletedSuccessfully'),
+          icon: "success",
+          text: t("invoiceDeletedSuccessfully"),
           toast: true,
-          position: 'bottom-end',
+          position: "bottom-end",
           showConfirmButton: false,
           timer: 3000,
-          timerProgressBar: true
+          timerProgressBar: true,
         });
       }
     } catch (err) {
-      setError(err.message || t('failedToDeleteInvoice'));
+      setError(err.message || t("failedToDeleteInvoice"));
       Swal.fire({
-        icon: 'error',
-        text: err.message || t('failedToDeleteInvoice'),
+        icon: "error",
+        text: err.message || t("failedToDeleteInvoice"),
         toast: true,
-        position: 'bottom-end',
+        position: "bottom-end",
         showConfirmButton: false,
         timer: 3000,
-        timerProgressBar: true
+        timerProgressBar: true,
       });
     } finally {
       setIsLoading(false);
@@ -453,28 +460,31 @@ const InvoiceDetailModal = ({
   const handlePdfAction = async () => {
     try {
       if (!invoiceRef.current) return;
-      
+
       // Create a clone of the invoice view for PDF generation
       const pdfContainer = invoiceRef.current.cloneNode(true);
-      pdfContainer.style.width = '190mm'; // A4 width
-      pdfContainer.style.padding = '0'; // Add proper padding
-      pdfContainer.style.margin = '0 auto'; // Center the content
-      pdfContainer.style.backgroundColor = 'white'; // Ensure white background
-      
+      pdfContainer.style.width = "190mm"; // A4 width
+      pdfContainer.style.padding = "0"; // Add proper padding
+      pdfContainer.style.margin = "0 auto"; // Center the content
+      pdfContainer.style.backgroundColor = "white"; // Ensure white background
+
       document.body.appendChild(pdfContainer);
 
       // Generate the PDF
-      await generatePDF(pdfContainer, `invoice-${currentInvoice.invoice_number}.pdf`);
+      await generatePDF(
+        pdfContainer,
+        `invoice-${currentInvoice.invoice_number}.pdf`
+      );
 
       // Clean up
       document.body.removeChild(pdfContainer);
     } catch (error) {
-      console.error('Failed to generate PDF:', error);
+      console.error("Failed to generate PDF:", error);
       Swal.fire({
-        icon: 'error',
-        text: t('failedToGeneratePDF'),
+        icon: "error",
+        text: t("failedToGeneratePDF"),
         toast: true,
-        position: 'bottom-end',
+        position: "bottom-end",
         showConfirmButton: false,
         timer: 3000,
       });
@@ -483,8 +493,6 @@ const InvoiceDetailModal = ({
 
   return (
     <>
-  
-      
       <div
         className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-2 sm:p-4"
         onClick={handleOverlayClick}
@@ -496,9 +504,13 @@ const InvoiceDetailModal = ({
         >
           <div className="flex justify-between items-center mb-4 sm:mb-6">
             <h2 className="text-lg sm:text-xl md:text-2xl font-bold">
-              {t("invoiceDetails")} {invoice.invoice_number?.startsWith('#') 
-                ? invoice.invoice_number 
-                : `#${invoice.invoice_number?.replace(/^INV-\d{8}-(\d{3}).*$/, '$1')}`}
+              {t("invoiceDetails")}{" "}
+              {invoice.invoice_number?.startsWith("#")
+                ? invoice.invoice_number
+                : `#${invoice.invoice_number?.replace(
+                    /^INV-\d{8}-(\d{3}).*$/,
+                    "$1"
+                  )}`}
             </h2>
             <button
               onClick={onClose}
@@ -518,33 +530,35 @@ const InvoiceDetailModal = ({
                 {/* Conditionally render the 'from' and 'to' sections based on invoice type */}
                 {invoiceType !== "quick" && (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-                    <InvoiceFrom 
+                    <InvoiceFrom
                       readOnly={!isEditing}
                       company={editForm.sender}
                       getInputClassName={() => "w-full p-2 border rounded"}
                       invoiceType={invoiceType}
                     />
-                    <InvoiceTo 
+                    <InvoiceTo
                       readOnly={!isEditing}
                       customer={customer}
                       selectedCustomerId={editForm.customerId}
                       onCustomerSelect={(customerId) => {
                         // Find the selected customer from the customers array
-                        const selectedCustomer = customers.find(c => c._id === customerId || c.id === customerId);
-                        
+                        const selectedCustomer = customers.find(
+                          (c) => c._id === customerId || c.id === customerId
+                        );
+
                         // Update both the customerId in editForm and the customer state
                         setEditForm({
                           ...editForm,
                           customerId: customerId,
                         });
-                        
+
                         // If a customer was found, update the customer state with their data
                         if (selectedCustomer) {
                           setCustomer({
                             name: selectedCustomer.name || "",
                             email: selectedCustomer.email || "",
                             phone: selectedCustomer.phone || "",
-                            address: selectedCustomer.address || ""
+                            address: selectedCustomer.address || "",
                           });
                         } else if (customerId === "") {
                           // If no customer was selected (empty string), reset the customer state
@@ -552,14 +566,14 @@ const InvoiceDetailModal = ({
                             name: "",
                             email: "",
                             phone: "",
-                            address: ""
+                            address: "",
                           });
                         }
                       }}
                       onCustomerChange={(field, value) => {
-                        setCustomer(prev => ({
+                        setCustomer((prev) => ({
                           ...prev,
-                          [field]: value
+                          [field]: value,
                         }));
                       }}
                       getInputClassName={() => "w-full p-2 border rounded"}
@@ -610,7 +624,7 @@ const InvoiceDetailModal = ({
                   onClick={handleAddItem}
                   className="btn btn-accent flex w-full text-center gap-2 sm:w-fit justify-center items-center space-s-2 text-sm md:text-base mb-2"
                 >
-                  {t("addItem")} <FiPlus size={20} /> 
+                  {t("addItem")} <FiPlus size={20} />
                 </button>
 
                 <div className="grid grid-cols-2 text-center gap-4 max-w-[400px] ms-auto">
@@ -715,7 +729,7 @@ const InvoiceDetailModal = ({
                       onClick={handleUpdate}
                       disabled={isLoading}
                     >
-                      {isLoading ? t('Saving...') : t('saveChanges')}
+                      {isLoading ? t("Saving...") : t("saveChanges")}
                     </button>
                     <button
                       type="button"
@@ -723,7 +737,7 @@ const InvoiceDetailModal = ({
                       onClick={onClose}
                       disabled={isLoading}
                     >
-                      {t('cancel')}
+                      {t("cancel")}
                     </button>
                   </div>
                 </div>
@@ -735,14 +749,24 @@ const InvoiceDetailModal = ({
                   <div className="grid md:grid-cols-2 gap-6">
                     <div className="space-y-2">
                       <h3 className="font-semibold">{t("from")}</h3>
-                      <p className="text-lg">{currentInvoice?.sender?.name || t("notAvailable")}</p>
-                      <p>{currentInvoice?.sender?.email || t("notAvailable")}</p>
-                      <p>{currentInvoice?.sender?.phone || t("notAvailable")}</p>
-                      <p>{currentInvoice?.sender?.address || t("notAvailable")}</p>
+                      <p className="text-lg">
+                        {currentInvoice?.sender?.name || t("notAvailable")}
+                      </p>
+                      <p>
+                        {currentInvoice?.sender?.email || t("notAvailable")}
+                      </p>
+                      <p>
+                        {currentInvoice?.sender?.phone || t("notAvailable")}
+                      </p>
+                      <p>
+                        {currentInvoice?.sender?.address || t("notAvailable")}
+                      </p>
                     </div>
                     <div className="space-y-2">
                       <h3 className="font-semibold">{t("to")}</h3>
-                      <p className="text-lg">{customer?.name || t("notAvailable")}</p>
+                      <p className="text-lg">
+                        {customer?.name || t("notAvailable")}
+                      </p>
                       <p>{customer?.email || t("notAvailable")}</p>
                       <p>{customer?.phone || t("notAvailable")}</p>
                       <p>{customer?.address || t("notAvailable")}</p>
@@ -767,11 +791,15 @@ const InvoiceDetailModal = ({
                     <table className="w-full">
                       <thead className="bg-gray-50">
                         <tr>
-                          <th className="px-4 py-2 text-start">{t("product")}</th>
+                          <th className="px-4 py-2 text-start">
+                            {t("product")}
+                          </th>
                           <th className="px-4 py-2 text-start">
                             {t("description")}
                           </th>
-                          <th className="px-4 py-2 text-end">{t("quantity")}</th>
+                          <th className="px-4 py-2 text-end">
+                            {t("quantity")}
+                          </th>
                           <th className="px-4 py-2 text-end">{t("price")}</th>
                           <th className="px-4 py-2 text-end">{t("total")}</th>
                         </tr>
@@ -796,8 +824,12 @@ const InvoiceDetailModal = ({
                             </td>
                             <td className="px-4 py-2 text-end">
                               {isRTL
-                                ? `${(item.quantity * item.price).toFixed(2)}${t("currency")}`
-                                : `${t("currency")}${(item.quantity * item.price).toFixed(2)}`}
+                                ? `${(item.quantity * item.price).toFixed(
+                                    2
+                                  )}${t("currency")}`
+                                : `${t("currency")}${(
+                                    item.quantity * item.price
+                                  ).toFixed(2)}`}
                             </td>
                           </tr>
                         ))}
@@ -822,8 +854,6 @@ const InvoiceDetailModal = ({
                 boxShadow: "0 -4px 6px -1px rgba(0, 0, 0, 0.05)",
               }}
             >
-             
-
               {/* Download PDF button */}
               <motion.button
                 whileHover={{ scale: 1.02 }}
@@ -858,14 +888,17 @@ const InvoiceDetailModal = ({
 
           {/* Add error display */}
           {error && (
-            <div className="p-4 mb-4 text-sm text-red-700 bg-red-100 rounded-lg" role="alert">
+            <div
+              className="p-4 mb-4 text-sm text-red-700 bg-red-100 rounded-lg"
+              role="alert"
+            >
               {error}
             </div>
           )}
 
           {/* Add InvoiceView component for PDF generation */}
           <div className="hidden">
-            <InvoiceView 
+            <InvoiceView
               ref={invoiceRef}
               invoice={currentInvoice}
               customer={customer}
