@@ -10,6 +10,7 @@ import { format } from "date-fns";
 import { ar } from "date-fns/locale";
 import Swal from "sweetalert2";
 import { useInvoiceNumber } from "../hooks/useInvoiceNumber";
+import { generatePDF } from "../utils/pdfGenerator";
 import {
   addItem,
   updateItem,
@@ -32,6 +33,7 @@ import LoadingSpinner from "../components/LoadingSpinner";
 import ProductItem from '../components/ProductItem';
 import { fetchProducts } from '../store/productSlice';
 import PreviewModal from '../components/PreviewModal';
+import InvoiceView from "../components/InvoiceView";
 
 function Home() {
   const dispatch = useDispatch();
@@ -512,9 +514,87 @@ function Home() {
     setShowPreview(true);
   };
 
-  const handleDownload = () => {
-    // TODO: Implement PDF download functionality
-    console.log('Downloading PDF...');
+  const handleDownload = async () => {
+    try {
+      // Prepare invoice data
+      const invoiceData = {
+        invoice_number: invoiceNumber,
+        sender: {
+          name: company.name || "",
+          email: company.email || "",
+          phone: company.phone || "",
+          address: company.address || "",
+          logo: company.logo || "",
+        },
+        items: items.map(item => ({
+          id: item.id,
+          name: item.name,
+          description: item.description,
+          quantity: Number(item.quantity),
+          price: Number(item.price)
+        })),
+        subtotal: subtotal,
+        discount: Number(discount),
+        discountAmount: discountAmount,
+        tax: Number(tax),
+        taxAmount: taxAmount,
+        total: total,
+        notes: notes || "",
+        privacy: privacy || "",
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        type: invoiceType
+      };
+
+      // Create a temporary div to hold the InvoiceView
+      const tempDiv = document.createElement('div');
+      tempDiv.style.position = 'absolute';
+      tempDiv.style.left = '-9999px';
+      document.body.appendChild(tempDiv);
+
+      // Render InvoiceView into the temporary div
+      const invoiceElement = document.createElement('div');
+      invoiceElement.style.width = '190mm';
+      invoiceElement.style.padding = '0';
+      invoiceElement.style.margin = '0 auto';
+      invoiceElement.style.backgroundColor = 'white';
+      invoiceElement.style.direction = i18n.language === "ar" ? 'rtl' : 'ltr';
+      invoiceElement.style.textAlign = i18n.language === "ar" ? 'right' : 'left';
+
+      // Create InvoiceView instance
+      const invoiceView = <InvoiceView
+        invoice={invoiceData}
+        customer={localCustomer}
+        invoiceType={invoiceType}
+        isPdfMode={true}
+      />;
+
+      // Use ReactDOM createRoot to render the InvoiceView
+      const ReactDOM = await import('react-dom/client');
+      const root = ReactDOM.createRoot(invoiceElement);
+      root.render(invoiceView);
+
+      // Wait for images to load
+      await new Promise(resolve => setTimeout(resolve, 500));
+
+      // Generate PDF
+      await generatePDF(invoiceElement, `invoice-${invoiceNumber}.pdf`);
+
+      // Cleanup
+      document.body.removeChild(tempDiv);
+      root.unmount();
+
+    } catch (error) {
+      console.error('Failed to generate PDF:', error);
+      Swal.fire({
+        icon: 'error',
+        text: t('failedToGeneratePDF'),
+        toast: true,
+        position: 'bottom-end',
+        showConfirmButton: false,
+        timer: 3000,
+      });
+    }
   };
 
   const handleClosePreview = () => {
@@ -672,7 +752,7 @@ function Home() {
                 </div>
               </div>
 
-              {items.map((item) => (
+              {items.map((item, index) => (
                 <ProductItem
                   key={item.id}
                   item={item}
@@ -681,6 +761,7 @@ function Home() {
                   handleTextareaResize={handleTextareaResize}
                   getInputClassName={getInputClassName}
                   validateItem={validateItem}
+                  shouldFocus={index === items.length - 1}
                 />
               ))}
             </div>

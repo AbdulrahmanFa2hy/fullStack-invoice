@@ -11,12 +11,21 @@ const ProductItem = ({
   handleUpdateItem, 
   handleTextareaResize, 
   getInputClassName,
-  validateItem
+  validateItem,
+  shouldFocus = false
 }) => {
   const dispatch = useDispatch();
   const { t } = useTranslation();
   const textareaRef = useRef(null);
+  const nameInputRef = useRef(null);
   const [showDropdown, setShowDropdown] = useState(false);
+
+  // Focus the name input when shouldFocus is true
+  useEffect(() => {
+    if (shouldFocus && nameInputRef.current) {
+      nameInputRef.current.focus();
+    }
+  }, [shouldFocus]);
 
   const handleBlur = (field) => {
     if (validateItem) {
@@ -47,6 +56,7 @@ const ProductItem = ({
           {t('productName')}
         </label>
         <input
+          ref={nameInputRef}
           type="text"
           value={item.name}
           onChange={(e) => {

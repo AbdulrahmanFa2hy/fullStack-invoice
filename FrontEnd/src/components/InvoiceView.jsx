@@ -38,22 +38,21 @@ const InvoiceView = forwardRef(({ invoice, customer, invoiceType, isPdfMode }, r
   return (
     <div 
       ref={ref}
-      className={`space-y-4 sm:space-y-6 ${isPdfMode ? 'p-8 bg-white min-h-[297mm]' : ''}`}
+      className={`space-y-4 sm:space-y-6 ${isPdfMode ? 'p-2 bg-white min-h-[297mm]'  : ''} `}
       dir={isRTL ? "rtl" : "ltr"}
     >
       {/* Logo and Invoice Number */}
       <div className="flex justify-between items-start mb-8">
-        {invoice?.sender?.logo && (
+         <h2 className="text-lg sm:text-xl md:text-2xl font-bold">
+            {t("invoiceDetails")} {invoice.invoice_number}
+          </h2>
+          {invoice?.sender?.logo && (
           <img 
             src={invoice.sender.logo} 
             alt="Company Logo" 
             className="h-16 w-auto object-contain"
           />
         )}
-        <div className="text-end">
-          <h1 className="text-2xl font-bold mb-2">{t("invoice")}</h1>
-          <p className="text-gray-600">{invoice.invoice_number}</p>
-        </div>
       </div>
 
       {/* Conditionally render the 'from' and 'to' sections based on invoice type */}
@@ -76,16 +75,6 @@ const InvoiceView = forwardRef(({ invoice, customer, invoiceType, isPdfMode }, r
         </div>
       )}
 
-      <div className="flex justify-between text-xs md text-gray-500">
-        <div className="flex flex-col">
-          {t("createdِAt")}
-          <span>{formatDate(invoice.createdAt)}</span>
-        </div>
-        <div className="flex flex-col">
-          {t("lastUpdated")}
-          <span>{formatDate(invoice.updatedAt)}</span>
-        </div>
-      </div>
 
       <div className="pt-2">
         <div className="overflow-x-auto">

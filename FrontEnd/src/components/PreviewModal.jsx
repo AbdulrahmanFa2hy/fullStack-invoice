@@ -26,8 +26,8 @@ const PreviewModal = ({
       
       // Create a clone of the invoice view for PDF generation
       const pdfContainer = invoiceRef.current.cloneNode(true);
-      pdfContainer.style.width = '210mm'; // A4 width
-      pdfContainer.style.padding = '20mm'; // Add proper padding
+      pdfContainer.style.width = '190mm'; // A4 width
+      pdfContainer.style.padding = '0'; // Add proper padding
       pdfContainer.style.margin = '0 auto'; // Center the content
       pdfContainer.style.backgroundColor = 'white'; // Ensure white background
       pdfContainer.style.direction = 'rtl'; // Force RTL direction
@@ -65,10 +65,7 @@ const PreviewModal = ({
         className="bg-white rounded-lg w-full max-w-6xl max-h-[95vh] sm:max-h-[90vh] overflow-y-auto p-3 sm:p-4 md:p-6 relative [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-track]:bg-gray-100 [&::-webkit-scrollbar-thumb]:bg-gray-300 hover:[&::-webkit-scrollbar-thumb]:bg-gray-400"
         onClick={e => e.stopPropagation()}
       >
-        <div className="flex justify-between items-center mb-4 sm:mb-6">
-          <h2 className="text-lg sm:text-xl md:text-2xl font-bold">
-            {t("previewInvoice")} {invoice.invoice_number}
-          </h2>
+        <div className="mb-4 sm:mb-6">
           <button
             onClick={onClose}
             className="p-1.5 sm:p-2 hover:bg-gray-100 rounded-full transition-colors duration-200"

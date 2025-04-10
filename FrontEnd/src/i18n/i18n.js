@@ -392,7 +392,7 @@ i18n
           totalLabel: "Total",
           editInvoice: "Edit Invoice",
           deleteInvoice: "Delete Invoice",
-          invoiceDetails: "Invoice Details",
+          invoiceDetails: "Invoice",
           senderDetails: "Sender Details",
           customerDetails: "Customer Details",
           itemDetails: "Item Details",

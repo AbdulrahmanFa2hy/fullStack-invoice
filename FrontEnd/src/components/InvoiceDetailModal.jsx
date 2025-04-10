@@ -1,14 +1,17 @@
 import { useDispatch } from "react-redux";
 import { useTranslation } from "react-i18next";
 import Swal from "sweetalert2";
-import { motion } from "framer-motion";
+import { format, parseISO } from "date-fns";
+import { ar } from "date-fns/locale";
 import { useState, useRef, useEffect } from "react";
+import { motion } from "framer-motion";
 import InvoiceFrom from "./InvoiceFrom";
 import InvoiceTo from "./InvoiceTo";
 import ProductItem from './ProductItem';
-import InvoiceView from './InvoiceView';
 import { FiPlus } from "react-icons/fi";
 import { updateInvoiceThunk, deleteInvoiceThunk } from "../store/invoiceSlice";
+import { generatePDF } from "../utils/pdfGenerator";
+import InvoiceView from "./InvoiceView";
 
 // Helper function to calculate invoice total
 const calculateInvoiceTotal = (invoice) => {
@@ -48,6 +51,7 @@ const InvoiceDetailModal = ({
 }) => {
   const { t, i18n } = useTranslation();
   const modalContentRef = useRef();
+  const invoiceRef = useRef(null);
   const isRTL = i18n.language === "ar";
   const dispatch = useDispatch();
 
@@ -184,6 +188,16 @@ const InvoiceDetailModal = ({
   }, [invoice?._id, invoice?.invoiceNumber, company?._id, customers.length]); // Only depend on essential values that should trigger an update
 
   if (!invoice) return null;
+
+  const formatDate = (dateString) => {
+    try {
+      return format(parseISO(dateString), "PPP", {
+        locale: i18n.language === "ar" ? ar : undefined,
+      });
+    } catch {
+      return "Invalid date";
+    }
+  };
 
   // Add validation for items
   const validateItem = (itemId, field) => {
@@ -407,14 +421,53 @@ const InvoiceDetailModal = ({
     }
   };
 
-  // Handle PDF actions
-  const handlePdfAction = (action) => {
-    // TODO: Implement PDF preview and download functionality
-    console.log('PDF action:', action);
+  const handlePdfAction = async () => {
+    try {
+      if (!invoiceRef.current) return;
+      
+      // Create a clone of the invoice view for PDF generation
+      const pdfContainer = invoiceRef.current.cloneNode(true);
+      pdfContainer.style.width = '190mm'; // A4 width
+      pdfContainer.style.padding = '0'; // Add proper padding
+      pdfContainer.style.margin = '0 auto'; // Center the content
+      pdfContainer.style.backgroundColor = 'white'; // Ensure white background
+      pdfContainer.style.direction = 'rtl'; // Force RTL direction
+      pdfContainer.style.textAlign = 'right'; // Align text to the right
+      
+      // Ensure all table cells and content maintain RTL
+      const tables = pdfContainer.getElementsByTagName('table');
+      for (const table of tables) {
+        table.style.direction = 'rtl';
+        const cells = table.getElementsByTagName('td');
+        for (const cell of cells) {
+          cell.style.textAlign = 'right';
+        }
+      }
+
+      document.body.appendChild(pdfContainer);
+
+      // Generate the PDF
+      await generatePDF(pdfContainer, `invoice-${currentInvoice.invoice_number}.pdf`);
+
+      // Clean up
+      document.body.removeChild(pdfContainer);
+    } catch (error) {
+      console.error('Failed to generate PDF:', error);
+      Swal.fire({
+        icon: 'error',
+        text: t('failedToGeneratePDF'),
+        toast: true,
+        position: 'bottom-end',
+        showConfirmButton: false,
+        timer: 3000,
+      });
+    }
   };
 
   return (
     <>
+  
+      
       <div
         className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-2 sm:p-4"
         onClick={handleOverlayClick}
@@ -441,6 +494,8 @@ const InvoiceDetailModal = ({
 
           {/* Main content */}
           <div className="mb-24 sm:mb-20">
+            {" "}
+            {/* Adjust bottom margin for floating buttons */}
             {isEditing ? (
               <div className="space-y-4 sm:space-y-6">
                 {/* Conditionally render the 'from' and 'to' sections based on invoice type */}
@@ -457,11 +512,16 @@ const InvoiceDetailModal = ({
                       customer={customer}
                       selectedCustomerId={editForm.customerId}
                       onCustomerSelect={(customerId) => {
+                        // Find the selected customer from the customers array
                         const selectedCustomer = customers.find(c => c._id === customerId || c.id === customerId);
+                        
+                        // Update both the customerId in editForm and the customer state
                         setEditForm({
                           ...editForm,
                           customerId: customerId,
                         });
+                        
+                        // If a customer was found, update the customer state with their data
                         if (selectedCustomer) {
                           setCustomer({
                             name: selectedCustomer.name || "",
@@ -470,6 +530,7 @@ const InvoiceDetailModal = ({
                             address: selectedCustomer.address || ""
                           });
                         } else if (customerId === "") {
+                          // If no customer was selected (empty string), reset the customer state
                           setCustomer({
                             name: "",
                             email: "",
@@ -526,7 +587,7 @@ const InvoiceDetailModal = ({
                   ))}
                 </div>
 
-                {/* Add Item button */}
+                {/* Add Item button - updated to match Home page style */}
                 <button
                   onClick={handleAddItem}
                   className="btn btn-accent flex w-full text-center gap-2 sm:w-fit justify-center items-center space-s-2 text-sm md:text-base mb-2"
@@ -650,15 +711,87 @@ const InvoiceDetailModal = ({
                 </div>
               </div>
             ) : (
-              <InvoiceView 
-                invoice={currentInvoice} 
-                customer={customer} 
-                invoiceType={invoiceType} 
-              />
+              <div className="space-y-4 sm:space-y-6">
+                {/* Conditionally render the 'from' and 'to' sections based on invoice type */}
+                {invoiceType !== "quick" && (
+                  <div className="grid md:grid-cols-2 gap-6">
+                    <div className="space-y-2">
+                      <h3 className="font-semibold">{t("from")}</h3>
+                      <p className="text-lg">{currentInvoice?.sender?.name || t("notAvailable")}</p>
+                      <p>{currentInvoice?.sender?.email || t("notAvailable")}</p>
+                      <p>{currentInvoice?.sender?.phone || t("notAvailable")}</p>
+                      <p>{currentInvoice?.sender?.address || t("notAvailable")}</p>
+                    </div>
+                    <div className="space-y-2">
+                      <h3 className="font-semibold">{t("to")}</h3>
+                      <p className="text-lg">{customer?.name || t("notAvailable")}</p>
+                      <p>{customer?.email || t("notAvailable")}</p>
+                      <p>{customer?.phone || t("notAvailable")}</p>
+                      <p>{customer?.address || t("notAvailable")}</p>
+                    </div>
+                  </div>
+                )}
+
+                <div className="flex justify-between text-xs md text-gray-500">
+                  <div className="flex flex-col">
+                    {t("createdِAt")}
+                    <span>{formatDate(currentInvoice.createdAt)}</span>
+                  </div>
+                  <div className="flex flex-col">
+                    {t("lastUpdated")}
+                    <span>{formatDate(currentInvoice.updatedAt)}</span>
+                  </div>
+                </div>
+
+                <div className="pt-2">
+                  {/* <h3 className="font-semibold mb-3">{t("items")}</h3> */}
+                  <div className="overflow-x-auto">
+                    <table className="w-full">
+                      <thead className="bg-gray-50">
+                        <tr>
+                          <th className="px-4 py-2 text-start">{t("product")}</th>
+                          <th className="px-4 py-2 text-start">
+                            {t("description")}
+                          </th>
+                          <th className="px-4 py-2 text-end">{t("quantity")}</th>
+                          <th className="px-4 py-2 text-end">{t("price")}</th>
+                          <th className="px-4 py-2 text-end">{t("total")}</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {currentInvoice.items.map((item, index) => (
+                          <tr
+                            key={item.id}
+                            className={`border-b ${
+                              index % 2 === 1 ? "bg-gray-50" : ""
+                            }`}
+                          >
+                            <td className="px-4 py-2">{item.name}</td>
+                            <td className="px-4 py-2">{item.description}</td>
+                            <td className="px-4 py-2 text-end">
+                              {item.quantity}
+                            </td>
+                            <td className="px-4 py-2 text-end">
+                              {isRTL
+                                ? `${item.price.toFixed(2)}${t("currency")}`
+                                : `${t("currency")}${item.price.toFixed(2)}`}
+                            </td>
+                            <td className="px-4 py-2 text-end">
+                              {isRTL
+                                ? `${(item.quantity * item.price).toFixed(2)}${t("currency")}`
+                                : `${t("currency")}${(item.quantity * item.price).toFixed(2)}`}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
             )}
           </div>
 
-          {/* Bottom buttons section */}
+          {/* Bottom buttons section - completely rewritten */}
           {!isEditing && (
             <motion.div
               initial={{ y: 20, opacity: 0 }}
@@ -675,7 +808,7 @@ const InvoiceDetailModal = ({
               <motion.button
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
-                onClick={() => handlePdfAction('preview')}
+                onClick={handlePdfAction}
                 className="w-full sm:w-auto flex-1 sm:flex-none px-4 py-2.5 bg-gradient-to-br from-cyan-500 to-cyan-600 text-white rounded-xl shadow-lg shadow-cyan-500/20 hover:shadow-xl hover:shadow-cyan-500/30 transition-all duration-200 flex items-center justify-center gap-2 text-sm sm:text-base font-medium"
               >
                 <span>{t("previewPdf")}</span>
@@ -685,7 +818,7 @@ const InvoiceDetailModal = ({
               <motion.button
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
-                onClick={() => handlePdfAction('download')}
+                onClick={handlePdfAction}
                 className="w-full sm:w-auto flex-1 sm:flex-none px-4 py-2.5 bg-gradient-to-br from-emerald-500 to-emerald-600 text-white rounded-xl shadow-lg shadow-emerald-500/20 hover:shadow-xl hover:shadow-emerald-500/30 transition-all duration-200 flex items-center justify-center gap-2 text-sm sm:text-base font-medium"
               >
                 <span>{t("downloadPdf")}</span>
@@ -719,6 +852,16 @@ const InvoiceDetailModal = ({
               {error}
             </div>
           )}
+
+          {/* Add InvoiceView component for PDF generation */}
+          <div className="hidden">
+            <InvoiceView 
+              ref={invoiceRef}
+              invoice={currentInvoice}
+              customer={customer}
+              invoiceType={invoiceType}
+            />
+          </div>
         </div>
       </div>
     </>
