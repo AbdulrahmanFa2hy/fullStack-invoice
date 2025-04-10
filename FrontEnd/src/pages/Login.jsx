@@ -193,7 +193,7 @@ function Login() {
 
               <div className="text-sm">
                 <Link
-                  to="/forgot-password"
+                  to=""
                   className="font-medium text-primary-600 hover:text-primary-500"
                 >
                   {t("forgotPassword")}

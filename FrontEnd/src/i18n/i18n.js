@@ -274,6 +274,7 @@ i18n
           pleaseAcceptTerms: "يرجى قبول الشروط والأحكام للمتابعة.",
           signingIn: "جاري تسجيل الدخول...",
           creatingAccount: "جاري إنشاء الحساب...",
+          deleteAccount: "حذف الحساب",
           // Password visibility translations
           showPassword: "إظهار كلمة المرور",
           hidePassword: "إخفاء كلمة المرور",
@@ -294,7 +295,7 @@ i18n
           viewDetails: "عرض التفاصيل",
           areYouSure: "هل أنت متأكد؟",
           youWillNotBeAbleToRecover: "لن تتمكن من استعادة هذه الفاتورة!",
-          yesDeleteIt: "نعم، احذفها!",
+          yesDeleteIt: "حذف",
           noKeepIt: "لا، احتفظ بها",
         },
       },
@@ -549,6 +550,7 @@ i18n
           pleaseAcceptTerms: "Please accept the terms and conditions to continue.",
           signingIn: "Signing in...",
           creatingAccount: "Creating account...",
+          deleteAccount: "Delete Account",
           // Password visibility translations
           showPassword: "Show password",
           hidePassword: "Hide password",
@@ -570,7 +572,7 @@ i18n
           viewDetails: "View Details",
           areYouSure: "Are you sure?",
           youWillNotBeAbleToRecover: "You will not be able to recover this invoice!",
-          yesDeleteIt: "Yes, delete it!",
+          yesDeleteIt: "delete",
           noKeepIt: "No, keep it",
         },
       },

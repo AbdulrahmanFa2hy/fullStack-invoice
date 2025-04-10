@@ -4,7 +4,6 @@ import { useDispatch, useSelector } from "react-redux";
 import { 
   resetInvoice, 
   getNextInvoiceNumber, 
-  addItem, 
   createInvoice, 
   saveToHistory 
 } from "../store/invoiceSlice";
@@ -239,7 +238,6 @@ const Navbar = () => {
 
   // Update the validateInputs function to check all validation conditions
   const validateInputs = () => {
-    let isValid = true;
     
     // Check if there are any items with valid data
     const hasValidItems = items.some(item => 

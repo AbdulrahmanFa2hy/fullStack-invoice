@@ -30,19 +30,7 @@ const PreviewModal = ({
       pdfContainer.style.padding = '0'; // Add proper padding
       pdfContainer.style.margin = '0 auto'; // Center the content
       pdfContainer.style.backgroundColor = 'white'; // Ensure white background
-      pdfContainer.style.direction = 'rtl'; // Force RTL direction
-      pdfContainer.style.textAlign = 'right'; // Align text to the right
       
-      // Ensure all table cells and content maintain RTL
-      const tables = pdfContainer.getElementsByTagName('table');
-      for (const table of tables) {
-        table.style.direction = 'rtl';
-        const cells = table.getElementsByTagName('td');
-        for (const cell of cells) {
-          cell.style.textAlign = 'right';
-        }
-      }
-
       document.body.appendChild(pdfContainer);
 
       // Generate the PDF

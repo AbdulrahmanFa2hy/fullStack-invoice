@@ -1,7 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
 import { FiTrash2 } from 'react-icons/fi';
-import { useDispatch } from 'react-redux';
-import { removeItem } from '../store/invoiceSlice';
 import { useTranslation } from 'react-i18next';
 import ProductSearchDropdown from './ProductSearchDropdown';
 
@@ -9,12 +7,12 @@ const ProductItem = ({
   item, 
   itemErrors = {},
   handleUpdateItem, 
+  handleDeleteItem,
   handleTextareaResize, 
   getInputClassName,
   validateItem,
   shouldFocus = false
 }) => {
-  const dispatch = useDispatch();
   const { t } = useTranslation();
   const textareaRef = useRef(null);
   const nameInputRef = useRef(null);
@@ -141,7 +139,10 @@ const ProductItem = ({
 
       <div className="col-span-1 flex items-center justify-center">
         <button
-          onClick={() => dispatch(removeItem(item.id))}
+          onClick={() => {
+            console.log('Delete button clicked for item:', item.id);
+            handleDeleteItem(item.id);
+          }}
           className="text-red-500 hover:text-red-700 transition-colors"
         >
           <FiTrash2 size={20} />

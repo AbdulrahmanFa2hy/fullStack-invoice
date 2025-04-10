@@ -1,9 +1,7 @@
-import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { setInvoiceType } from "../store/invoiceSlice";
 import { useTranslation } from "react-i18next";
-import { fetchCompanyByUserId } from "../store/companySlice";
 
 function InvoiceTypes() {
   const { t, i18n } = useTranslation();

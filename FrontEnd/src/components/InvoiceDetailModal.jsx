@@ -187,6 +187,16 @@ const InvoiceDetailModal = ({
     }
   }, [invoice?._id, invoice?.invoiceNumber, company?._id, customers.length]); // Only depend on essential values that should trigger an update
 
+  // Add effect to log state changes
+  useEffect(() => {
+    console.log('EditForm items updated:', editForm.items);
+  }, [editForm.items]);
+
+  // Add effect to log state changes
+  useEffect(() => {
+    console.log('Current invoice items updated:', currentInvoice.items);
+  }, [currentInvoice.items]);
+
   if (!invoice) return null;
 
   const formatDate = (dateString) => {
@@ -354,6 +364,25 @@ const InvoiceDetailModal = ({
     }));
   };
 
+  const handleDeleteItem = (itemId) => {
+    console.log('Deleting item:', itemId);
+    console.log('Current items:', editForm.items);
+    setEditForm((prev) => {
+      const newItems = prev.items.filter((item) => item.id !== itemId);
+      console.log('New items after deletion:', newItems);
+      return {
+        ...prev,
+        items: newItems,
+      };
+    });
+    // Clear any errors for the deleted item
+    setItemErrors((prev) => {
+      const newErrors = { ...prev };
+      delete newErrors[itemId];
+      return newErrors;
+    });
+  };
+
   // Add click handler for the overlay
   const handleOverlayClick = (e) => {
     if (
@@ -431,19 +460,7 @@ const InvoiceDetailModal = ({
       pdfContainer.style.padding = '0'; // Add proper padding
       pdfContainer.style.margin = '0 auto'; // Center the content
       pdfContainer.style.backgroundColor = 'white'; // Ensure white background
-      pdfContainer.style.direction = 'rtl'; // Force RTL direction
-      pdfContainer.style.textAlign = 'right'; // Align text to the right
       
-      // Ensure all table cells and content maintain RTL
-      const tables = pdfContainer.getElementsByTagName('table');
-      for (const table of tables) {
-        table.style.direction = 'rtl';
-        const cells = table.getElementsByTagName('td');
-        for (const cell of cells) {
-          cell.style.textAlign = 'right';
-        }
-      }
-
       document.body.appendChild(pdfContainer);
 
       // Generate the PDF
@@ -580,6 +597,7 @@ const InvoiceDetailModal = ({
                       item={item}
                       itemErrors={itemErrors}
                       handleUpdateItem={handleItemUpdate}
+                      handleDeleteItem={handleDeleteItem}
                       handleTextareaResize={handleTextareaResize}
                       getInputClassName={getInputClassName}
                       validateItem={validateItem}
@@ -693,19 +711,19 @@ const InvoiceDetailModal = ({
                   <div className="flex justify-end gap-4 mt-6">
                     <button
                       type="button"
-                      className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
-                      onClick={onClose}
-                      disabled={isLoading}
-                    >
-                      {t('Cancel')}
-                    </button>
-                    <button
-                      type="button"
                       className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 border border-transparent rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
                       onClick={handleUpdate}
                       disabled={isLoading}
                     >
-                      {isLoading ? t('Saving...') : t('Save Changes')}
+                      {isLoading ? t('Saving...') : t('saveChanges')}
+                    </button>
+                    <button
+                      type="button"
+                      className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                      onClick={onClose}
+                      disabled={isLoading}
+                    >
+                      {t('cancel')}
                     </button>
                   </div>
                 </div>
@@ -804,15 +822,7 @@ const InvoiceDetailModal = ({
                 boxShadow: "0 -4px 6px -1px rgba(0, 0, 0, 0.05)",
               }}
             >
-              {/* Preview PDF button */}
-              <motion.button
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                onClick={handlePdfAction}
-                className="w-full sm:w-auto flex-1 sm:flex-none px-4 py-2.5 bg-gradient-to-br from-cyan-500 to-cyan-600 text-white rounded-xl shadow-lg shadow-cyan-500/20 hover:shadow-xl hover:shadow-cyan-500/30 transition-all duration-200 flex items-center justify-center gap-2 text-sm sm:text-base font-medium"
-              >
-                <span>{t("previewPdf")}</span>
-              </motion.button>
+             
 
               {/* Download PDF button */}
               <motion.button

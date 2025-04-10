@@ -1,6 +1,5 @@
 import { useTranslation } from "react-i18next";
 import CustomerSelector from "./CustomerSelector";
-import { useEffect } from "react";
 
 const InvoiceTo = ({
   readOnly = false,

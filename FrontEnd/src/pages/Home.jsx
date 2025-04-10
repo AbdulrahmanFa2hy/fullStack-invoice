@@ -22,6 +22,7 @@ import {
   resetInvoice,
   createInvoice,
   getNextInvoiceNumber,
+  removeItem,
 } from "../store/invoiceSlice";
 import { setSelectedCustomerId, fetchCustomers } from "../store/customersSlice";
 import { updateCompany, fetchCompanyByUserId } from "../store/companySlice";
@@ -170,6 +171,10 @@ function Home() {
   const handleTextareaResize = (e) => {
     e.target.style.height = "auto";
     e.target.style.height = e.target.scrollHeight + "px";
+  };
+
+  const handleDeleteItem = (itemId) => {
+    dispatch(removeItem(itemId));
   };
 
   // Add function to scroll to bottom
@@ -758,6 +763,7 @@ function Home() {
                   item={item}
                   itemErrors={itemErrors}
                   handleUpdateItem={handleUpdateItem}
+                  handleDeleteItem={handleDeleteItem}
                   handleTextareaResize={handleTextareaResize}
                   getInputClassName={getInputClassName}
                   validateItem={validateItem}

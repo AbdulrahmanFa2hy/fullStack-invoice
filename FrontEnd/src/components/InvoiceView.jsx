@@ -1,6 +1,4 @@
 import { useTranslation } from "react-i18next";
-import { format, parseISO } from "date-fns";
-import { ar } from "date-fns/locale";
 import { forwardRef } from "react";
 
 const InvoiceView = forwardRef(({ invoice, customer, invoiceType, isPdfMode }, ref) => {
@@ -14,16 +12,6 @@ const InvoiceView = forwardRef(({ invoice, customer, invoiceType, isPdfMode }, r
     invoiceType,
     isPdfMode
   });
-
-  const formatDate = (dateString) => {
-    try {
-      return format(parseISO(dateString), "PPP", {
-        locale: i18n.language === "ar" ? ar : undefined,
-      });
-    } catch {
-      return "Invalid date";
-    }
-  };
 
   // Calculate totals
   const subtotal = invoice.items.reduce(
@@ -40,47 +28,55 @@ const InvoiceView = forwardRef(({ invoice, customer, invoiceType, isPdfMode }, r
       ref={ref}
       className={`space-y-4 sm:space-y-6 ${isPdfMode ? 'p-2 bg-white min-h-[297mm]'  : ''} `}
       dir={isRTL ? "rtl" : "ltr"}
+      style={{
+        pageBreakInside: 'auto',
+        pageBreakBefore: 'auto',
+        pageBreakAfter: 'auto'
+      }}
     >
-      {/* Logo and Invoice Number */}
-      <div className="flex justify-between items-start mb-8">
-         <h2 className="text-lg sm:text-xl md:text-2xl font-bold">
+      {/* Header Section - No Break */}
+      <div className="no-break" style={{ pageBreakInside: 'avoid', marginBottom: '20px' }}>
+        {/* Logo and Invoice Number */}
+        <div className="flex justify-between items-start mb-8">
+          <h2 className="text-lg sm:text-xl md:text-2xl font-bold">
             {t("invoiceDetails")} {invoice.invoice_number}
           </h2>
           {invoice?.sender?.logo && (
-          <img 
-            src={invoice.sender.logo} 
-            alt="Company Logo" 
-            className="h-16 w-auto object-contain"
-          />
+            <img 
+              src={invoice.sender.logo} 
+              alt="Company Logo" 
+              className="h-16 w-auto object-contain"
+            />
+          )}
+        </div>
+
+        {/* Conditionally render the 'from' and 'to' sections based on invoice type */}
+        {invoiceType !== "quick" && (
+          <div className="grid md:grid-cols-2 gap-8 md:gap-16">
+            <div className="space-y-2">
+              <h3 className="font-semibold">{t("from")}</h3>
+              <p className="text-lg">{invoice?.sender?.name || t("notAvailable")}</p>
+              <p>{invoice?.sender?.email || t("notAvailable")}</p>
+              <p>{invoice?.sender?.phone || t("notAvailable")}</p>
+              <p>{invoice?.sender?.address || t("notAvailable")}</p>
+            </div>
+            <div className="space-y-2">
+              <h3 className="font-semibold">{t("to")}</h3>
+              <p className="text-lg">{customer?.name || t("notAvailable")}</p>
+              <p>{customer?.email || t("notAvailable")}</p>
+              <p>{customer?.phone || t("notAvailable")}</p>
+              <p>{customer?.address || t("notAvailable")}</p>
+            </div>
+          </div>
         )}
       </div>
 
-      {/* Conditionally render the 'from' and 'to' sections based on invoice type */}
-      {invoiceType !== "quick" && (
-        <div className="grid md:grid-cols-2 gap-8 md:gap-16">
-          <div className="space-y-2">
-            <h3 className="font-semibold">{t("from")}</h3>
-            <p className="text-lg">{invoice?.sender?.name || t("notAvailable")}</p>
-            <p>{invoice?.sender?.email || t("notAvailable")}</p>
-            <p>{invoice?.sender?.phone || t("notAvailable")}</p>
-            <p>{invoice?.sender?.address || t("notAvailable")}</p>
-          </div>
-          <div className="space-y-2">
-            <h3 className="font-semibold">{t("to")}</h3>
-            <p className="text-lg">{customer?.name || t("notAvailable")}</p>
-            <p>{customer?.email || t("notAvailable")}</p>
-            <p>{customer?.phone || t("notAvailable")}</p>
-            <p>{customer?.address || t("notAvailable")}</p>
-          </div>
-        </div>
-      )}
-
-
-      <div className="pt-2">
+      {/* Items Table Section */}
+      <div className="items-section" style={{ pageBreakInside: 'auto' }}>
         <div className="overflow-x-auto">
           <table className="w-full">
-            <thead className="bg-gray-50">
-              <tr key="header">
+            <thead className="bg-gray-50 no-break" style={{ pageBreakInside: 'avoid', display: 'table-header-group' }}>
+              <tr>
                 <th className="px-4 py-2 text-start w-[40%]">{t("product")}</th>
                 <th className="px-4 py-2 text-end">{t("quantity")}</th>
                 <th className="px-4 py-2 text-end">{t("price")}</th>
@@ -91,9 +87,12 @@ const InvoiceView = forwardRef(({ invoice, customer, invoiceType, isPdfMode }, r
               {invoice.items.map((item, index) => (
                 <tr
                   key={item.id || `item-${index}`}
-                  className={`border-b ${
-                    index % 2 === 1 ? "bg-gray-50" : ""
-                  }`}
+                  className={`border-b item-row ${index % 2 === 1 ? "bg-gray-50" : ""}`}
+                  style={{ 
+                    pageBreakInside: 'avoid',
+                    breakAfter: 'auto',
+                    breakBefore: 'auto'
+                  }}
                 >
                   <td className="px-4 py-2">
                     <div className="space-y-1">
@@ -122,8 +121,14 @@ const InvoiceView = forwardRef(({ invoice, customer, invoiceType, isPdfMode }, r
           </table>
         </div>
 
-        {/* Summary Section */}
-        <div className="mt-4 ms-auto max-w-sm">
+        {/* Summary Section - No Break */}
+        <div className="mt-4 ms-auto max-w-sm summary-section" 
+          style={{ 
+            pageBreakInside: 'avoid',
+            breakBefore: 'auto',
+            breakAfter: 'auto'
+          }}
+        >
           <div className="space-y-1 text-sm">
             <div className="flex justify-between py-2">
               <span className="text-gray-600">{t("subtotal")}:</span>
@@ -169,7 +174,7 @@ const InvoiceView = forwardRef(({ invoice, customer, invoiceType, isPdfMode }, r
 
         {/* Privacy and Notes Sections */}
         {(invoice.privacy || invoice.notes) && (
-          <div className="mt-6 space-y-4 text-sm">
+          <div className="mt-6 space-y-4 text-sm" style={{ pageBreakInside: 'avoid' }}>
             {invoice.privacy && invoice.privacy.trim() !== "" && (
               <div className="bg-gray-50 p-4 rounded-lg">
                 <h4 className="font-medium mb-2">{t("termsAndPrivacy")}</h4>

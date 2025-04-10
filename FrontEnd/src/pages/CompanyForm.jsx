@@ -7,7 +7,7 @@ import {
   fetchCompanyByUserId,
   saveCompany,
 } from "../store/companySlice";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { FaTrash } from "react-icons/fa";
 import { useTranslation } from "react-i18next";
 import LoadingSpinner from "../components/LoadingSpinner";

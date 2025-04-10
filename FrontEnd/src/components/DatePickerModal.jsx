@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { useTranslation } from "react-i18next";
-import { FiX, FiCalendar, FiChevronLeft, FiChevronRight, FiChevronDown } from "react-icons/fi";
+import { FiX, FiChevronDown } from "react-icons/fi";
 
 const DatePickerModal = ({ 
   isOpen, 

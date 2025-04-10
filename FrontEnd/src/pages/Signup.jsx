@@ -18,9 +18,9 @@ function Signup() {
   const [displayError, setDisplayError] = useState(null);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  
+
   // Get current language direction
-  const isRTL = document.documentElement.dir === 'rtl';
+  const isRTL = document.documentElement.dir === "rtl";
 
   // Process and translate error messages
   useEffect(() => {
@@ -30,21 +30,28 @@ function Signup() {
     }
 
     // Skip token errors on signup page
-    if (error.message === "No token found" || error.message === "Token not provided") {
+    if (
+      error.message === "No token found" ||
+      error.message === "Token not provided"
+    ) {
       setDisplayError(null);
       return;
     }
 
     // Translate common error messages to user-friendly versions
     let friendlyMessage = "";
-    
+
     if (error.message.includes("User already exist")) {
       friendlyMessage = t("emailAlreadyExists");
-    } else if (error.message.includes("User phone number must be unique") || 
-               error.message.includes("phone_1 dup key")) {
+    } else if (
+      error.message.includes("User phone number must be unique") ||
+      error.message.includes("phone_1 dup key")
+    ) {
       friendlyMessage = t("phoneNumberAlreadyExists");
-    } else if (error.message.includes("User email must be unique") || 
-               error.message.includes("email_1 dup key")) {
+    } else if (
+      error.message.includes("User email must be unique") ||
+      error.message.includes("email_1 dup key")
+    ) {
       friendlyMessage = t("emailAlreadyExists");
     } else {
       // For any other errors, use the original message
@@ -107,7 +114,7 @@ function Signup() {
               onChange={(e) => setName(e.target.value)}
               aria-label={t("fullName")}
             />
-            
+
             <input
               id="email-address"
               name="email"
@@ -120,7 +127,7 @@ function Signup() {
               onChange={(e) => setEmail(e.target.value)}
               aria-label={t("emailAddress")}
             />
-            
+
             <input
               id="phone"
               name="phone"
@@ -133,7 +140,7 @@ function Signup() {
               onChange={(e) => setPhone(e.target.value)}
               aria-label={t("phoneNumber")}
             />
-            
+
             <div className="relative">
               <input
                 id="password"
@@ -149,23 +156,54 @@ function Signup() {
               />
               <button
                 type="button"
-                className={`absolute inset-y-0 ${isRTL ? 'left-0 pl-3' : 'right-0 pr-3'} flex items-center text-sm leading-5`}
+                className={`absolute inset-y-0 ${
+                  isRTL ? "left-0 pl-3" : "right-0 pr-3"
+                } flex items-center text-sm leading-5`}
                 onClick={() => setShowPassword(!showPassword)}
-                aria-label={showPassword ? t("hidePassword") : t("showPassword")}
+                aria-label={
+                  showPassword ? t("hidePassword") : t("showPassword")
+                }
               >
                 {showPassword ? (
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-5 w-5 text-gray-500"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"
+                    />
                   </svg>
                 ) : (
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-5 w-5 text-gray-500"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                    />
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+                    />
                   </svg>
                 )}
               </button>
             </div>
-            
+
             <div className="relative">
               <input
                 id="confirm-password"
@@ -181,18 +219,49 @@ function Signup() {
               />
               <button
                 type="button"
-                className={`absolute inset-y-0 ${isRTL ? 'left-0 pl-3' : 'right-0 pr-3'} flex items-center text-sm leading-5`}
+                className={`absolute inset-y-0 ${
+                  isRTL ? "left-0 pl-3" : "right-0 pr-3"
+                } flex items-center text-sm leading-5`}
                 onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                aria-label={showConfirmPassword ? t("hidePassword") : t("showPassword")}
+                aria-label={
+                  showConfirmPassword ? t("hidePassword") : t("showPassword")
+                }
               >
                 {showConfirmPassword ? (
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-5 w-5 text-gray-500"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"
+                    />
                   </svg>
                 ) : (
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-5 w-5 text-gray-500"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                    />
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+                    />
                   </svg>
                 )}
               </button>
@@ -213,19 +282,19 @@ function Signup() {
                 className="ml-2 block text-sm text-gray-700"
               >
                 {t("acceptTerms")}{" "}
-                <a
-                  href="/terms"
-                  className="text-primary-600 hover:text-primary-500"
+                <Link
+                  to=""
+                  className="font-medium text-primary-600 hover:text-primary-500 transition-colors duration-200"
                 >
-                  {t("termsAndConditions")}
-                </a>{" "}
+                  {t("acceptTerms")}
+                </Link>{" "}
                 {t("and")}{" "}
-                <a
-                  href="/privacy"
-                  className="text-primary-600 hover:text-primary-500"
+                <Link
+                  to=""
+                  className="font-medium text-primary-600 hover:text-primary-500 transition-colors duration-200"
                 >
                   {t("privacyPolicy")}
-                </a>
+                </Link>
               </label>
             </div>
           </div>
