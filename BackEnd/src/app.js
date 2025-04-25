@@ -3,6 +3,7 @@ import path from 'path';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import { fileURLToPath } from 'url';
+import { existsSync } from 'fs';
 
 dotenv.config();
 
@@ -39,8 +40,8 @@ app.get('/debug/paths', (req, res) => {
     publicPath,
     indexPath,
     exists: {
-      publicDir: require('fs').existsSync(publicPath),
-      indexFile: require('fs').existsSync(indexPath)
+      publicDir: existsSync(publicPath),
+      indexFile: existsSync(indexPath)
     }
   });
 });
@@ -51,7 +52,7 @@ app.use(express.static(path.join(__dirname, '../public')));
 // Anything that doesn't match the above, send back index.html
 app.get('*', (req, res) => {
   const indexPath = path.join(__dirname, '../public/index.html');
-  if (require('fs').existsSync(indexPath)) {
+  if (existsSync(indexPath)) {
     res.sendFile(indexPath);
   } else {
     res.status(404).json({ 
