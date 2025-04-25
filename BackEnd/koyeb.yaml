@@ -1,0 +1,31 @@
+services:
+  - name: invoice-backend
+    image: koyeb/app
+    type: Web Service
+    env:
+      - key: PORT
+        value: "8000"
+      - key: MONGODB_URI
+        secret: true
+      - key: JWT_SECRET
+        secret: true
+      - key: TWILIO_ACCOUNT_SID
+        secret: true
+      - key: TWILIO_AUTH_TOKEN
+        secret: true
+    regions:
+      - fra
+    ports:
+      - port: 8000
+        http:
+          paths:
+            - /
+    build:
+      type: dockerfile
+      dockerfile: |
+        FROM node:20.15.0
+        WORKDIR /app
+        COPY package*.json ./
+        RUN npm install
+        COPY . .
+        CMD ["npm", "start"]

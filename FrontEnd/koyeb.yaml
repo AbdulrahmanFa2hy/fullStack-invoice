@@ -1,0 +1,21 @@
+services:
+  - name: invoice-frontend
+    image: koyeb/app
+    type: Web Service
+    regions:
+      - fra
+    ports:
+      - port: 80
+        http:
+          paths:
+            - /
+    build:
+      type: dockerfile
+      dockerfile: |
+        FROM node:20.15.0
+        WORKDIR /app
+        COPY package*.json ./
+        RUN npm install
+        COPY . .
+        RUN npm run build
+        CMD ["npm", "run", "preview", "--", "--host", "0.0.0.0", "--port", "80"]
