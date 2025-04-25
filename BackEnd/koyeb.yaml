@@ -5,6 +5,8 @@ services:
     env:
       - key: PORT
         value: "8000"
+      - key: NODE_ENV
+        value: "production"
       - key: MONGODB_URI
         secret: true
       - key: JWT_SECRET
@@ -25,7 +27,23 @@ services:
       dockerfile: |
         FROM node:20.15.0
         WORKDIR /app
-        COPY package*.json ./
+        
+        # Copy backend files
+        COPY BackEnd/package*.json ./
         RUN npm install
-        COPY . .
+        COPY BackEnd/ .
+        
+        # Copy frontend files and build
+        COPY FrontEnd/ ../frontend/
+        WORKDIR /frontend
+        RUN npm install
+        RUN npm run build
+        
+        # Move frontend build to backend static directory
+        WORKDIR /app
+        RUN mkdir -p public
+        RUN cp -r ../frontend/dist/* public/
+        
+        ENV NODE_ENV=production
+        EXPOSE 8000
         CMD ["npm", "start"]

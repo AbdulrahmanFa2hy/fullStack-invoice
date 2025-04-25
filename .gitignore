@@ -15,8 +15,7 @@
 /FrontEnd/lerna-debug.log*
 
 /FrontEnd/node_modules
-/FrontEnd/dist
-/FrontEnd/dist-ssr
+
 /FrontEnd/*.local
 
 # Editor directories and files
