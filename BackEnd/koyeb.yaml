@@ -26,23 +26,23 @@ services:
       type: dockerfile
       dockerfile: |
         FROM node:20.15.0
-        WORKDIR /app
         
-        # Copy backend files
-        COPY BackEnd/package*.json ./
-        RUN npm install
-        COPY BackEnd/ .
+        # Set working directory for the project
+        WORKDIR /workspace
         
-        # Copy frontend files and build
-        COPY FrontEnd/ ../frontend/
-        WORKDIR /frontend
+        # Copy the entire project
+        COPY . .
+        
+        # Install and build frontend
+        WORKDIR /workspace/FrontEnd
         RUN npm install
         RUN npm run build
         
-        # Move frontend build to backend static directory
-        WORKDIR /app
+        # Install backend dependencies and setup
+        WORKDIR /workspace/BackEnd
+        RUN npm install
         RUN mkdir -p public
-        RUN cp -r ../frontend/dist/* public/
+        RUN cp -r ../FrontEnd/dist/* public/
         
         ENV NODE_ENV=production
         EXPOSE 8000

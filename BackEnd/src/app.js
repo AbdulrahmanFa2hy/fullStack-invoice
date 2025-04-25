@@ -30,12 +30,35 @@ app.get('/api', (req, res) => {
   res.json({ message: 'Server is running!' });
 });
 
+// Debug route to check directory structure
+app.get('/debug/paths', (req, res) => {
+  const publicPath = path.join(__dirname, '../public');
+  const indexPath = path.join(__dirname, '../public/index.html');
+  res.json({
+    currentDir: __dirname,
+    publicPath,
+    indexPath,
+    exists: {
+      publicDir: require('fs').existsSync(publicPath),
+      indexFile: require('fs').existsSync(indexPath)
+    }
+  });
+});
+
 // Serve static files from the public directory
 app.use(express.static(path.join(__dirname, '../public')));
 
 // Anything that doesn't match the above, send back index.html
 app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, '../public/index.html'));
+  const indexPath = path.join(__dirname, '../public/index.html');
+  if (require('fs').existsSync(indexPath)) {
+    res.sendFile(indexPath);
+  } else {
+    res.status(404).json({ 
+      error: 'Index file not found',
+      path: indexPath
+    });
+  }
 });
 
 app.listen(PORT, () => {
